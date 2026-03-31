@@ -39,3 +39,8 @@ crashlytics-build.properties
 # OS
 .DS_Store
 Thumbs.db
+
+# Secrets / local agent config (tokens)
+.mcp.json
+.cursor/mcp.json
+.claude/

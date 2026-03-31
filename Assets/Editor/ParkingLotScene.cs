@@ -186,7 +186,7 @@ public class ParkingLotSceneGenerator : Editor
         GameObject carParent = new GameObject("ParkedCar");
         carParent.transform.parent = root.transform;
 
-        GameObject carPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ModelsPlace/Car.fbx");
+        GameObject carPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ModelsPlace/psx-low-poly-car-renault/source/Car.fbx");
         if (carPrefab != null)
         {
             GameObject car = (GameObject)PrefabUtility.InstantiatePrefab(carPrefab);
@@ -563,10 +563,10 @@ public class ParkingLotSceneGenerator : Editor
     // ============================
     static void ApplyCarTextures(GameObject car)
     {
-        Texture2D carTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ModelsPlace/Car_-_RegularWhite.png");
-        Texture2D carEmit = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ModelsPlace/CarEmission.png");
-        Texture2D tireTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ModelsPlace/Tire.png");
-        Texture2D plateTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ModelsPlace/LicensePlate.png");
+        Texture2D carTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ModelsPlace/psx-low-poly-car-renault/textures/Car_-_RegularWhite.png");
+        Texture2D carEmit = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ModelsPlace/psx-low-poly-car-renault/textures/CarEmission.png");
+        Texture2D tireTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ModelsPlace/psx-low-poly-car-renault/textures/Tire.png");
+        Texture2D plateTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ModelsPlace/psx-low-poly-car-renault/textures/LicensePlate.png");
 
         foreach (Renderer r in car.GetComponentsInChildren<Renderer>())
         {
