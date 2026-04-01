@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using System.Collections.Generic;
 
 public class DeskObjectInteraction : MonoBehaviour
 {
@@ -8,6 +9,8 @@ public class DeskObjectInteraction : MonoBehaviour
     public float interactDistance = 3f;
     public Camera playerCamera;
     private FirstPersonCamera cameraController;
+    private bool interactionActive = false;
+    private readonly Dictionary<InteractableObject, int> sipCounts = new Dictionary<InteractableObject, int>();
 
     // Currently hovered
     private InteractableObject hoveredObject = null;
@@ -30,24 +33,12 @@ public class DeskObjectInteraction : MonoBehaviour
     {
         if (playerCamera == null) return;
 
-        // Don't interact if monitor browser is active
         MonitorInteraction monitorInt = FindAnyObjectByType<MonitorInteraction>();
-        if (monitorInt != null && monitorInt.IsBrowsing()) return;
+        if (monitorInt != null && monitorInt.IsZoomed()) return;
 
-        // Don't interact if phone is being held
         PhoneInteraction phone = FindAnyObjectByType<PhoneInteraction>();
-        if (phone != null)
-        {
-            var stateField = phone.GetType().GetField("state",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (stateField != null)
-            {
-                int stateVal = (int)stateField.GetValue(phone);
-                if (stateVal != 0) return; // not idle
-            }
-        }
+        if (phone != null && phone.IsActive()) return;
 
-        // Raycast from screen center
         Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
         RaycastHit hit;
 
@@ -60,11 +51,10 @@ public class DeskObjectInteraction : MonoBehaviour
             hoveredObject = obj;
         }
 
-        // Click to interact
         Mouse mouse = Mouse.current;
         if (mouse != null && mouse.leftButton.wasPressedThisFrame)
         {
-            if (hoveredObject != null && !hoveredObject.isAnimating)
+            if (hoveredObject != null && !hoveredObject.isAnimating && !interactionActive)
             {
                 StartCoroutine(DoInteraction(hoveredObject));
             }
@@ -85,6 +75,7 @@ public class DeskObjectInteraction : MonoBehaviour
 
     IEnumerator DoInteraction(InteractableObject obj)
     {
+        interactionActive = true;
         obj.isAnimating = true;
 
         switch (obj.interactionType)
@@ -115,6 +106,7 @@ public class DeskObjectInteraction : MonoBehaviour
         }
 
         obj.isAnimating = false;
+        interactionActive = false;
     }
 
     // ============================
@@ -178,23 +170,13 @@ public class DeskObjectInteraction : MonoBehaviour
         Quaternion origLocalRot = obj.originalRotation;
         Transform origParent = t.parent;
 
-        Debug.Log("*picks up energy drink*");
-
-        // Freeze camera look
         if (cameraController != null) cameraController.enabled = false;
-
-        // Parent to camera
         t.SetParent(playerCamera.transform);
 
-        // Current local pos in camera space (will be weird, we lerp from it)
         Vector3 startPos = t.localPosition;
         Quaternion startRot = t.localRotation;
-
-        // Target: centered, close to camera, slightly below center
-        Vector3 holdPos = new Vector3(0f, -0.08f, 0.25f);
-        Quaternion holdRot = Quaternion.Euler(0, 0, 0);
-
-        // Pick up - bring to camera
+        Vector3 holdPos = new Vector3(0f, 0.0f, 0.42f);
+        Quaternion holdRot = Quaternion.identity;
         float elapsed = 0f;
         float dur = 0.4f;
         while (elapsed < dur)
@@ -206,12 +188,10 @@ public class DeskObjectInteraction : MonoBehaviour
             yield return null;
         }
 
-        // Brief pause holding
-        yield return new WaitForSeconds(0.15f);
+        yield return new WaitForSeconds(0.1f);
 
-        // Tilt to sip
-        Vector3 sipPos = holdPos + new Vector3(0, 0.03f, -0.02f);
-        Quaternion sipRot = Quaternion.Euler(-35, 0, 8);
+        Vector3 sipPos = holdPos + new Vector3(0f, 0.05f, -0.03f);
+        Quaternion sipRot = Quaternion.Euler(-40f, 0f, 8f);
 
         elapsed = 0f;
         dur = 0.3f;
@@ -224,10 +204,9 @@ public class DeskObjectInteraction : MonoBehaviour
             yield return null;
         }
 
-        // Hold sip
-        yield return new WaitForSeconds(0.5f);
+        TryPlaySipAudio();
+        yield return new WaitForSeconds(1.2f);
 
-        // Tilt back to hold position
         elapsed = 0f;
         dur = 0.25f;
         while (elapsed < dur)
@@ -239,13 +218,9 @@ public class DeskObjectInteraction : MonoBehaviour
             yield return null;
         }
 
-        // Brief pause before putting back
         yield return new WaitForSeconds(0.1f);
 
-        // Re-parent to desk
         t.SetParent(origParent);
-
-        // Lerp back to original desk position
         startPos = t.localPosition;
         startRot = t.localRotation;
 
@@ -263,10 +238,14 @@ public class DeskObjectInteraction : MonoBehaviour
         t.localPosition = origLocalPos;
         t.localRotation = origLocalRot;
 
-        // Re-enable camera look
-        if (cameraController != null) cameraController.enabled = true;
+        int sipCount = 0;
+        sipCounts.TryGetValue(obj, out sipCount);
+        sipCount++;
+        sipCounts[obj] = sipCount;
+        if (sipCount >= 3)
+            ApplyEmptyCanState(obj);
 
-        Debug.Log("*puts drink back*");
+        if (cameraController != null) cameraController.enabled = true;
     }
 
     // ============================
@@ -403,5 +382,48 @@ public class DeskObjectInteraction : MonoBehaviour
         }
 
         t.localRotation = to;
+    }
+
+    public bool IsActive()
+    {
+        return interactionActive;
+    }
+
+    void TryPlaySipAudio()
+    {
+        AudioSource audioSource = FindAnyObjectByType<AudioSource>();
+        if (audioSource == null || audioSource.clip == null)
+            return;
+
+        audioSource.PlayOneShot(audioSource.clip, 0.15f);
+    }
+
+    void ApplyEmptyCanState(InteractableObject obj)
+    {
+        Transform body = obj.transform.Find("CanBody");
+        if (body == null)
+            return;
+
+        Renderer renderer = body.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            Material current = renderer.material;
+            Color currentColor = current.HasProperty("_BaseColor") ? current.GetColor("_BaseColor") : current.color;
+            float grey = currentColor.grayscale;
+            Color emptyColor = Color.Lerp(currentColor, new Color(grey, grey, grey, currentColor.a), 0.4f);
+
+            Material emptyMaterial = new Material(current);
+            emptyMaterial.name = "Desk_EnergyCanEmpty_Runtime";
+            if (emptyMaterial.HasProperty("_BaseColor"))
+                emptyMaterial.SetColor("_BaseColor", emptyColor);
+            else if (emptyMaterial.HasProperty("_Color"))
+                emptyMaterial.SetColor("_Color", emptyColor);
+            else
+                emptyMaterial.color = emptyColor;
+            renderer.material = emptyMaterial;
+        }
+
+        Vector3 localScale = body.localScale;
+        body.localScale = new Vector3(localScale.x, 0.21f, localScale.z);
     }
 }

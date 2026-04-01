@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 63f9170d9a477d742bf199d9306731a3
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 237277
+  packageName: 3D Square Tile Terrain Generator
+  packageVersion: 1.0
+  assetPath: Assets/SquareTileTerrain/Example/TilePrefabs/Tile_Cliff1SGL.prefab
+  uploadId: 560100

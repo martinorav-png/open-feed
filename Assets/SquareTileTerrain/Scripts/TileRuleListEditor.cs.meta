@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 8d0354bfb6a1ccc48a706d10832a8774
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 237277
+  packageName: 3D Square Tile Terrain Generator
+  packageVersion: 1.0
+  assetPath: Assets/SquareTileTerrain/Scripts/TileRuleListEditor.cs
+  uploadId: 560100

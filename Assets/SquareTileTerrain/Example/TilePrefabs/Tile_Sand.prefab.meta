@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ef37c9793df83ef46be22e5672319216
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 237277
+  packageName: 3D Square Tile Terrain Generator
+  packageVersion: 1.0
+  assetPath: Assets/SquareTileTerrain/Example/TilePrefabs/Tile_Sand.prefab
+  uploadId: 560100

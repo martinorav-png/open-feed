@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OPENFEED - Dialogue Writer</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Share+Tech+Mono&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-deep: #08080a;
+      --bg-base: #0a0a0d;
+      --bg-raised: #0e0e12;
+      --bg-surface: #111116;
+      --bg-hover: #16161c;
+      --border: #1a1a1f;
+      --border-subtle: #141418;
+      --text-primary: #c8c8cc;
+      --text-secondary: #777780;
+      --text-muted: #444450;
+      --text-ghost: #2a2a32;
+      --accent: #d02828;
+      --accent-dim: #8b1a1a;
+      --accent-glow: #e0303018;
+      --danger: #661a1a;
+      --dot-filled: #d02828;
+      --dot-empty: #333340;
+      --mono: 'IBM Plex Mono', 'Courier New', monospace;
+      --display: 'Share Tech Mono', 'IBM Plex Mono', monospace;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #1e1e24;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2a2a32;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-base);
+      flex-shrink: 0;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      font-family: var(--display);
+      font-size: 17px;
+      letter-spacing: 6px;
+      color: var(--accent);
+      font-weight: 400;
+      user-select: none;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .word-total {
+      color: var(--text-muted);
+      font-size: 11px;
+      letter-spacing: 1px;
+      padding-right: 4px;
+    }
+
+    .save-status {
+      color: var(--text-ghost);
+      font-size: 10px;
+      min-width: 70px;
+      text-align: right;
+    }
+
+    /* Buttons */
+    .btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 5px 14px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 1px;
+      border-radius: 2px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .btn:hover {
+      border-color: var(--text-muted);
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
+    .btn-collapse {
+      padding: 3px 9px;
+      font-size: 13px;
+      color: var(--text-muted);
+      border-color: var(--border);
+      line-height: 1;
+    }
+
+    .btn-danger {
+      border-color: var(--danger);
+      color: #553030;
+    }
+
+    .btn-danger:hover {
+      border-color: var(--accent-dim);
+      color: var(--accent);
+      background: #1a0808;
+    }
+
+    /* Body */
+    .body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      min-width: 250px;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      background: var(--bg-base);
+      padding: 6px 0;
+      flex-shrink: 0;
+      transition: width 0.2s, min-width 0.2s, padding 0.2s, opacity 0.2s;
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      min-width: 0;
+      padding: 0;
+      overflow: hidden;
+      border-right: none;
+      opacity: 0;
+    }
+
+    .scene-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 10px 18px;
+      background: none;
+      border: none;
+      border-left: 2px solid transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      text-align: left;
+      transition: all 0.12s ease;
+      letter-spacing: 0.3px;
+    }
+
+    .scene-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-raised);
+    }
+
+    .scene-btn.active {
+      color: #dddde0;
+      border-left-color: var(--accent);
+      background: var(--bg-surface);
+    }
+
+    .scene-wc {
+      font-size: 10px;
+      color: var(--text-ghost);
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+
+    .section-list {
+      padding: 2px 0 8px 0;
+    }
+
+    .section-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 5px 18px 5px 30px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 11px;
+      text-align: left;
+      transition: all 0.1s ease;
+    }
+
+    .section-btn:hover {
+      color: var(--text-secondary);
+      background: var(--bg-raised);
+    }
+
+    .section-btn.active {
+      color: #bbbbc0;
+      background: var(--bg-hover);
+    }
+
+    .section-dot {
+      font-size: 7px;
+      width: 10px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .section-dot.filled {
+      color: var(--dot-filled);
+    }
+
+    .section-dot.empty {
+      color: var(--dot-empty);
+    }
+
+    .section-wc {
+      font-size: 9px;
+      color: var(--text-ghost);
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    /* Editor */
+    .editor {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-deep);
+    }
+
+    .editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+      background: var(--bg-base);
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bread-scene {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .bread-sep {
+      color: var(--text-ghost);
+      font-size: 12px;
+    }
+
+    .bread-section {
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .editor-wc {
+      color: var(--text-ghost);
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── FORMATTING TOOLBAR ───────────────────────────── */
+    .format-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 5px 28px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-base);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      row-gap: 4px;
+    }
+
+    .fmt-group {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+      padding-right: 10px;
+      margin-right: 6px;
+      border-right: 1px solid var(--border);
+    }
+
+    .fmt-group:last-child {
+      border-right: none;
+      margin-right: 0;
+      padding-right: 0;
+    }
+
+    .fmt-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 3px 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      border-radius: 2px;
+      transition: all 0.1s ease;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .fmt-btn:hover {
+      border-color: var(--border);
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
+    .fmt-btn.active {
+      border-color: #2a2a32;
+      color: var(--text-primary);
+      background: var(--bg-surface);
+    }
+
+    .fmt-btn-bold {
+      font-weight: 600;
+    }
+
+    .fmt-btn-italic {
+      font-style: italic;
+    }
+
+    .fmt-btn-under {
+      text-decoration: underline;
+    }
+
+    .fmt-label {
+      font-size: 10px;
+      color: var(--text-ghost);
+      letter-spacing: 1px;
+      padding-right: 4px;
+      user-select: none;
+    }
+
+    /* Color swatches */
+    .fmt-swatches {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .fmt-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      border: 1px solid #1e1e24;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.1s, border-color 0.1s;
+    }
+
+    .fmt-swatch:hover {
+      transform: scale(1.25);
+      border-color: #444450;
+    }
+
+    .fmt-swatch.active {
+      border-color: var(--text-secondary);
+    }
+
+    .fmt-custom-wrap {
+      position: relative;
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .fmt-custom-wrap input[type="color"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+    }
+
+    .fmt-custom-preview {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      border: 1px dashed #333340;
+      background: conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+      pointer-events: none;
+      transition: transform 0.1s;
+    }
+
+    .fmt-custom-wrap:hover .fmt-custom-preview {
+      transform: scale(1.25);
+    }
+
+    /* ── EDITOR AREA ─────────────────────────────────── */
+    .editor-area {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .editor-area::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--bg-deep), transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* contenteditable replacing textarea */
+    #editor-content {
+      flex: 1;
+      background: var(--bg-deep);
+      border: none;
+      color: #b8b8bc;
+      padding: 32px 28px 28px;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 300;
+      line-height: 1.85;
+      outline: none;
+      overflow-y: auto;
+      width: 100%;
+      letter-spacing: 0.2px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    #editor-content:empty::before {
+      content: attr(data-placeholder);
+      color: var(--text-ghost);
+      pointer-events: none;
+    }
+
+    #editor-content::selection,
+    #editor-content *::selection {
+      background: var(--accent-dim);
+      color: #eee;
+    }
+
+    /* Scanline overlay */
+    .scanlines {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.03) 2px,
+          rgba(0, 0, 0, 0.03) 4px);
+      opacity: 0.4;
+    }
+
+    .vignette {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 9998;
+      background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.35) 100%);
+    }
+
+    #import-input {
+      display: none;
+    }
+
+    @media (max-width: 700px) {
+      .sidebar {
+        width: 200px;
+        min-width: 200px;
+      }
+
+      .logo-sub {
+        display: none;
+      }
+
+      #editor-content {
+        padding: 20px 16px;
+        font-size: 13px;
+      }
+
+      .editor-header {
+        padding: 10px 16px;
+      }
+
+      .format-toolbar {
+        padding: 5px 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="app">
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <button class="btn btn-collapse" id="collapse-btn">&lt;</button>
+        <span class="logo">OPENFEED</span>
+        <span class="logo-sub">dialogue writer</span>
+      </div>
+      <div class="header-right">
+        <span class="word-total" id="word-total">0 words</span>
+        <span class="save-status" id="save-status"></span>
+        <button class="btn" id="export-btn">export json</button>
+        <button class="btn" id="import-btn">import</button>
+        <button class="btn btn-danger" id="clear-btn">clear</button>
+        <input type="file" id="import-input" accept=".json">
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+      <div class="sidebar" id="sidebar"></div>
+      <div class="editor">
+
+        <!-- Editor Header -->
+        <div class="editor-header">
+          <div class="breadcrumb">
+            <span class="bread-scene" id="bread-scene"></span>
+            <span class="bread-sep">/</span>
+            <span class="bread-section" id="bread-section"></span>
+          </div>
+          <span class="editor-wc" id="editor-wc">0 words</span>
+        </div>
+
+        <!-- Formatting Toolbar -->
+        <div class="format-toolbar">
+
+          <!-- Text style -->
+          <div class="fmt-group">
+            <button class="fmt-btn fmt-btn-bold" id="fmt-bold" title="Bold (Ctrl+B)"
+              onmousedown="fmtCmd(event,'bold')">B</button>
+            <button class="fmt-btn fmt-btn-italic" id="fmt-italic" title="Italic (Ctrl+I)"
+              onmousedown="fmtCmd(event,'italic')">I</button>
+            <button class="fmt-btn fmt-btn-under" id="fmt-under" title="Underline (Ctrl+U)"
+              onmousedown="fmtCmd(event,'underline')">U</button>
+            <button class="fmt-btn" title="Clear formatting" onmousedown="fmtClear(event)"
+              style="font-size:10px;color:var(--text-ghost)">clr</button>
+          </div>
+
+          <!-- Color -->
+          <div class="fmt-group">
+            <span class="fmt-label">color</span>
+            <div class="fmt-swatches">
+              <div class="fmt-swatch" style="background:#b8b8bc" title="Default"
+                onmousedown="fmtColor(event,'#b8b8bc')"></div>
+              <div class="fmt-swatch" style="background:#ffffff" title="White" onmousedown="fmtColor(event,'#ffffff')">
+              </div>
+              <div class="fmt-swatch" style="background:#6dcc6d" title="Green" onmousedown="fmtColor(event,'#6dcc6d')">
+              </div>
+              <div class="fmt-swatch" style="background:#e8a030" title="Amber" onmousedown="fmtColor(event,'#e8a030')">
+              </div>
+              <div class="fmt-swatch" style="background:#d02828" title="Red" onmousedown="fmtColor(event,'#d02828')">
+              </div>
+              <div class="fmt-swatch" style="background:#5588ee" title="Blue" onmousedown="fmtColor(event,'#5588ee')">
+              </div>
+              <div class="fmt-swatch" style="background:#aa77ee" title="Purple" onmousedown="fmtColor(event,'#aa77ee')">
+              </div>
+              <div class="fmt-swatch" style="background:#666680" title="Muted" onmousedown="fmtColor(event,'#666680')">
+              </div>
+              <div class="fmt-custom-wrap" title="Custom color">
+                <div class="fmt-custom-preview" id="custom-preview"></div>
+                <input type="color" id="custom-color" value="#ff88cc" onmousedown="event.stopPropagation()"
+                  onchange="applyCustomColor(this.value)">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Editor Area -->
+        <div class="editor-area">
+          <div id="editor-content" contenteditable="true" spellcheck="true" data-placeholder=""></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Scene Structure ───────────────────────────────────────────
+
+    const SCENES = [
+      {
+        id: "intro", label: "Intro / Main Menu",
+        sections: [
+          { id: "lore", label: "Lore Text", placeholder: "Opening lore, world context..." },
+          { id: "subtitles", label: "Subtitle Cards", placeholder: "Fade-in text cards shown during intro..." },
+          { id: "notes", label: "Design Notes", placeholder: "Notes on atmosphere, timing, music cues..." },
+        ],
+      },
+      {
+        id: "parking_lot", label: "Parking Lot / Store",
+        sections: [
+          { id: "scene_desc", label: "Scene Description", placeholder: "What the player sees on arrival..." },
+          { id: "dialogue", label: "Dialogue", placeholder: "Any NPC or internal dialogue..." },
+          { id: "env_text", label: "Environmental Text", placeholder: "Signs, labels, readable objects..." },
+          { id: "notes", label: "Design Notes", placeholder: "Atmosphere, lighting, sound notes..." },
+        ],
+      },
+      {
+        id: "driving", label: "Driving Scene",
+        sections: [
+          { id: "radio", label: "Radio / Audio", placeholder: "Radio chatter, music, ambient audio..." },
+          { id: "monologue", label: "Internal Monologue", placeholder: "Player character thoughts..." },
+          { id: "subtitles", label: "Subtitle Cards", placeholder: "Text overlays during driving..." },
+          { id: "notes", label: "Design Notes", placeholder: "Route, weather, pacing notes..." },
+        ],
+      },
+      {
+        id: "desk", label: "Desk Scene",
+        sections: [
+          { id: "monitor_ui", label: "Monitor / openfeed.icu", placeholder: "Website UI text, headers, buttons..." },
+          { id: "feed_us", label: "Feed: US Gas Station", placeholder: "Description, events, chat messages..." },
+          { id: "feed_asia", label: "Feed: Asian Shop Interior", placeholder: "Description, events, chat messages..." },
+          { id: "feed_europe", label: "Feed: Eastern European Hallway", placeholder: "Description, events, chat messages..." },
+          { id: "feed_alley", label: "Feed: Back Alley", placeholder: "Description, events, chat messages..." },
+          { id: "community", label: "Community Board", placeholder: "Forum posts, user comments..." },
+          { id: "faq", label: "FAQ Page", placeholder: "Website FAQ content..." },
+          { id: "notes", label: "Design Notes", placeholder: "Interaction flow, cursor behavior..." },
+        ],
+      },
+      {
+        id: "decision", label: "Decision Point",
+        sections: [
+          { id: "context", label: "Scene Context", placeholder: "What leads to the decision, setup..." },
+          { id: "dialogue_options", label: "Dialogue Options", placeholder: "Fallout-style choices the player can pick..." },
+          { id: "npc_responses", label: "NPC / System Responses", placeholder: "Reactions to each choice..." },
+          { id: "notes", label: "Design Notes", placeholder: "Branching logic, tone shifts..." },
+        ],
+      },
+      {
+        id: "ending_good", label: "Ending: Good",
+        sections: [
+          { id: "sequence", label: "Ending Sequence", placeholder: "What happens in the good ending..." },
+          { id: "dialogue", label: "Dialogue / Text", placeholder: "Any spoken or displayed text..." },
+          { id: "credits_drive", label: "Pre-Credits Drive", placeholder: "Text shown during the final drive..." },
+          { id: "notes", label: "Design Notes", placeholder: "Music, pacing, emotional beat..." },
+        ],
+      },
+      {
+        id: "ending_bad", label: "Ending: Bad",
+        sections: [
+          { id: "sequence", label: "Ending Sequence", placeholder: "What happens in the bad ending..." },
+          { id: "dialogue", label: "Dialogue / Text", placeholder: "Any spoken or displayed text..." },
+          { id: "notes", label: "Design Notes", placeholder: "Music, pacing, emotional beat..." },
+        ],
+      },
+      {
+        id: "ending_neutral", label: "Ending: Neutral",
+        sections: [
+          { id: "sequence", label: "Ending Sequence", placeholder: "What happens in the neutral ending..." },
+          { id: "dialogue", label: "Dialogue / Text", placeholder: "Any spoken or displayed text..." },
+          { id: "notes", label: "Design Notes", placeholder: "Music, pacing, emotional beat..." },
+        ],
+      },
+      {
+        id: "phone", label: "Phone Mechanic",
+        sections: [
+          { id: "messages", label: "Phone Messages", placeholder: "Text messages, notifications..." },
+          { id: "inspect_text", label: "Inspect Mode Text", placeholder: "Text shown when examining the phone..." },
+          { id: "notes", label: "Design Notes", placeholder: "When the phone appears, interaction flow..." },
+        ],
+      },
+      {
+        id: "global", label: "Global / Misc",
+        sections: [
+          { id: "ui_text", label: "UI Text", placeholder: "Menu labels, button text, tooltips..." },
+          { id: "world_lore", label: "World Lore", placeholder: "Background lore not tied to a specific scene..." },
+          { id: "cut_content", label: "Cut / Parking Lot", placeholder: "Ideas to revisit, scrapped dialogue..." },
+        ],
+      },
+    ];
+
+    // ─── State ─────────────────────────────────────────────────────
+
+    const STORAGE_KEY = "openfeed-dialogue-data";
+    let data = {};
+    let activeScene = "intro";
+    let activeSection = "lore";
+    let saveTimeout = null;
+
+    // Track the saved selection for toolbar interactions
+    let savedRange = null;
+
+    function buildEmpty() {
+      const d = {};
+      SCENES.forEach(s => {
+        d[s.id] = {};
+        s.sections.forEach(sec => { d[s.id][sec.id] = ""; });
+      });
+      return d;
+    }
+
+    function stripHTML(html) {
+      const d = document.createElement('div');
+      d.innerHTML = html;
+      return d.textContent || d.innerText || '';
+    }
+
+    function wc(content) {
+      const text = stripHTML(content);
+      if (!text || !text.trim()) return 0;
+      return text.trim().split(/\s+/).length;
+    }
+
+    function totalWc() {
+      let n = 0;
+      Object.values(data).forEach(scene => {
+        Object.values(scene).forEach(t => { n += wc(t); });
+      });
+      return n;
+    }
+
+    function sceneWc(sceneId) {
+      if (!data[sceneId]) return 0;
+      let n = 0;
+      Object.values(data[sceneId]).forEach(t => { n += wc(t); });
+      return n;
+    }
+
+    // ─── Selection Management ──────────────────────────────────────
+
+    function saveSelection() {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        const editor = document.getElementById('editor-content');
+        if (editor.contains(range.commonAncestorContainer)) {
+          savedRange = range.cloneRange();
+        }
+      }
+    }
+
+    function restoreSelection() {
+      const editor = document.getElementById('editor-content');
+      editor.focus();
+      if (savedRange) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      }
+    }
+
+    // ─── Formatting Commands ───────────────────────────────────────
+
+    function fmtCmd(e, command) {
+      e.preventDefault();
+      restoreSelection();
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand(command, false, null);
+      onEditorInput();
+      updateToolbarState();
+    }
+
+    function fmtClear(e) {
+      e.preventDefault();
+      restoreSelection();
+      document.execCommand('removeFormat', false, null);
+      onEditorInput();
+      updateToolbarState();
+    }
+
+    function fmtColor(e, color) {
+      e.preventDefault();
+      restoreSelection();
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand('foreColor', false, color);
+      onEditorInput();
+    }
+
+    function applyCustomColor(color) {
+      restoreSelection();
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand('foreColor', false, color);
+      document.getElementById('custom-preview').style.background = color;
+      onEditorInput();
+    }
+
+    function updateToolbarState() {
+      document.getElementById('fmt-bold').classList.toggle('active', document.queryCommandState('bold'));
+      document.getElementById('fmt-italic').classList.toggle('active', document.queryCommandState('italic'));
+      document.getElementById('fmt-under').classList.toggle('active', document.queryCommandState('underline'));
+    }
+
+    // ─── Persistence ───────────────────────────────────────────────
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const merged = buildEmpty();
+          Object.keys(parsed).forEach(sid => {
+            if (merged[sid]) {
+              Object.keys(parsed[sid]).forEach(secId => {
+                if (merged[sid].hasOwnProperty(secId)) {
+                  merged[sid][secId] = parsed[sid][secId];
+                }
+              });
+            }
+          });
+          data = merged;
+        } else {
+          data = buildEmpty();
+        }
+      } catch (e) {
+        data = buildEmpty();
+      }
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        const now = new Date();
+        document.getElementById("save-status").textContent =
+          "saved " + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      } catch (e) {
+        document.getElementById("save-status").textContent = "save failed";
+      }
+    }
+
+    function debouncedSave() {
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveData, 600);
+    }
+
+    // ─── Rendering ─────────────────────────────────────────────────
+
+    function renderSidebar() {
+      const sidebar = document.getElementById("sidebar");
+      sidebar.innerHTML = "";
+
+      SCENES.forEach(scene => {
+        const isActive = scene.id === activeScene;
+        const sw = sceneWc(scene.id);
+
+        const btn = document.createElement("button");
+        btn.className = "scene-btn" + (isActive ? " active" : "");
+        btn.innerHTML = `
+          <span>${scene.label}</span>
+          ${sw > 0 ? `<span class="scene-wc">${sw}</span>` : ""}
+        `;
+        btn.onclick = () => {
+          activeScene = scene.id;
+          activeSection = scene.sections[0].id;
+          renderSidebar();
+          renderEditor();
+        };
+        sidebar.appendChild(btn);
+
+        if (isActive) {
+          const list = document.createElement("div");
+          list.className = "section-list";
+
+          scene.sections.forEach(sec => {
+            const secWc = wc(data[scene.id]?.[sec.id] || "");
+            const secActive = sec.id === activeSection;
+
+            const secBtn = document.createElement("button");
+            secBtn.className = "section-btn" + (secActive ? " active" : "");
+            secBtn.innerHTML = `
+              <span class="section-dot ${secWc > 0 ? 'filled' : 'empty'}">${secWc > 0 ? "●" : "○"}</span>
+              <span>${sec.label}</span>
+              ${secWc > 0 ? `<span class="section-wc">${secWc}</span>` : ""}
+            `;
+            secBtn.onclick = () => {
+              activeSection = sec.id;
+              renderSidebar();
+              renderEditor();
+            };
+            list.appendChild(secBtn);
+          });
+
+          sidebar.appendChild(list);
+        }
+      });
+    }
+
+    function renderEditor() {
+      const scene = SCENES.find(s => s.id === activeScene);
+      const section = scene?.sections.find(s => s.id === activeSection);
+      if (!scene || !section) return;
+
+      document.getElementById("bread-scene").textContent = scene.label;
+      document.getElementById("bread-section").textContent = section.label;
+
+      const content = data[activeScene]?.[activeSection] || "";
+      const editorEl = document.getElementById("editor-content");
+      editorEl.innerHTML = content;
+      editorEl.dataset.placeholder = section.placeholder;
+
+      document.getElementById("editor-wc").textContent = wc(content) + " words";
+      editorEl.focus();
+    }
+
+    function onEditorInput() {
+      const editorEl = document.getElementById("editor-content");
+      const html = editorEl.innerHTML;
+
+      // Treat empty / whitespace-only as empty string
+      const text = stripHTML(html).trim();
+      data[activeScene][activeSection] = text ? html : "";
+
+      document.getElementById("editor-wc").textContent = wc(html) + " words";
+      updateWordTotal();
+      debouncedSave();
+      renderSidebar();
+    }
+
+    function updateWordTotal() {
+      document.getElementById("word-total").textContent = totalWc() + " words";
+    }
+
+    // ─── Export / Import ───────────────────────────────────────────
+
+    function exportJSON() {
+      const exportData = {
+        _meta: {
+          project: "OPENFEED",
+          exported: new Date().toISOString(),
+          version: "2.0",
+          totalWords: totalWc(),
+        },
+        scenes: {},
+      };
+
+      SCENES.forEach(scene => {
+        const sceneData = {};
+        let hasContent = false;
+        scene.sections.forEach(sec => {
+          const html = data[scene.id]?.[sec.id]?.trim();
+          const text = stripHTML(html || '').trim();
+          if (text) {
+            sceneData[sec.id] = {
+              label: sec.label,
+              content: html,
+              plaintext: text,
+            };
+            hasContent = true;
+          }
+        });
+        if (hasContent) {
+          exportData.scenes[scene.id] = { label: scene.label, sections: sceneData };
+        }
+      });
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `openfeed-dialogue-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON(file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          const merged = buildEmpty();
+          const scenes = imported.scenes || imported;
+
+          Object.keys(scenes).forEach(sceneId => {
+            if (sceneId === "_meta") return;
+            if (merged[sceneId]) {
+              const sd = scenes[sceneId];
+              if (sd.sections) {
+                Object.keys(sd.sections).forEach(secId => {
+                  if (merged[sceneId].hasOwnProperty(secId)) {
+                    const sec = sd.sections[secId];
+                    // Support both v1 (plain text) and v2 (html) exports
+                    merged[sceneId][secId] = sec.content || (typeof sec === 'string' ? sec : '');
+                  }
+                });
+              } else {
+                Object.keys(sd).forEach(secId => {
+                  if (merged[sceneId].hasOwnProperty(secId)) {
+                    merged[sceneId][secId] = typeof sd[secId] === "string" ? sd[secId] : sd[secId].content || "";
+                  }
+                });
+              }
+            }
+          });
+
+          data = merged;
+          saveData();
+          renderSidebar();
+          renderEditor();
+          updateWordTotal();
+        } catch (e) {
+          alert("Failed to parse JSON file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function clearAll() {
+      if (confirm("Clear all dialogue data? This can't be undone.")) {
+        data = buildEmpty();
+        saveData();
+        renderSidebar();
+        renderEditor();
+        updateWordTotal();
+      }
+    }
+
+    // ─── Init ──────────────────────────────────────────────────────
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadData();
+      renderSidebar();
+      renderEditor();
+      updateWordTotal();
+
+      const editorEl = document.getElementById("editor-content");
+
+      // Save selection on every mouseup / keyup inside editor
+      editorEl.addEventListener("mouseup", () => { saveSelection(); updateToolbarState(); });
+      editorEl.addEventListener("keyup", () => { saveSelection(); updateToolbarState(); });
+      editorEl.addEventListener("input", onEditorInput);
+
+      // Tab support in contenteditable
+      editorEl.addEventListener("keydown", (e) => {
+        if (e.key === "Tab") {
+          e.preventDefault();
+          document.execCommand('insertText', false, '\t');
+        }
+      });
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key === "b") { e.preventDefault(); restoreSelection(); document.execCommand('styleWithCSS', false, true); document.execCommand('bold', false, null); onEditorInput(); updateToolbarState(); }
+          if (e.key === "i") { e.preventDefault(); restoreSelection(); document.execCommand('styleWithCSS', false, true); document.execCommand('italic', false, null); onEditorInput(); updateToolbarState(); }
+          if (e.key === "u") { e.preventDefault(); restoreSelection(); document.execCommand('styleWithCSS', false, true); document.execCommand('underline', false, null); onEditorInput(); updateToolbarState(); }
+          if (e.key === "s") { e.preventDefault(); saveData(); }
+        }
+      });
+
+      // Sidebar collapse
+      document.getElementById("collapse-btn").addEventListener("click", () => {
+        const sb = document.getElementById("sidebar");
+        const btn = document.getElementById("collapse-btn");
+        sb.classList.toggle("collapsed");
+        btn.textContent = sb.classList.contains("collapsed") ? ">" : "<";
+      });
+
+      document.getElementById("export-btn").addEventListener("click", exportJSON);
+      document.getElementById("import-btn").addEventListener("click", () => {
+        document.getElementById("import-input").click();
+      });
+      document.getElementById("import-input").addEventListener("change", (e) => {
+        if (e.target.files?.[0]) importJSON(e.target.files[0]);
+        e.target.value = "";
+      });
+      document.getElementById("clear-btn").addEventListener("click", clearAll);
+    });
+  </script>
+</body>
+
+</html>

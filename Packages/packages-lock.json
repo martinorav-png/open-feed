@@ -261,6 +261,13 @@
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
+    "net.gree.unity-webview": {
+      "version": "https://github.com/gree/unity-webview.git?path=/dist/package",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "fb64f33cdc7726629b3a760ef50843fb4d2a0767"
+    },
     "org.nuget.microsoft.aspnetcore.connections.abstractions": {
       "version": "10.0.3",
       "depth": 3,

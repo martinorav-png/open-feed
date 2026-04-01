@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: dc4f6a409646b784781ed44a11d97631
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 237277
+  packageName: 3D Square Tile Terrain Generator
+  packageVersion: 1.0
+  assetPath: Assets/SquareTileTerrain/Example/TilePrefabs/Tile_Cliff2EndL.prefab
+  uploadId: 560100

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ec8ffa17c2e74d141903d32f436a010c
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 237277
+  packageName: 3D Square Tile Terrain Generator
+  packageVersion: 1.0
+  assetPath: Assets/SquareTileTerrain/Configs/config0.txt
+  uploadId: 560100

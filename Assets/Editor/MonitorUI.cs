@@ -468,6 +468,9 @@ public class MonitorUIGenerator : Editor
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(150, 20), Vector2.zero);
 
+        if (canvasObj.GetComponent<MonitorWebViewHost>() == null)
+            canvasObj.AddComponent<MonitorWebViewHost>();
+
         // ============================
         // FINALIZE
         // ============================

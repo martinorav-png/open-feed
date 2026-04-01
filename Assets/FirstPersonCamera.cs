@@ -16,10 +16,12 @@ public class FirstPersonCamera : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        Vector3 currentRotation = transform.eulerAngles;
-        rotationY = currentRotation.y;
-        rotationX = currentRotation.x;
-        if (rotationX > 180f) rotationX -= 360f;
+        SyncToCurrentTransform();
+    }
+
+    void OnEnable()
+    {
+        SyncToCurrentTransform();
     }
 
     void Update()
@@ -39,5 +41,14 @@ public class FirstPersonCamera : MonoBehaviour
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
+    }
+
+    public void SyncToCurrentTransform()
+    {
+        Vector3 currentRotation = transform.eulerAngles;
+        rotationY = currentRotation.y;
+        rotationX = currentRotation.x;
+        if (rotationX > 180f)
+            rotationX -= 360f;
     }
 }

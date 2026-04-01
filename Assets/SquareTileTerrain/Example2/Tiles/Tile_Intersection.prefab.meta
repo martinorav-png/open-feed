@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 66700b94bdf3ed54fb94d33202952cea
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 237277
+  packageName: 3D Square Tile Terrain Generator
+  packageVersion: 1.0
+  assetPath: Assets/SquareTileTerrain/Example2/Tiles/Tile_Intersection.prefab
+  uploadId: 560100

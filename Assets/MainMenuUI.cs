@@ -16,8 +16,8 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] AudioClip introTitleClip;
     [Tooltip("Loops after the intro finishes. Assign in Inspector, or use Audio/Resources auto-load.")]
     [SerializeField] AudioClip menuThemeClip;
-    [Range(0f, 1f)] [SerializeField] float introVolume = 1f;
-    [Range(0f, 1f)] [SerializeField] float themeVolume = 0.85f;
+    [Range(0f, 1f)] [SerializeField] float introVolume = 0.5f;
+    [Range(0f, 1f)] [SerializeField] float themeVolume = 0.425f;
 
     // ============================
     // COLORS (desaturated, muted palette)

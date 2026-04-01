@@ -40,7 +40,15 @@ crashlytics-build.properties
 .DS_Store
 Thumbs.db
 
+# gree unity-webview Windows: NuGet restore output (re-run restore_webview2_sdk.ps1)
+external/unity-webview/plugins/Windows/packages/
+external/unity-webview/plugins/Windows/nuget.exe
+
 # Secrets / local agent config (tokens)
 .mcp.json
 .cursor/mcp.json
 .claude/
+
+# Sample scene exceeds GitHub 100 MB file limit
+Assets/SquareTileTerrain/Scenes/ExampleScene.unity
+Assets/SquareTileTerrain/Scenes/ExampleScene.unity.meta

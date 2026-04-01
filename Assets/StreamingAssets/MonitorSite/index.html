@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>openfeed.icu</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: #e8e8e0;
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 12px;
+      color: #222;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    a {
+      color: #0000cc;
+    }
+
+    .header-bar {
+      background: #fff;
+      border-bottom: 2px solid #888;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: monospace;
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .logo .colon {
+      color: #c00;
+    }
+
+    .header-sub {
+      font-family: Verdana, sans-serif;
+      font-size: 10px;
+      color: #777;
+      margin-left: 10px;
+    }
+
+    .header-right {
+      font-family: monospace;
+      font-size: 11px;
+      color: #555;
+    }
+
+    .nav-bar {
+      background: #d4d4cc;
+      border-bottom: 1px solid #aaa;
+      padding: 4px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-bar a {
+      font-family: monospace;
+      font-size: 11px;
+      margin-right: 14px;
+    }
+
+    .nav-bar a.active {
+      color: #000;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .nav-status {
+      font-family: monospace;
+      font-size: 10px;
+      color: #888;
+    }
+
+    .content {
+      padding: 12px 16px 24px;
+    }
+
+    .notice {
+      border: 1px solid #bbb;
+      background: #fffff0;
+      padding: 6px 8px;
+      margin-bottom: 12px;
+      font-size: 10px;
+      color: #555;
+    }
+
+    .section-header {
+      font-weight: bold;
+      font-size: 12px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .section-header .count {
+      font-weight: normal;
+      font-size: 10px;
+      color: #999;
+      margin-left: 6px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #bbb;
+      margin: 10px 0;
+    }
+
+    .cam-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .cam-cell {
+      border: 1px solid #999;
+      background: #000;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .cam-cell:hover {
+      border-color: #666;
+    }
+
+    .cam-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+
+    .cam-id {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-family: monospace;
+      font-size: 9px;
+      color: rgba(140, 170, 130, 0.8);
+      text-shadow: 0 0 2px #000;
+    }
+
+    .cam-live {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      font-family: monospace;
+      font-size: 9px;
+      text-shadow: 0 0 2px #000;
+    }
+
+    .cam-new {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-family: monospace;
+      font-size: 8px;
+      color: #f00;
+      background: #ff0;
+      padding: 0 3px;
+      font-weight: bold;
+    }
+
+    .cam-info {
+      background: #eee;
+      border-top: 1px solid #999;
+      padding: 3px 4px;
+      font-family: Verdana, sans-serif;
+      font-size: 10px;
+      color: #333;
+      width: 160px;
+    }
+
+    .cam-info .meta {
+      font-size: 9px;
+      color: #777;
+    }
+
+    .viewer-panel {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid #888;
+      background: #d9d9d0;
+      padding: 8px;
+    }
+
+    .viewer-panel.open {
+      display: block;
+    }
+
+    .viewer-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .viewer-title {
+      font-family: Verdana, sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      color: #111;
+    }
+
+    .viewer-close {
+      font-family: monospace;
+      font-size: 12px;
+      padding: 4px 8px;
+      background: #c0c0c0;
+      border: 2px outset #ddd;
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .viewer-close:active {
+      border-style: inset;
+    }
+
+    .viewer-stage {
+      background: #111;
+      border: 1px solid #666;
+      padding: 2px;
+    }
+
+    .viewer-canvas {
+      display: block;
+      width: 100%;
+      max-width: 960px;
+      height: auto;
+      margin: 0 auto;
+      background: #000;
+    }
+
+    .viewer-footer {
+      background: #eee;
+      border-top: 1px solid #999;
+      padding: 6px 8px;
+      font-family: Verdana, sans-serif;
+      font-size: 10px;
+      color: #555;
+      margin-top: 6px;
+    }
+
+    .faq-table {
+      border: 1px solid #ccc;
+      background: #fff;
+      width: 700px;
+      max-width: 100%;
+      border-collapse: collapse;
+    }
+
+    .faq-table td {
+      padding: 8px;
+      vertical-align: top;
+      font-family: Verdana, sans-serif;
+      font-size: 11px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .faq-table b {
+      color: #333;
+    }
+
+    .faq-a {
+      color: #666;
+    }
+
+    .footer-area {
+      font-size: 9px;
+      color: #999;
+      text-align: center;
+      padding: 8px 0 16px;
+    }
+
+    .footer-area .mono {
+      font-family: monospace;
+      font-size: 10px;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header-bar">
+    <div>
+      <span class="logo">OPEN<span class="colon">:</span>FEED</span>
+      <span class="header-sub">public surveillance camera index</span>
+    </div>
+    <div class="header-right">
+      <span id="visitorCount">00847</span> visitors online
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <div>
+      <a href="#" class="active">[feeds]</a>
+      <a href="#">[map]</a>
+      <a href="#">[submit]</a>
+      <a href="#">[faq]</a>
+      <a href="#">[about]</a>
+    </div>
+    <div class="nav-status" id="navStatus"></div>
+  </div>
+
+  <div class="content">
+    <div class="notice">
+      <b>Notice:</b> openfeed.icu indexes publicly accessible camera feeds. We do not host or operate any cameras.
+      All streams listed here are accessible without authentication. Click any feed to view in full size.
+      <a href="#">read more</a>
+    </div>
+
+    <div id="feedSection">
+      <div class="section-header">Live Camera Feeds <span class="count" id="feedCount"></span></div>
+      <hr>
+      <div class="cam-grid" id="camGrid"></div>
+    </div>
+
+    <div class="viewer-panel" id="viewerPanel">
+      <div class="viewer-topbar">
+        <div class="viewer-title" id="viewerTitle"></div>
+        <button class="viewer-close" id="viewerClose">[back to feeds]</button>
+      </div>
+      <div class="viewer-stage">
+        <canvas id="viewerCanvas" class="viewer-canvas" width="640" height="480"></canvas>
+      </div>
+      <div class="viewer-footer" id="viewerFooter"></div>
+    </div>
+
+    <div id="faqSection">
+      <hr>
+
+      <div class="section-header">Frequently Asked Questions</div>
+      <hr>
+
+      <table class="faq-table" cellpadding="0" cellspacing="0">
+        <tr>
+          <td><b>Q: What is openfeed?</b><br><span class="faq-a">A: openfeed indexes publicly accessible surveillance
+              feeds from around the world. we do not host cameras. we aggregate what is already visible.</span></td>
+        </tr>
+        <tr>
+          <td><b>Q: Is this legal?</b><br><span class="faq-a">A: these feeds are accessible without authentication. no
+              systems have been compromised. you are watching what anyone can watch. whether you should is a different
+              question.</span></td>
+        </tr>
+        <tr>
+          <td><b>Q: How do I submit a feed?</b><br><span class="faq-a">A: use the submit page. provide the direct stream
+              URL. feeds are verified manually before listing. we do not accept feeds from private residences.</span></td>
+        </tr>
+        <tr>
+          <td><b>Q: A feed shows something wrong. What do I do?</b><br><span class="faq-a">A: you can report it. or you
+              can close the tab. both are choices.</span></td>
+        </tr>
+        <tr>
+          <td><b>Q: Who runs this?</b><br><span class="faq-a">A: openfeed has been indexing open surveillance streams
+              since 2019. the project operates on the belief that if a camera is watching, someone should know it is being
+              watched.</span></td>
+        </tr>
+        <tr>
+          <td style="border-bottom:none;"><b>Q: Do you accept donations?</b><br><span class="faq-a">A: no. we accept no
+              donations and we run no ads.</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <hr id="footerRule">
+
+    <div class="footer-area" id="footerArea">
+      openfeed.icu does not operate, own, or maintain any listed camera feeds.
+      all streams are publicly accessible. viewer discretion advised.
+      <br>contact: openfeed@onionmail.org
+      <br><br>
+      <span class="mono">last indexed: 2 hrs ago | running since 2019</span>
+    </div>
+  </div>
+
+  <script>
+    var CAMERAS = [
+      { id: "001", label: "Gas Station - Route 14", country: "US", tz: "CST", status: "live", quality: "240p", viewers: 23 },
+      { id: "002", label: "Shop Interior - District 4", country: "TW", tz: "CST", status: "live", quality: "144p", viewers: 41 },
+      { id: "003", label: "Hallway - Block 9, Floor 3", country: "UA", tz: "EET", status: "live", quality: "240p", viewers: 112, isNew: true },
+      { id: "004", label: "Back Alley - Unknown", country: "??", tz: "---", status: "offline", quality: "---", viewers: 7 },
+      { id: "005", label: "Parking Garage B2", country: "DE", tz: "CET", status: "live", quality: "320p", viewers: 18 },
+      { id: "006", label: "Laundromat", country: "US", tz: "EST", status: "live", quality: "240p", viewers: 9 },
+      { id: "007", label: "Warehouse Loading Dock", country: "PL", tz: "CET", status: "live", quality: "144p", viewers: 34 },
+      { id: "008", label: "Hotel Lobby", country: "TH", tz: "ICT", status: "live", quality: "480p", viewers: 56 },
+      { id: "009", label: "Underpass Cam", country: "BR", tz: "BRT", status: "offline", quality: "---", viewers: 3 },
+      { id: "010", label: "Rooftop - Building 14", country: "JP", tz: "JST", status: "live", quality: "240p", viewers: 71 },
+      { id: "011", label: "Stairwell C", country: "RO", tz: "EET", status: "live", quality: "144p", viewers: 15 },
+      { id: "012", label: "Bus Depot - Cam 3", country: "MX", tz: "CST", status: "live", quality: "320p", viewers: 28 },
+      { id: "013", label: "Courtyard", country: "EG", tz: "EET", status: "live", quality: "240p", viewers: 6, isNew: true },
+      { id: "014", label: "Convenience Store", country: "KR", tz: "KST", status: "live", quality: "480p", viewers: 44 },
+      { id: "015", label: "Corridor - Floor 7", country: "RU", tz: "MSK", status: "offline", quality: "---", viewers: 0 }
+    ];
+
+    var PALETTES = [
+      [0x2a, 0x3a, 0x20], [0x3a, 0x34, 0x20], [0x20, 0x24, 0x3a], [0x1a, 0x1a, 0x1a],
+      [0x2a, 0x2a, 0x20], [0x1e, 0x2e, 0x1e], [0x2a, 0x20, 0x24], [0x24, 0x20, 0x1e],
+      [0x22, 0x30, 0x28], [0x30, 0x28, 0x1e], [0x1c, 0x20, 0x30], [0x28, 0x24, 0x1c],
+      [0x20, 0x2a, 0x22], [0x2e, 0x2a, 0x20], [0x1a, 0x1e, 0x24]
+    ];
+
+    var thumbIntervals = [];
+    var viewerInterval = null;
+
+    function installWheelScrollFallback() {
+      function handleWheel(event) {
+        var root = document.scrollingElement || document.documentElement || document.body;
+        var delta = 0;
+
+        if (typeof event.deltaY === "number") {
+          delta = event.deltaY;
+        } else if (typeof event.wheelDelta === "number") {
+          delta = -event.wheelDelta;
+        } else if (typeof event.detail === "number") {
+          delta = event.detail * 40;
+        }
+
+        if (!delta) {
+          return;
+        }
+
+        root.scrollTop += delta;
+
+        if (event.preventDefault) {
+          event.preventDefault();
+        }
+        event.returnValue = false;
+      }
+
+      if (document.addEventListener) {
+        document.addEventListener("wheel", handleWheel, { passive: false });
+        document.addEventListener("mousewheel", handleWheel, { passive: false });
+        document.addEventListener("DOMMouseScroll", handleWheel, false);
+      }
+    }
+
+    function updateNavCounts() {
+      var liveCount = 0;
+      var offCount = 0;
+      for (var i = 0; i < CAMERAS.length; i++) {
+        if (CAMERAS[i].status === "live") liveCount++;
+        else offCount++;
+      }
+      document.getElementById("feedCount").textContent = "(" + CAMERAS.length + " indexed)";
+      document.getElementById("navStatus").textContent = liveCount + " feeds active / " + offCount + " offline";
+    }
+
+    function drawNoiseFrame(ctx, pal, isOff, width, height, index) {
+      var img = ctx.createImageData(width, height);
+      var d = img.data;
+
+      for (var j = 0; j < d.length; j += 4) {
+        var n = (Math.random() - 0.5) * (isOff ? 50 : 20);
+        d[j] = Math.max(0, Math.min(255, pal[0] + n));
+        d[j + 1] = Math.max(0, Math.min(255, pal[1] + n));
+        d[j + 2] = Math.max(0, Math.min(255, pal[2] + n));
+        d[j + 3] = 255;
+      }
+
+      if (!isOff) {
+        var lights = [
+          { x: width * 0.22 + Math.sin(Date.now() * 0.0003 + index) * 20, y: height * 0.24, radius: Math.min(width, height) * 0.24 },
+          { x: width * 0.68 + Math.cos(Date.now() * 0.0004 + index) * 18, y: height * 0.42, radius: Math.min(width, height) * 0.28 }
+        ];
+
+        for (var li = 0; li < lights.length; li++) {
+          var lx = lights[li].x;
+          var ly = lights[li].y;
+          var rad = lights[li].radius;
+          for (var y = Math.max(0, Math.floor(ly - rad)); y < Math.min(height, Math.ceil(ly + rad)); y++) {
+            for (var x = Math.max(0, Math.floor(lx - rad)); x < Math.min(width, Math.ceil(lx + rad)); x++) {
+              var dist = Math.sqrt((x - lx) * (x - lx) + (y - ly) * (y - ly));
+              if (dist < rad) {
+                var di = (y * width + x) * 4;
+                var factor = (1 - dist / rad) * 0.28;
+                d[di] = Math.min(255, d[di] + 60 * factor);
+                d[di + 1] = Math.min(255, d[di + 1] + 50 * factor);
+                d[di + 2] = Math.min(255, d[di + 2] + 30 * factor);
+              }
+            }
+          }
+        }
+
+        for (var sy = 0; sy < height; sy += 3) {
+          for (var sx = 0; sx < width; sx++) {
+            var si = (sy * width + sx) * 4;
+            d[si] = Math.max(0, d[si] - 6);
+            d[si + 1] = Math.max(0, d[si + 1] - 6);
+            d[si + 2] = Math.max(0, d[si + 2] - 6);
+          }
+        }
+      }
+
+      ctx.putImageData(img, 0, 0);
+    }
+
+    function drawThumb(ctx, cam, idx) {
+      var pal = PALETTES[idx % PALETTES.length];
+      var isOff = cam.status === "offline";
+      drawNoiseFrame(ctx, pal, isOff, 160, 120, idx);
+
+      if (isOff) {
+        ctx.fillStyle = "rgba(180,180,180,0.3)";
+        ctx.font = "bold 12px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("NO SIGNAL", 80, 64);
+        ctx.textAlign = "start";
+      }
+    }
+
+    function drawViewer(cam, index) {
+      var canvas = document.getElementById("viewerCanvas");
+      var ctx = canvas.getContext("2d");
+      var pal = PALETTES[index % PALETTES.length];
+      var isOff = cam.status === "offline";
+      var w = canvas.width;
+      var h = canvas.height;
+
+      drawNoiseFrame(ctx, pal, isOff, w, h, index);
+
+      ctx.shadowColor = "#000";
+      ctx.shadowBlur = 2;
+      ctx.font = "12px monospace";
+      ctx.fillStyle = "rgba(140,170,130,0.8)";
+      ctx.fillText("CAM_" + cam.id, 10, 18);
+      var ts = new Date().toTimeString().substring(0, 8);
+      ctx.fillText(ts + " " + cam.tz, 10, h - 10);
+      ctx.fillText(cam.quality, w - 40, h - 10);
+      if (cam.status === "live") {
+        ctx.fillStyle = "rgba(200,70,70,0.9)";
+        ctx.fillText("\u25CF REC", w - 55, 18);
+      }
+      if (isOff) {
+        ctx.fillStyle = "rgba(200,200,200,0.4)";
+        ctx.font = "bold 24px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("NO SIGNAL", w / 2, h / 2);
+        ctx.textAlign = "start";
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    function hideFeedList(hidden) {
+      document.getElementById("feedSection").style.display = hidden ? "none" : "block";
+      document.getElementById("faqSection").style.display = hidden ? "none" : "block";
+      document.getElementById("footerRule").style.display = hidden ? "none" : "block";
+      document.getElementById("footerArea").style.display = hidden ? "none" : "block";
+    }
+
+    function stopViewerInterval() {
+      if (viewerInterval) {
+        clearInterval(viewerInterval);
+        viewerInterval = null;
+      }
+    }
+
+    function openViewer(cam, index) {
+      stopViewerInterval();
+
+      document.getElementById("viewerTitle").textContent = "CAM_" + cam.id + " - [" + cam.country + "] " + cam.label;
+      document.getElementById("viewerFooter").innerHTML =
+        "Status: <b style='color:" + (cam.status === "live" ? "#060" : "#900") + "'>" +
+        cam.status.toUpperCase() + "</b> | Quality: " + cam.quality +
+        " | Viewers: " + cam.viewers + " | Timezone: " + cam.tz;
+
+      document.getElementById("viewerPanel").classList.add("open");
+      hideFeedList(true);
+
+      drawViewer(cam, index);
+      viewerInterval = setInterval(function () {
+        drawViewer(cam, index);
+      }, cam.status === "offline" ? 300 : 130);
+
+      var root = document.scrollingElement || document.documentElement || document.body;
+      root.scrollTop = 0;
+    }
+
+    function closeViewer() {
+      document.getElementById("viewerPanel").classList.remove("open");
+      hideFeedList(false);
+      stopViewerInterval();
+    }
+
+    function buildGrid() {
+      var grid = document.getElementById("camGrid");
+      updateNavCounts();
+
+      while (thumbIntervals.length) {
+        clearInterval(thumbIntervals.pop());
+      }
+
+      for (var i = 0; i < CAMERAS.length; i++) {
+        (function (cam, idx) {
+          var cell = document.createElement("div");
+          cell.className = "cam-cell";
+          cell.onclick = function () { openViewer(cam, idx); };
+
+          var canvas = document.createElement("canvas");
+          canvas.width = 160;
+          canvas.height = 120;
+          canvas.style.display = "block";
+          canvas.style.width = "160px";
+          canvas.style.height = "120px";
+          canvas.style.imageRendering = "pixelated";
+          cell.appendChild(canvas);
+
+          var overlay = document.createElement("div");
+          overlay.className = "cam-overlay";
+          var liveHtml = cam.status === "live"
+            ? '<span class="cam-live" style="color:rgba(200,70,70,0.9);">\u25CF LIVE</span>'
+            : '<span class="cam-live" style="color:rgba(200,70,70,0.4);">OFFLINE</span>';
+          var newHtml = cam.isNew ? '<span class="cam-new">NEW!</span>' : '';
+          overlay.innerHTML = '<span class="cam-id">CAM_' + cam.id + '</span>' + liveHtml + newHtml;
+          cell.appendChild(overlay);
+
+          var info = document.createElement("div");
+          info.className = "cam-info";
+          info.innerHTML = '<b>[' + cam.country + ']</b> ' + cam.label + '<br><span class="meta">' + cam.quality + ' - ' + cam.viewers + ' watching</span>';
+          cell.appendChild(info);
+
+          grid.appendChild(cell);
+
+          var ctx = canvas.getContext("2d");
+          drawThumb(ctx, cam, idx);
+          thumbIntervals.push(setInterval(function () {
+            drawThumb(ctx, cam, idx);
+          }, cam.status === "offline" ? 400 : 250));
+        })(CAMERAS[i], i);
+      }
+    }
+
+    function preventDeadLinks() {
+      var links = document.getElementsByTagName("a");
+      for (var i = 0; i < links.length; i++) {
+        links[i].onclick = function () {
+          return false;
+        };
+      }
+    }
+
+    document.getElementById("viewerClose").onclick = closeViewer;
+
+    var visitors = 847;
+    setInterval(function () {
+      visitors += Math.random() > 0.5 ? 1 : -1;
+      visitors = Math.max(780, Math.min(920, visitors));
+      document.getElementById("visitorCount").textContent = String(visitors).padStart(5, "0");
+    }, 7000);
+
+    installWheelScrollFallback();
+    preventDeadLinks();
+    buildGrid();
+  </script>
+</body>
+
+</html>

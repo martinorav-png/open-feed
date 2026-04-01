@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a7e68c0cb6b1a8f47b0f43eb67cddc36
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 237277
+  packageName: 3D Square Tile Terrain Generator
+  packageVersion: 1.0
+  assetPath: Assets/SquareTileTerrain/Example/TilePrefabs/Tile_STGExt.prefab
+  uploadId: 560100
