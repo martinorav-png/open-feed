@@ -45,22 +45,40 @@ public class StoreFirstPersonController : MonoBehaviour
         if (!isControlEnabled)
             return;
 
-        UpdateLook();
-        UpdateMovement();
-
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
+
+        if (Cursor.lockState != CursorLockMode.Locked && Mouse.current != null &&
+            Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        UpdateLook();
+        UpdateMovement();
     }
 
     void UpdateLook()
     {
-        if (cameraPivot == null || Mouse.current == null)
+        if (cameraPivot == null)
             return;
 
-        Vector2 mouseDelta = Mouse.current.delta.ReadValue();
+        Vector2 mouseDelta = Vector2.zero;
+        if (Mouse.current != null)
+            mouseDelta = Mouse.current.delta.ReadValue();
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+        if (mouseDelta.sqrMagnitude < 1e-6f && Cursor.lockState == CursorLockMode.Locked)
+            mouseDelta = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")) * 40f;
+#endif
+
+        if (mouseDelta.sqrMagnitude < 1e-6f)
+            return;
+
         float yawDelta = mouseDelta.x * mouseSensitivity * 0.1f;
         float pitchDelta = mouseDelta.y * mouseSensitivity * 0.1f;
 

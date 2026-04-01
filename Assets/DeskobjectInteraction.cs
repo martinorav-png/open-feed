@@ -103,6 +103,10 @@ public class DeskObjectInteraction : MonoBehaviour
             case InteractableObject.InteractionType.Open:
                 yield return StartCoroutine(AnimateOpen(obj));
                 break;
+
+            case InteractableObject.InteractionType.PlayNudge:
+                yield return StartCoroutine(AnimatePlayNudge(obj));
+                break;
         }
 
         obj.isAnimating = false;
@@ -382,6 +386,71 @@ public class DeskObjectInteraction : MonoBehaviour
         }
 
         t.localRotation = to;
+    }
+
+    // ============================
+    // PLAY NUDGE - toy / iDog
+    // ============================
+    IEnumerator AnimatePlayNudge(InteractableObject obj)
+    {
+        Transform t = obj.transform;
+        Vector3 orig = obj.originalPosition;
+
+        Vector3 dir = Random.onUnitSphere;
+        dir.y = Mathf.Abs(dir.y) * 0.35f + 0.15f;
+        dir.Normalize();
+        Vector3 peak = orig + dir * Mathf.Max(0.005f, obj.nudgeMoveMeters);
+
+        AudioClip clip = obj.nudgeSound;
+        if (clip == null)
+        {
+            clip = Resources.Load<AudioClip>("IdogBoop")
+                ?? Resources.Load<AudioClip>("idog_boop");
+        }
+
+        if (clip == null)
+            clip = CreateDefaultNudgeClip();
+
+        AudioSource.PlayClipAtPoint(clip, t.position, obj.nudgeSoundVolume);
+
+        float half = Mathf.Max(0.04f, obj.nudgeDuration * 0.5f);
+        float elapsed = 0f;
+        while (elapsed < half)
+        {
+            elapsed += Time.deltaTime;
+            float s = Mathf.SmoothStep(0f, 1f, elapsed / half);
+            t.localPosition = Vector3.Lerp(orig, peak, s);
+            yield return null;
+        }
+
+        elapsed = 0f;
+        while (elapsed < half)
+        {
+            elapsed += Time.deltaTime;
+            float s = Mathf.SmoothStep(0f, 1f, elapsed / half);
+            t.localPosition = Vector3.Lerp(peak, orig, s);
+            yield return null;
+        }
+
+        t.localPosition = orig;
+    }
+
+    static AudioClip CreateDefaultNudgeClip()
+    {
+        int sampleRate = 44100;
+        float frequency = 520f;
+        float duration = 0.06f;
+        int samples = Mathf.Max(1, (int)(sampleRate * duration));
+        var clip = AudioClip.Create("DeskPlayNudgeBoop", samples, 1, sampleRate, false);
+        var data = new float[samples];
+        for (int i = 0; i < samples; i++)
+        {
+            float env = Mathf.Exp(-i / (samples * 0.28f));
+            data[i] = Mathf.Sin(2f * Mathf.PI * frequency * i / sampleRate) * env * 0.42f;
+        }
+
+        clip.SetData(data, 0);
+        return clip;
     }
 
     public bool IsActive()

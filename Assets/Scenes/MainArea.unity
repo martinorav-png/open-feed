@@ -5354,7 +5354,7 @@ Transform:
   m_GameObject: {fileID: 544880467}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0.25881907, w: 0.9659259}
-  m_LocalPosition: {x: -2.18, y: 1.5, z: 8.72}
+  m_LocalPosition: {x: -2.18, y: 1.5, z: 8.791}
   m_LocalScale: {x: 0.03, y: 0.36, z: 0.03}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5645,7 +5645,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 549870139}
   m_Enabled: 1
-  serializedVersion: 12
+  serializedVersion: 13
   m_Type: 2
   m_Color: {r: 0.14, g: 0.16, b: 0.22, a: 1}
   m_Intensity: 0.12
@@ -5697,7 +5697,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -7433,7 +7433,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 740251710}
   m_Enabled: 1
-  serializedVersion: 12
+  serializedVersion: 13
   m_Type: 2
   m_Color: {r: 1, g: 0.94, b: 0.78, a: 1}
   m_Intensity: 0.8
@@ -7485,7 +7485,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -8670,6 +8670,10 @@ MonoBehaviour:
   interactionType: 1
   objectName: energy can
   interactHint: 
+  nudgeSound: {fileID: 0}
+  nudgeSoundVolume: 0.65
+  nudgeMoveMeters: 0.035
+  nudgeDuration: 0.22
   isAnimating: 0
   originalScale: {x: 0, y: 0, z: 0}
   originalPosition: {x: 0, y: 0, z: 0}
@@ -10431,13 +10435,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1011918725}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.63721436, y: -0.30652562, z: -0.30652556, w: 0.6372143}
-  m_LocalPosition: {x: 4.789, y: 0, z: -0.232}
+  m_LocalRotation: {x: -0.6835582, y: -0.18096478, z: -0.18096474, w: 0.68355817}
+  m_LocalPosition: {x: 2.9296274, y: 0, z: -0.57595026}
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1339458556}
-  m_LocalEulerAnglesHint: {x: -90, y: 0, z: -51.379}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: -29.657}
 --- !u!23 &1011918727
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -10740,7 +10744,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1023063481}
   m_Enabled: 1
-  serializedVersion: 12
+  serializedVersion: 13
   m_Type: 2
   m_Color: {r: 0.45, g: 0.75, b: 0.5, a: 1}
   m_Intensity: 0.4
@@ -10792,7 +10796,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -10913,7 +10917,7 @@ MonoBehaviour:
   zoomLookTarget: {x: 0, y: 1.68, z: 8.88}
   deskViewFov: 60
   zoomFov: 56
-  monitorScreenHitboxSize: {x: 0.2, y: 0.2, z: 0.06}
+  monitorScreenHitboxSize: {x: 0.77, y: 0.76, z: 0.06}
   speakerOverMonitorSlopMeters: 0.4
   interactDistance: 3
   zoomSpeed: 6
@@ -10975,6 +10979,8 @@ MonoBehaviour:
   crosshairSize: 4
   crosshairColor: {r: 1, g: 1, b: 1, a: 0.6}
   crosshairHoverColor: {r: 0.4, g: 0.9, b: 0.5, a: 0.9}
+  inspectBackgroundColor: {r: 0.78, g: 0.86, b: 0.64, a: 0.98}
+  inspectScreenGlowColor: {r: 0.82, g: 0.92, b: 0.7, a: 0.16}
 --- !u!114 &1025541800
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11641,7 +11647,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1065094872}
   m_Enabled: 1
-  serializedVersion: 12
+  serializedVersion: 13
   m_Type: 2
   m_Color: {r: 1, g: 0.96, b: 0.88, a: 1}
   m_Intensity: 0.65
@@ -11693,7 +11699,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -12175,7 +12181,7 @@ Transform:
   m_GameObject: {fileID: 1114524659}
   serializedVersion: 2
   m_LocalRotation: {x: 0.4055798, y: -0.0616284, z: 0.579228, w: 0.70441604}
-  m_LocalPosition: {x: -2.05, y: 1.72, z: 8.62}
+  m_LocalPosition: {x: -2.035, y: 1.695, z: 8.646}
   m_LocalScale: {x: 0.18, y: 0.1, z: 0.18}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13325,7 +13331,6 @@ RectTransform:
   - {fileID: 1472132282}
   - {fileID: 313950582}
   - {fileID: 1195460133}
-  - {fileID: 1215469317}
   m_Father: {fileID: 1172870575}
   m_LocalEulerAnglesHint: {x: 90, y: -90, z: -90}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -13391,6 +13396,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -13980,81 +13986,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1213962584}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1215469316
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1215469317}
-  - component: {fileID: 1215469319}
-  - component: {fileID: 1215469318}
-  m_Layer: 0
-  m_Name: Image
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1215469317
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1215469316}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1199646251}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 8, y: 2}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1215469318
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1215469316}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &1215469319
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1215469316}
-  m_CullTransparentMesh: 1
 --- !u!1 &1215812059
 GameObject:
   m_ObjectHideFlags: 0
@@ -16851,6 +16782,10 @@ MonoBehaviour:
   interactionType: 1
   objectName: energy can
   interactHint: 
+  nudgeSound: {fileID: 0}
+  nudgeSoundVolume: 0.65
+  nudgeMoveMeters: 0.035
+  nudgeDuration: 0.22
   isAnimating: 0
   originalScale: {x: 0, y: 0, z: 0}
   originalPosition: {x: 0, y: 0, z: 0}
@@ -19437,7 +19372,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1766527881}
   m_Enabled: 1
-  serializedVersion: 12
+  serializedVersion: 13
   m_Type: 2
   m_Color: {r: 0.6, g: 0.6666667, b: 0.5764706, a: 1}
   m_Intensity: 0.01
@@ -19489,7 +19424,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -20300,7 +20235,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1828761632}
   m_Enabled: 1
-  serializedVersion: 12
+  serializedVersion: 13
   m_Type: 2
   m_Color: {r: 0.62, g: 0.74, b: 1, a: 1}
   m_Intensity: 0.35
@@ -20352,7 +20287,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -21710,6 +21645,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0

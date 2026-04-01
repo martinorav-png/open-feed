@@ -151,7 +151,7 @@ public class SpeakerStillAudio : MonoBehaviour
         if (!Physics.Raycast(ray, out RaycastHit hit, interactDistance))
             return;
 
-        if (!IsSpeakerHit(hit.transform))
+        if (!IsSpeakerTransform(hit.transform))
             return;
 
         playbackSource.clip = clip;
@@ -168,7 +168,7 @@ public class SpeakerStillAudio : MonoBehaviour
             playbackSource.UnPause();
     }
 
-    static bool IsSpeakerHit(Transform t)
+    public static bool IsSpeakerTransform(Transform t)
     {
         Transform c = t;
         while (c != null)

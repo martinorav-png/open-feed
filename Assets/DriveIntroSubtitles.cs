@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Desk / MainArea: on play, shows typewriter subtitles with typing SFX; hides when the player starts monitor zoom.
+/// After the full sequence finishes or is cut off by opening the monitor, waits then starts the lines again from the top.
 /// Spawns automatically when <see cref="MonitorInteraction"/> exists in the loaded scene.
 /// Optional clip: <c>Resources/Typing</c> (e.g. Assets/Audio/Resources/Typing.wav). If missing, uses a short synthetic tick.
 /// </summary>
@@ -34,12 +35,15 @@ public class DriveIntroSubtitles : MonoBehaviour
     [SerializeField] int playTypingSoundEveryNChars = 2;
     [SerializeField] float typingSoundVolume = 0.22f;
     [SerializeField] int canvasSortOrder = 32;
+    [SerializeField] float pauseBeforeRestartSeconds = 10f;
 
     CanvasGroup _canvasGroup;
     TextMeshProUGUI _bodyText;
     AudioSource _audio;
     AudioClip _typingClip;
     Coroutine _sequenceRoutine;
+    Coroutine _restartRoutine;
+    Coroutine _interruptFadeRoutine;
     bool _dismissed;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -81,22 +85,38 @@ public class DriveIntroSubtitles : MonoBehaviour
     {
         _canvasGroup.alpha = 0f;
         _bodyText.text = string.Empty;
-        _sequenceRoutine = StartCoroutine(RunSequence());
+        _sequenceRoutine = StartCoroutine(RunSequenceWrapper());
     }
 
     void OnMonitorZoomStarted()
     {
-        if (_dismissed)
-            return;
-        _dismissed = true;
         if (_sequenceRoutine != null)
         {
             StopCoroutine(_sequenceRoutine);
             _sequenceRoutine = null;
         }
 
+        if (_restartRoutine != null)
+        {
+            StopCoroutine(_restartRoutine);
+            _restartRoutine = null;
+        }
+
+        _dismissed = true;
         _audio.Stop();
-        StartCoroutine(FadeOutAndDestroy());
+        if (_interruptFadeRoutine != null)
+        {
+            StopCoroutine(_interruptFadeRoutine);
+            _interruptFadeRoutine = null;
+        }
+
+        _interruptFadeRoutine = StartCoroutine(FadeOutAfterMonitorInterrupt());
+    }
+
+    IEnumerator RunSequenceWrapper()
+    {
+        yield return RunSequence();
+        _sequenceRoutine = null;
     }
 
     IEnumerator RunSequence()
@@ -168,9 +188,14 @@ public class DriveIntroSubtitles : MonoBehaviour
             yield return FadeCanvasAlpha(_canvasGroup.alpha, overlayFadeOutDuration);
         }
 
-        _sequenceRoutine = null;
+        if (_restartRoutine != null)
+        {
+            StopCoroutine(_restartRoutine);
+            _restartRoutine = null;
+        }
+
         if (!_dismissed)
-            Destroy(gameObject);
+            _restartRoutine = StartCoroutine(RestartAfterPause());
     }
 
     void PlayTypingTick()
@@ -181,10 +206,39 @@ public class DriveIntroSubtitles : MonoBehaviour
         _audio.PlayOneShot(_typingClip, typingSoundVolume);
     }
 
-    IEnumerator FadeOutAndDestroy()
+    IEnumerator FadeOutAfterMonitorInterrupt()
     {
         yield return FadeCanvasAlpha(_canvasGroup.alpha, overlayFadeOutDuration);
-        Destroy(gameObject);
+        _bodyText.text = string.Empty;
+        _interruptFadeRoutine = null;
+        _restartRoutine = StartCoroutine(RestartAfterPause());
+    }
+
+    IEnumerator RestartAfterPause()
+    {
+        yield return new WaitForSecondsRealtime(pauseBeforeRestartSeconds);
+
+        while (true)
+        {
+            MonitorInteraction mon = FindAnyObjectByType<MonitorInteraction>();
+            if (mon == null || !mon.IsZoomed())
+                break;
+            yield return null;
+        }
+
+        _dismissed = false;
+        _restartRoutine = null;
+
+        _canvasGroup.alpha = 0f;
+        _bodyText.text = string.Empty;
+
+        if (_sequenceRoutine != null)
+        {
+            StopCoroutine(_sequenceRoutine);
+            _sequenceRoutine = null;
+        }
+
+        _sequenceRoutine = StartCoroutine(RunSequenceWrapper());
     }
 
     IEnumerator FadeCanvasAlpha(float startAlpha, float duration)

@@ -297,6 +297,8 @@ public class MainMenuUI : MonoBehaviour
 
         // Fade out menu
         yield return StartCoroutine(FadeCanvasGroup(canvasGroup, 1f, 0f, 0.6f));
+        canvasGroup.interactable = false;
+        canvasGroup.blocksRaycasts = false;
 
         StoreFlowIntroController storeFlowIntro = FindAnyObjectByType<StoreFlowIntroController>();
         if (storeFlowIntro != null && storeFlowIntro.BeginIntroSequence())

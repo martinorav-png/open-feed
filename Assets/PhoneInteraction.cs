@@ -27,6 +27,12 @@ public class PhoneInteraction : MonoBehaviour
     public Color crosshairColor = new Color(1f, 1f, 1f, 0.6f);
     public Color crosshairHoverColor = new Color(0.4f, 0.9f, 0.5f, 0.9f);
 
+    [Header("Screen while held")]
+    [Tooltip("Phone canvas background while lifting or inspecting (brighter than on-desk default).")]
+    [SerializeField] Color inspectBackgroundColor = new Color(0.78f, 0.86f, 0.64f, 0.98f);
+    [Tooltip("PhoneScreen glow while held — higher alpha reads brighter.")]
+    [SerializeField] Color inspectScreenGlowColor = new Color(0.82f, 0.92f, 0.70f, 0.16f);
+
     enum State { Idle, PickingUp, Inspecting, PuttingDown }
 
     State state = State.Idle;
@@ -183,6 +189,7 @@ public class PhoneInteraction : MonoBehaviour
         state = State.PickingUp;
         transitionProgress = 0f;
         overlayTargetAlpha = overlayAlpha;
+        RefreshPhoneUi();
     }
 
     void StartPutDown()
@@ -205,6 +212,8 @@ public class PhoneInteraction : MonoBehaviour
 
         if (crosshairCanvas != null)
             crosshairCanvas.SetActive(true);
+
+        RefreshPhoneUi();
     }
 
     void HandleTransition()
@@ -253,6 +262,7 @@ public class PhoneInteraction : MonoBehaviour
                 if (phoneRootCollider != null)
                     phoneRootCollider.enabled = true;
                 state = State.Idle;
+                RefreshPhoneUi();
             }
         }
     }
@@ -319,9 +329,15 @@ public class PhoneInteraction : MonoBehaviour
         if (crosshairDot == null || state != State.Idle)
             return;
 
-        Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-        bool hovering = Physics.Raycast(ray, out RaycastHit hit, pickupDistance) &&
-            FindInspectableInParents(hit.transform) != null;
+        float reach = pickupDistance;
+        DeskObjectInteraction desk = FindAnyObjectByType<DeskObjectInteraction>();
+        if (desk != null)
+            reach = Mathf.Max(reach, desk.interactDistance);
+        MonitorInteraction mon = FindAnyObjectByType<MonitorInteraction>();
+        if (mon != null)
+            reach = Mathf.Max(reach, mon.interactDistance);
+
+        bool hovering = InteractableHoverQuery.IsCrosshairOverInteractable(playerCamera, reach);
 
         crosshairDot.color = hovering ? crosshairHoverColor : crosshairColor;
         crosshairDot.rectTransform.sizeDelta = hovering
@@ -675,14 +691,24 @@ public class PhoneInteraction : MonoBehaviour
             batteryText.text = callingMode ? "SIG" : "BAT";
 
         if (backgroundImage != null)
-            backgroundImage.color = callingMode ? callingBackgroundColor : defaultBackgroundColor;
+        {
+            if (callingMode)
+                backgroundImage.color = callingBackgroundColor;
+            else if (state == State.PickingUp || state == State.Inspecting)
+                backgroundImage.color = inspectBackgroundColor;
+            else
+                backgroundImage.color = defaultBackgroundColor;
+        }
 
         if (screenGlowImage != null)
         {
             screenGlowImage.enabled = true;
-            screenGlowImage.color = callingMode
-                ? new Color(0.78f, 0.92f, 0.64f, 0.20f)
-                : new Color(0.64f, 0.75f, 0.53f, 0.08f);
+            if (callingMode)
+                screenGlowImage.color = new Color(0.78f, 0.92f, 0.64f, 0.20f);
+            else if (state == State.PickingUp || state == State.Inspecting)
+                screenGlowImage.color = inspectScreenGlowColor;
+            else
+                screenGlowImage.color = new Color(0.64f, 0.75f, 0.53f, 0.08f);
         }
 
         UpdateClockDisplay();

@@ -194,8 +194,17 @@ public class MonitorInteraction : MonoBehaviour
 
         Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         RaycastHit[] hits = Physics.RaycastAll(ray, interactDistance);
-        if (hits == null || hits.Length == 0)
+        if (!HitsAllowMonitorZoom(hits))
             return;
+
+        StartZoomIn();
+    }
+
+    /// <summary>True if these hits (e.g. from a center-screen ray) would start a monitor zoom, ignoring speakers in front.</summary>
+    public bool HitsAllowMonitorZoom(RaycastHit[] hits)
+    {
+        if (hits == null || hits.Length == 0)
+            return false;
 
         float monitorDist = float.MaxValue;
         float speakerDist = float.MaxValue;
@@ -210,12 +219,12 @@ public class MonitorInteraction : MonoBehaviour
         }
 
         if (monitorDist == float.MaxValue)
-            return;
+            return false;
 
         if (speakerDist != float.MaxValue && speakerDist <= monitorDist + speakerOverMonitorSlopMeters)
-            return;
+            return false;
 
-        StartZoomIn();
+        return true;
     }
 
     static readonly string[] SpeakerObjectNames = { "Cube.009", "Cube.010" };
