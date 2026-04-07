@@ -20,6 +20,9 @@ namespace PSX
             if (ditheringPass == null)
                 return;
 
+            if (renderingData.cameraData.isSceneViewCamera)
+                return;
+
 #if URP_COMPATIBILITY_MODE
 #pragma warning disable CS0618
             ditheringPass.Setup(renderer.cameraColorTargetHandle);
@@ -70,6 +73,9 @@ namespace PSX
             var resourceData = frameData.Get<UniversalResourceData>();
             var cameraData = frameData.Get<UniversalCameraData>();
 
+            if (cameraData.isSceneViewCamera)
+                return;
+
             if (!cameraData.postProcessEnabled || resourceData.isActiveTargetBackBuffer)
                 return;
 
@@ -113,6 +119,9 @@ namespace PSX
         [System.Obsolete("Compatibility-mode fallback for URP.")]
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
+            if (renderingData.cameraData.isSceneViewCamera)
+                return;
+
             if (!renderingData.cameraData.postProcessEnabled || !TryGetActiveDithering(out var dithering) || currentTarget == null || tempTarget == null)
                 return;
 

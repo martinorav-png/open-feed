@@ -39,7 +39,7 @@ public class MonitorWebViewHost : MonoBehaviour
     void Awake()
     {
         _canvas = GetComponent<Canvas>();
-        foreach (var wvc in FindObjectsByType<WebViewController>(FindObjectsSortMode.None))
+        foreach (var wvc in FindObjectsByType<WebViewController>())
         {
             if (!wvc.AlignsToWorldViewport)
                 continue;

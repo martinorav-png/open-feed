@@ -20,7 +20,7 @@ public class MonitorBrowser : MonoBehaviour
                 Camera cam = Camera.main;
                 if (cam == null)
                 {
-                    Camera[] cams = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+                    Camera[] cams = FindObjectsByType<Camera>();
                     if (cams.Length > 0) cam = cams[0];
                 }
                 if (cam != null)

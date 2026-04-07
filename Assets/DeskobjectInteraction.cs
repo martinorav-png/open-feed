@@ -21,7 +21,7 @@ public class DeskObjectInteraction : MonoBehaviour
             playerCamera = Camera.main;
         if (playerCamera == null)
         {
-            Camera[] cams = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+            Camera[] cams = FindObjectsByType<Camera>();
             if (cams.Length > 0) playerCamera = cams[0];
         }
 

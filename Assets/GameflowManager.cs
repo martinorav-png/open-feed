@@ -50,6 +50,7 @@ public class GameFlowManager : MonoBehaviour
     private TextMeshProUGUI titleText;
     private TextMeshProUGUI promptText;
     private TextMeshProUGUI subtitleText;
+    private TextMeshProUGUI creatorCreditText;
 
     private bool inputReady = false;
     private float inputCooldown = 0.5f;
@@ -90,7 +91,7 @@ public class GameFlowManager : MonoBehaviour
         if (current == mainMenuScene)
         {
             state = GameState.MainMenu;
-            ShowMainMenu();
+            StartCoroutine(PlayCreatorCreditThenMainMenu());
         }
         else if (current == storeScene)
         {
@@ -355,17 +356,42 @@ public class GameFlowManager : MonoBehaviour
 
     void ShowMainMenu()
     {
-        titleText.text = "OPEN FEED";
-        titleText.gameObject.SetActive(true);
-
-        promptText.text = "click to begin";
-        promptText.gameObject.SetActive(true);
-
-        // Start with screen faded in (visible)
+        SetupMainMenuTexts();
         fadePanel.color = new Color(0, 0, 0, 0);
         fadePanel.gameObject.SetActive(false);
+        StartCoroutine(PulsePrompt());
+    }
 
-        // Pulse the prompt text
+    void SetupMainMenuTexts()
+    {
+        titleText.text = "OPEN FEED";
+        titleText.gameObject.SetActive(true);
+        promptText.text = "click to begin";
+        promptText.gameObject.SetActive(true);
+    }
+
+    IEnumerator PlayCreatorCreditThenMainMenu()
+    {
+        if (titleText != null) titleText.gameObject.SetActive(false);
+        if (promptText != null) promptText.gameObject.SetActive(false);
+
+        fadePanel.gameObject.SetActive(true);
+        fadePanel.color = new Color(0, 0, 0, 1);
+
+        creatorCreditText.gameObject.SetActive(true);
+        Color c = creatorCreditText.color;
+        c.a = 0f;
+        creatorCreditText.color = c;
+
+        yield return StartCoroutine(FadeText(creatorCreditText, 0f, 1f, 1.25f));
+        yield return new WaitForSeconds(2.35f);
+        yield return StartCoroutine(FadeText(creatorCreditText, 1f, 0f, 0.95f));
+        creatorCreditText.gameObject.SetActive(false);
+
+        SetupMainMenuTexts();
+        yield return StartCoroutine(Fade(1f, 0f, fadeDuration));
+        inputReady = false;
+        inputTimer = 0f;
         StartCoroutine(PulsePrompt());
     }
 
@@ -508,5 +534,23 @@ public class GameFlowManager : MonoBehaviour
         srt.sizeDelta = new Vector2(800, 200);
         srt.anchoredPosition = Vector2.zero;
         subObj.SetActive(false);
+
+        GameObject creditObj = new GameObject("CreatorCreditText");
+        creditObj.transform.SetParent(canvasObj.transform, false);
+
+        creatorCreditText = creditObj.AddComponent<TextMeshProUGUI>();
+        creatorCreditText.text = "created by martin.";
+        creatorCreditText.fontSize = 30;
+        creatorCreditText.alignment = TextAlignmentOptions.Center;
+        creatorCreditText.color = new Color(1f, 1f, 1f, 0f);
+        creatorCreditText.enableAutoSizing = false;
+
+        RectTransform crt = creditObj.GetComponent<RectTransform>();
+        crt.anchorMin = new Vector2(0.5f, 0.5f);
+        crt.anchorMax = new Vector2(0.5f, 0.5f);
+        crt.pivot = new Vector2(0.5f, 0.5f);
+        crt.sizeDelta = new Vector2(900, 80);
+        crt.anchoredPosition = Vector2.zero;
+        creditObj.SetActive(false);
     }
 }

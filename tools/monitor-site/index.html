@@ -391,20 +391,20 @@
 
   <script>
     var CAMERAS = [
-      { id: "001", label: "Gas Station - Route 14", country: "US", tz: "CST", status: "live", quality: "240p", viewers: 23 },
-      { id: "002", label: "Shop Interior - District 4", country: "TW", tz: "CST", status: "live", quality: "144p", viewers: 41 },
-      { id: "003", label: "Hallway - Block 9, Floor 3", country: "UA", tz: "EET", status: "live", quality: "240p", viewers: 112, isNew: true },
+      { id: "001", label: "Gas Station - Route 14", country: "US", tz: "CST", status: "live", quality: "240p", viewers: 23, thumb: "thumbs/cam001.jpg" },
+      { id: "002", label: "Shop Interior - District 4", country: "TW", tz: "CST", status: "live", quality: "144p", viewers: 41, thumb: "thumbs/cam002.jpg" },
+      { id: "003", label: "Hallway - Block 9, Floor 3", country: "UA", tz: "EET", status: "live", quality: "240p", viewers: 112, isNew: true, thumb: "thumbs/cam003.jpg" },
       { id: "004", label: "Back Alley - Unknown", country: "??", tz: "---", status: "offline", quality: "---", viewers: 7 },
-      { id: "005", label: "Parking Garage B2", country: "DE", tz: "CET", status: "live", quality: "320p", viewers: 18 },
-      { id: "006", label: "Laundromat", country: "US", tz: "EST", status: "live", quality: "240p", viewers: 9 },
-      { id: "007", label: "Warehouse Loading Dock", country: "PL", tz: "CET", status: "live", quality: "144p", viewers: 34 },
-      { id: "008", label: "Hotel Lobby", country: "TH", tz: "ICT", status: "live", quality: "480p", viewers: 56 },
+      { id: "005", label: "Parking Garage B2", country: "DE", tz: "CET", status: "live", quality: "320p", viewers: 18, thumb: "thumbs/cam005.jpg" },
+      { id: "006", label: "Laundromat", country: "US", tz: "EST", status: "live", quality: "240p", viewers: 9, thumb: "thumbs/cam006.jpg" },
+      { id: "007", label: "Warehouse Loading Dock", country: "PL", tz: "CET", status: "live", quality: "144p", viewers: 34, thumb: "thumbs/cam007.jpg" },
+      { id: "008", label: "Hotel Lobby", country: "TH", tz: "ICT", status: "live", quality: "480p", viewers: 56, thumb: "thumbs/cam008.jpg" },
       { id: "009", label: "Underpass Cam", country: "BR", tz: "BRT", status: "offline", quality: "---", viewers: 3 },
-      { id: "010", label: "Rooftop - Building 14", country: "JP", tz: "JST", status: "live", quality: "240p", viewers: 71 },
-      { id: "011", label: "Stairwell C", country: "RO", tz: "EET", status: "live", quality: "144p", viewers: 15 },
-      { id: "012", label: "Bus Depot - Cam 3", country: "MX", tz: "CST", status: "live", quality: "320p", viewers: 28 },
-      { id: "013", label: "Courtyard", country: "EG", tz: "EET", status: "live", quality: "240p", viewers: 6, isNew: true },
-      { id: "014", label: "Convenience Store", country: "KR", tz: "KST", status: "live", quality: "480p", viewers: 44 },
+      { id: "010", label: "Rooftop - Building 14", country: "JP", tz: "JST", status: "live", quality: "240p", viewers: 71, thumb: "thumbs/cam010.jpg" },
+      { id: "011", label: "Stairwell C", country: "RO", tz: "EET", status: "live", quality: "144p", viewers: 15, thumb: "thumbs/cam011.jpg" },
+      { id: "012", label: "Bus Depot - Cam 3", country: "MX", tz: "CST", status: "live", quality: "320p", viewers: 28, thumb: "thumbs/cam012.jpg" },
+      { id: "013", label: "Courtyard", country: "EG", tz: "EET", status: "live", quality: "240p", viewers: 6, isNew: true, thumb: "thumbs/cam013.jpg" },
+      { id: "014", label: "Convenience Store", country: "KR", tz: "KST", status: "live", quality: "480p", viewers: 44, thumb: "thumbs/cam014.jpg" },
       { id: "015", label: "Corridor - Floor 7", country: "RU", tz: "MSK", status: "offline", quality: "---", viewers: 0 }
     ];
 
@@ -611,14 +611,26 @@
           cell.className = "cam-cell";
           cell.onclick = function () { openViewer(cam, idx); };
 
-          var canvas = document.createElement("canvas");
-          canvas.width = 160;
-          canvas.height = 120;
-          canvas.style.display = "block";
-          canvas.style.width = "160px";
-          canvas.style.height = "120px";
-          canvas.style.imageRendering = "pixelated";
-          cell.appendChild(canvas);
+          if (cam.thumb && cam.status === "live") {
+            var img = document.createElement("img");
+            img.src = cam.thumb;
+            img.width = 160;
+            img.height = 120;
+            img.style.display = "block";
+            img.style.width = "160px";
+            img.style.height = "120px";
+            img.style.objectFit = "cover";
+            cell.appendChild(img);
+          } else {
+            var canvas = document.createElement("canvas");
+            canvas.width = 160;
+            canvas.height = 120;
+            canvas.style.display = "block";
+            canvas.style.width = "160px";
+            canvas.style.height = "120px";
+            canvas.style.imageRendering = "pixelated";
+            cell.appendChild(canvas);
+          }
 
           var overlay = document.createElement("div");
           overlay.className = "cam-overlay";
@@ -636,11 +648,13 @@
 
           grid.appendChild(cell);
 
-          var ctx = canvas.getContext("2d");
-          drawThumb(ctx, cam, idx);
-          thumbIntervals.push(setInterval(function () {
+          if (!cam.thumb || cam.status !== "live") {
+            var ctx = canvas.getContext("2d");
             drawThumb(ctx, cam, idx);
-          }, cam.status === "offline" ? 400 : 250));
+            thumbIntervals.push(setInterval(function () {
+              drawThumb(ctx, cam, idx);
+            }, cam.status === "offline" ? 400 : 250));
+          }
         })(CAMERAS[i], i);
       }
     }

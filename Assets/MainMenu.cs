@@ -3,7 +3,7 @@ using UnityEditor;
 
 public class MainMenuSceneGenerator : Editor
 {
-    [MenuItem("OPEN FEED/Scripts/Main Menu - Clear")]
+    [MenuItem("OPEN FEED/Main Menu/Clear", false, 200)]
     static void ClearMainMenuScene()
     {
         GameObject existing = GameObject.Find("MainMenuScene");
@@ -14,14 +14,14 @@ public class MainMenuSceneGenerator : Editor
         }
     }
 
-    [MenuItem("OPEN FEED/Scripts/Main Menu")]
+    [MenuItem("OPEN FEED/Main Menu/Generate", false, 0)]
     static void GenerateMainMenuScene()
     {
         GameObject existing = GameObject.Find("MainMenuScene");
         if (existing != null) DestroyImmediate(existing);
 
         // Remove ALL existing directional lights
-        Light[] allLights = FindObjectsByType<Light>(FindObjectsSortMode.None);
+        Light[] allLights = FindObjectsByType<Light>();
         foreach (Light l in allLights)
         {
             if (l.type == LightType.Directional)

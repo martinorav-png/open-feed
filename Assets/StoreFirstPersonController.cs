@@ -15,9 +15,20 @@ public class StoreFirstPersonController : MonoBehaviour
     public float minPitch = -40f;
     public float maxPitch = 65f;
 
+    [Header("View bob (WASD)")]
+    public bool enableLocomotionViewBob = true;
+    [Tooltip("Smaller than intro cinematic bob — vertical meters peak-to-center.")]
+    public float viewBobVerticalAmplitude = 0.018f;
+    public float viewBobLateralAmplitude = 0.005f;
+    public float viewBobFrequency = 2f;
+    public float viewBobTiltAmplitude = 0.32f;
+    public float viewBobSprintFrequencyMultiplier = 1.12f;
+
     CharacterController characterController;
+    Vector3 cameraPivotBaseLocal;
     float verticalVelocity;
     float pitch;
+    float viewBobPhase;
     bool isControlEnabled;
     bool cinematicMode;
 
@@ -28,6 +39,9 @@ public class StoreFirstPersonController : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         if (cameraPivot == null && Camera.main != null)
             cameraPivot = Camera.main.transform;
+
+        if (cameraPivot != null)
+            cameraPivotBaseLocal = cameraPivot.localPosition;
     }
 
     void Start()
@@ -60,6 +74,14 @@ public class StoreFirstPersonController : MonoBehaviour
 
         UpdateLook();
         UpdateMovement();
+    }
+
+    void LateUpdate()
+    {
+        if (!isControlEnabled || cinematicMode || cameraPivot == null)
+            return;
+
+        ApplyLocomotionViewBob();
     }
 
     void UpdateLook()
@@ -112,6 +134,47 @@ public class StoreFirstPersonController : MonoBehaviour
         characterController.Move(move * Time.deltaTime);
     }
 
+    void ApplyLocomotionViewBob()
+    {
+        if (!enableLocomotionViewBob)
+        {
+            cameraPivot.localPosition = cameraPivotBaseLocal;
+            return;
+        }
+
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null)
+            return;
+
+        Vector2 input = Vector2.zero;
+        if (keyboard.wKey.isPressed) input.y += 1f;
+        if (keyboard.sKey.isPressed) input.y -= 1f;
+        if (keyboard.dKey.isPressed) input.x += 1f;
+        if (keyboard.aKey.isPressed) input.x -= 1f;
+        input = Vector2.ClampMagnitude(input, 1f);
+
+        float moveAmt = characterController != null && characterController.isGrounded
+            ? input.magnitude
+            : 0f;
+
+        if (moveAmt > 0.01f)
+        {
+            float freqMul = keyboard.leftShiftKey.isPressed ? viewBobSprintFrequencyMultiplier : 1f;
+            viewBobPhase += Time.deltaTime * viewBobFrequency * Mathf.PI * 2f * moveAmt * freqMul;
+        }
+
+        float amp = moveAmt;
+        float cycle = viewBobPhase;
+        Vector3 bobPos = cameraPivotBaseLocal;
+        bobPos.y += Mathf.Sin(cycle) * (viewBobVerticalAmplitude * amp);
+        bobPos.x += Mathf.Cos(cycle * 0.5f) * (viewBobLateralAmplitude * amp);
+        cameraPivot.localPosition = bobPos;
+
+        float pitchBob = Mathf.Sin(cycle) * (viewBobTiltAmplitude * amp);
+        float rollBob = Mathf.Cos(cycle * 0.5f) * (viewBobTiltAmplitude * 0.6f * amp);
+        cameraPivot.localRotation = Quaternion.Euler(pitch + pitchBob, 0f, rollBob);
+    }
+
     public void SetControlEnabled(bool enabled)
     {
         isControlEnabled = enabled;
@@ -142,7 +205,7 @@ public class StoreFirstPersonController : MonoBehaviour
         Quaternion bodyRotation = Quaternion.Euler(0f, worldRotation.eulerAngles.y, 0f);
         transform.rotation = bodyRotation;
 
-        Vector3 cameraLocalOffset = cameraPivot != null ? cameraPivot.localPosition : new Vector3(0f, 1.62f, 0f);
+        Vector3 cameraLocalOffset = cameraPivot != null ? cameraPivotBaseLocal : new Vector3(0f, 1.62f, 0f);
         transform.position = worldPosition - (bodyRotation * cameraLocalOffset);
 
         if (cameraPivot != null)
