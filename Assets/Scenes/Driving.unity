@@ -27794,8 +27794,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameFlowManager
   mainMenuScene: MainMenu
-  storeScene: GroceryStore
-  drivingScene: Driving
+  storeScene: supermarket
+  drivingScene: ForestDrive
+  mainAreaScene: MainArea
   deskScene: Desk
   fadeDuration: 1.5
   subtitleDisplayTime: 3.5

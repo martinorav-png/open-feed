@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>openfeed.icu — map</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: #e8e8e0;
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 12px;
+      color: #222;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    a {
+      color: #0000cc;
+    }
+
+    .header-bar {
+      background: #fff;
+      border-bottom: 2px solid #888;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: monospace;
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .logo .colon {
+      color: #c00;
+    }
+
+    .header-sub {
+      font-family: Verdana, sans-serif;
+      font-size: 10px;
+      color: #777;
+      margin-left: 10px;
+    }
+
+    .header-right {
+      font-family: monospace;
+      font-size: 11px;
+      color: #555;
+    }
+
+    .nav-bar {
+      background: #d4d4cc;
+      border-bottom: 1px solid #aaa;
+      padding: 4px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-bar a {
+      font-family: monospace;
+      font-size: 11px;
+      margin-right: 14px;
+    }
+
+    .nav-bar a.active {
+      color: #000;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .nav-status {
+      font-family: monospace;
+      font-size: 10px;
+      color: #888;
+    }
+
+    .content {
+      padding: 12px 16px 24px;
+    }
+
+    .notice {
+      border: 1px solid #bbb;
+      background: #fffff0;
+      padding: 6px 8px;
+      margin-bottom: 12px;
+      font-size: 10px;
+      color: #555;
+    }
+
+    .section-header {
+      font-weight: bold;
+      font-size: 12px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .section-header .count {
+      font-weight: normal;
+      font-size: 10px;
+      color: #999;
+      margin-left: 6px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #bbb;
+      margin: 10px 0;
+    }
+
+    .map-stage {
+      background: #111;
+      border: 1px solid #666;
+      padding: 2px;
+      max-width: 764px;
+    }
+
+    .map-surface {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2 / 1;
+      background-color: #5a6a78;
+      box-shadow: inset 0 0 0 1px #1a1a1a;
+      cursor: crosshair;
+      overflow: hidden;
+    }
+
+    .map-world-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      object-position: center;
+      display: block;
+      z-index: 0;
+      pointer-events: none;
+      filter: sepia(0.12) saturate(0.75) contrast(1.08) brightness(0.88);
+    }
+
+    .map-grid-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0, 0, 0, 0.14) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.14) 1px, transparent 1px);
+      background-size: 40px 20px;
+    }
+
+    .map-surface::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.05) 2px,
+        rgba(0, 0, 0, 0.05) 3px
+      );
+    }
+
+    .map-marker {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      margin-left: -4px;
+      margin-top: -4px;
+      border: 1px solid #111;
+      transform: rotate(45deg);
+      z-index: 5;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    .map-marker.live {
+      background: #c02020;
+      box-shadow: 0 0 6px rgba(200, 40, 40, 0.9);
+      animation: marker-pulse 1.4s ease-in-out infinite;
+    }
+
+    .map-marker.offline {
+      background: #555;
+      box-shadow: none;
+      opacity: 0.85;
+    }
+
+    @keyframes marker-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
+    .map-marker .map-tip {
+      position: absolute;
+      left: 50%;
+      bottom: 100%;
+      margin-bottom: 6px;
+      transform: translateX(-50%) rotate(-45deg);
+      white-space: nowrap;
+      font-family: monospace;
+      font-size: 9px;
+      color: rgba(180, 210, 170, 0.95);
+      text-shadow: 0 0 3px #000, 0 0 2px #000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.12s;
+      z-index: 3;
+    }
+
+    .map-marker:hover .map-tip {
+      opacity: 1;
+    }
+
+    .map-axis {
+      position: absolute;
+      font-family: monospace;
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.75);
+      text-shadow: 0 0 3px #000, 0 1px 2px #000;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .map-axis.nw {
+      top: 4px;
+      left: 6px;
+    }
+
+    .map-axis.ne {
+      top: 4px;
+      right: 6px;
+    }
+
+    .map-axis.sw {
+      bottom: 4px;
+      left: 6px;
+    }
+
+    .map-axis.se {
+      bottom: 4px;
+      right: 6px;
+    }
+
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 10px;
+      padding: 8px;
+      background: #eee;
+      border: 1px solid #999;
+      font-family: Verdana, sans-serif;
+      font-size: 10px;
+      color: #444;
+      max-width: 760px;
+    }
+
+    .map-legend span {
+      font-family: monospace;
+    }
+
+    .map-feed-table {
+      border: 1px solid #ccc;
+      background: #fff;
+      width: 100%;
+      max-width: 760px;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-family: Verdana, sans-serif;
+      font-size: 10px;
+    }
+
+    .map-feed-table th {
+      background: #d4d4cc;
+      border: 1px solid #aaa;
+      padding: 6px 8px;
+      text-align: left;
+      font-weight: bold;
+      color: #222;
+    }
+
+    .map-feed-table td {
+      border: 1px solid #ddd;
+      padding: 5px 8px;
+      color: #333;
+      vertical-align: top;
+    }
+
+    .map-feed-table td.mono {
+      font-family: monospace;
+    }
+
+    .map-feed-table tr:nth-child(even) td {
+      background: #fafaf8;
+    }
+
+    .st-live {
+      color: #060;
+      font-family: monospace;
+      font-weight: bold;
+    }
+
+    .st-off {
+      color: #900;
+      font-family: monospace;
+    }
+
+    .footer-area {
+      font-size: 9px;
+      color: #999;
+      text-align: center;
+      padding: 8px 0 16px;
+    }
+
+    .footer-area .mono {
+      font-family: monospace;
+      font-size: 10px;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header-bar">
+    <div>
+      <span class="logo">OPEN<span class="colon">:</span>FEED</span>
+      <span class="header-sub">public surveillance camera index</span>
+    </div>
+    <div class="header-right">
+      <span id="visitorCount">00847</span> visitors online
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <div>
+      <a href="index.html">[feeds]</a>
+      <a href="map.html" class="active">[map]</a>
+      <a href="#">[submit]</a>
+      <a href="index.html#faqSection">[faq]</a>
+      <a href="about.html">[about]</a>
+    </div>
+    <div class="nav-status" id="navStatus"></div>
+  </div>
+
+  <div class="content">
+    <div class="notice">
+      <b>Notice:</b> positions are approximate (city- or region-level only). openfeed does not publish precise
+      coordinates. click a marker to open that camera in fullscreen on the feeds page. map updates when new feeds are verified.
+    </div>
+
+    <div class="section-header">Indexed feed locations <span class="count" id="mapCount"></span></div>
+    <hr>
+
+    <div class="map-stage">
+      <div class="map-surface" id="mapSurface" title="regional plot — not for navigation">
+        <img class="map-world-bg" src="world-map.svg" alt="" width="360" height="180" decoding="async">
+        <div class="map-grid-overlay" aria-hidden="true"></div>
+        <span class="map-axis nw">W 180°</span>
+        <span class="map-axis ne">E 180°</span>
+        <span class="map-axis sw">S 90°</span>
+        <span class="map-axis se">N 90°</span>
+      </div>
+    </div>
+
+    <div class="map-legend">
+      <div><span style="color:#c02020;">■</span> live feed (approx.)</div>
+      <div><span style="color:#555;">■</span> offline / last known</div>
+      <div><span>◇</span> diamond markers — click opens fullscreen feed</div>
+    </div>
+
+    <div class="section-header" style="margin-top:16px;">Listing by camera</div>
+    <hr>
+    <table class="map-feed-table" cellpadding="0" cellspacing="0" id="mapTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Region</th>
+          <th>Label</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="mapTableBody"></tbody>
+    </table>
+
+    <hr id="footerRule">
+
+    <div class="footer-area" id="footerArea">
+      openfeed.icu does not operate, own, or maintain any listed camera feeds.
+      all streams are publicly accessible. viewer discretion advised.
+      <br>contact: openfeed@onionmail.org
+      <br><br>
+      <span class="mono">last indexed: 2 hrs ago | running since 2019</span>
+      <br><span class="mono">world basemap: Wikimedia Commons (blank political map)</span>
+    </div>
+  </div>
+
+  <script>
+    var CAMERAS = [
+      { id: "001", label: "Highway Motel Lobby", country: "US", status: "live", lon: -118.2, lat: 34.05 },
+      { id: "002", label: "Shop Interior - District 4", country: "TW", status: "live", lon: 121.45, lat: 25.02 },
+      { id: "003", label: "Laundromat - After Hours", country: "US", status: "live", lon: -104.99, lat: 39.74 },
+      { id: "004", label: "Back Alley - Unknown", country: "??", status: "offline", lon: -12.0, lat: 48.0 },
+      { id: "005", label: "Snow Field - Unmarked Relay", country: "??", status: "live", lon: -97.5, lat: 55.8 },
+      { id: "006", label: "Laundromat", country: "US", status: "live", lon: -87.65, lat: 41.88 },
+      { id: "007", label: "Warehouse Loading Dock", country: "PL", status: "live", lon: 21.01, lat: 52.23 },
+      { id: "008", label: "Hotel Lobby", country: "TH", status: "live", lon: 100.5, lat: 13.76 },
+      { id: "009", label: "Underpass Cam", country: "BR", status: "offline", lon: -46.63, lat: -23.55 },
+      { id: "010", label: "Rooftop - Building 14", country: "JP", status: "live", lon: 139.76, lat: 35.68 },
+      { id: "011", label: "Staff Corridor - Rear Wing", country: "UA", status: "live", lon: 30.52, lat: 50.45 },
+      { id: "012", label: "Bus Depot - Cam 3", country: "MX", status: "live", lon: -99.13, lat: 19.43 },
+      { id: "013", label: "Courtyard", country: "EG", status: "live", lon: 31.24, lat: 30.04 },
+      { id: "014", label: "Convenience Store", country: "KR", status: "live", lon: 126.98, lat: 37.57 },
+      { id: "015", label: "Corridor - Floor 7", country: "RU", status: "offline", lon: 37.62, lat: 55.75 }
+    ];
+
+    function lonToPct(lon) {
+      return ((lon + 180) / 360) * 100;
+    }
+
+    function latToPct(lat) {
+      return ((90 - lat) / 180) * 100;
+    }
+
+    function installWheelScrollFallback() {
+      function handleWheel(event) {
+        var root = document.scrollingElement || document.documentElement || document.body;
+        var delta = 0;
+        if (typeof event.deltaY === "number") {
+          delta = event.deltaY;
+        } else if (typeof event.wheelDelta === "number") {
+          delta = -event.wheelDelta;
+        } else if (typeof event.detail === "number") {
+          delta = event.detail * 40;
+        }
+        if (!delta) {
+          return;
+        }
+        root.scrollTop += delta;
+        if (event.preventDefault) {
+          event.preventDefault();
+        }
+        event.returnValue = false;
+      }
+      if (document.addEventListener) {
+        document.addEventListener("wheel", handleWheel, { passive: false });
+        document.addEventListener("mousewheel", handleWheel, { passive: false });
+        document.addEventListener("DOMMouseScroll", handleWheel, false);
+      }
+    }
+
+    function preventDeadLinks() {
+      var links = document.getElementsByTagName("a");
+      for (var i = 0; i < links.length; i++) {
+        links[i].onclick = function () {
+          var h = this.getAttribute("href");
+          if (h === null || h === "" || h === "#") {
+            return false;
+          }
+          if (h.charAt(0) === "#" && h.length > 1) {
+            return true;
+          }
+          if (h.charAt(0) === "#") {
+            return false;
+          }
+          return true;
+        };
+      }
+    }
+
+    function updateNavCounts() {
+      var liveCount = 0;
+      var offCount = 0;
+      for (var i = 0; i < CAMERAS.length; i++) {
+        if (CAMERAS[i].status === "live") {
+          liveCount++;
+        } else {
+          offCount++;
+        }
+      }
+      document.getElementById("mapCount").textContent = "(" + CAMERAS.length + " plotted)";
+      document.getElementById("navStatus").textContent = liveCount + " live pins / " + offCount + " offline";
+    }
+
+    function buildMap() {
+      var surface = document.getElementById("mapSurface");
+      var tbody = document.getElementById("mapTableBody");
+      updateNavCounts();
+
+      for (var i = 0; i < CAMERAS.length; i++) {
+        (function (cam) {
+          var m = document.createElement("a");
+          m.className = "map-marker " + (cam.status === "live" ? "live" : "offline");
+          m.href = "index.html?cam=" + encodeURIComponent(cam.id);
+          m.style.left = lonToPct(cam.lon) + "%";
+          m.style.top = latToPct(cam.lat) + "%";
+          m.title = "CAM_" + cam.id + " — " + cam.label;
+
+          var tip = document.createElement("span");
+          tip.className = "map-tip";
+          tip.textContent = "CAM_" + cam.id;
+          m.appendChild(tip);
+
+          surface.appendChild(m);
+
+          var tr = document.createElement("tr");
+          var stClass = cam.status === "live" ? "st-live" : "st-off";
+          var stText = cam.status === "live" ? "LIVE" : "OFFLINE";
+          tr.innerHTML =
+            '<td class="mono"><a href="index.html?cam=' + encodeURIComponent(cam.id) + '">CAM_' + cam.id + "</a></td>" +
+            '<td>[' + cam.country + "]</td>" +
+            "<td>" + cam.label + "</td>" +
+            '<td class="' + stClass + '">' + stText + "</td>";
+          tbody.appendChild(tr);
+        })(CAMERAS[i]);
+      }
+    }
+
+    var visitors = 831;
+    setInterval(function () {
+      visitors += Math.random() > 0.5 ? 1 : -1;
+      visitors = Math.max(780, Math.min(920, visitors));
+      document.getElementById("visitorCount").textContent = String(visitors).padStart(5, "0");
+    }, 7000);
+
+    installWheelScrollFallback();
+    preventDeadLinks();
+    buildMap();
+  </script>
+</body>
+
+</html>

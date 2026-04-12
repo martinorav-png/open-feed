@@ -19,6 +19,8 @@ public class StoreIntroPathSample
     public float t;
     public float px, py, pz;
     public float qx, qy, qz, qw;
+    /// <summary>Degrees; 0 or omitted = keep camera default while sampling.</summary>
+    public float fov;
 }
 
 public class StoreFlowIntroController : MonoBehaviour
@@ -91,6 +93,15 @@ public class StoreFlowIntroController : MonoBehaviour
     public float exitCarDuration = 1.0f;
     public float walkToStoreDuration = 3.2f;
 
+    [Header("Supermarket authored walk (replaces JSON path when enabled)")]
+    public bool useSupermarketAuthoredWalkKeyframes;
+    [Tooltip("View bob scale on look-at-store / look-at-entrance segments (small position deltas).")]
+    public float supermarketAuthoredLookBobMultiplier = 0.42f;
+    [Tooltip("Durations between consecutive keyframes from \"out of car\" through \"into store\" (4 segments).")]
+    public float[] supermarketAuthoredSegmentDurations = { 0.9f, 0.85f, 3.45f, 5.4f };
+    [Tooltip("Seconds to hold at the store-sign look pose before turning toward the entrance.")]
+    public float supermarketAuthoredSignLookHoldDuration = 2f;
+
     [Header("Recorded walk path (after exit car)")]
     public bool useRecordedWalkToStorePath = true;
     public string recordedWalkPathResourceName = "StoreIntroWalkPath";
@@ -111,6 +122,10 @@ public class StoreFlowIntroController : MonoBehaviour
     public float walkBobLateralAmplitude = 0.012f;
     public float walkBobFrequency = 2.2f;
     public float walkBobTiltAmplitude = 0.9f;
+    [Tooltip("Bob multiplier while stepping out of the car (0 = none).")]
+    public float exitCarBobMultiplier = 0.32f;
+    [Tooltip("Extra scale on bob during recorded walk path and supermarket authored walk segments.")]
+    public float recordedWalkViewBobMultiplier = 1.35f;
     public AnimationCurve cinematicEase = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     bool hasStarted;
@@ -183,7 +198,7 @@ public class StoreFlowIntroController : MonoBehaviour
         if (carSideDoor != null)
             carDoorOpen = StartCoroutine(AnimateCarSideDoor(true, carSideDoorOpenDuration));
 
-        yield return StartCoroutine(MovePose(carPose, exitPose, exitCarDuration, true));
+        yield return StartCoroutine(MovePose(carPose, exitPose, exitCarDuration, Mathf.Max(0f, exitCarBobMultiplier)));
 
         if (carDoorOpen != null)
             yield return carDoorOpen;
@@ -201,7 +216,12 @@ public class StoreFlowIntroController : MonoBehaviour
 
         CinematicPose afterWalkPose = walkPose;
 
-        if (useRecordedWalkToStorePath
+        if (useSupermarketAuthoredWalkKeyframes)
+        {
+            yield return StartCoroutine(FollowSupermarketAuthoredKeyframeWalk());
+            afterWalkPose = SupermarketAuthoredWalk_EndPose();
+        }
+        else if (useRecordedWalkToStorePath
             && TryLoadRecordedWalkPath(out StoreIntroPathSample[] pathSamples, out float pathLastT)
             && pathSamples != null
             && pathSamples.Length >= 2)
@@ -211,14 +231,17 @@ public class StoreFlowIntroController : MonoBehaviour
         }
         else
         {
-            yield return StartCoroutine(MovePose(exitPose, walkPose, walkToStoreDuration, true));
+            yield return StartCoroutine(MovePose(exitPose, walkPose, walkToStoreDuration, 1f));
         }
 
-        if (!PosesAreNearlyEqual(afterWalkPose, turnPose))
-            yield return StartCoroutine(MovePose(afterWalkPose, turnPose, walkTurnDuration, true));
+        if (!useSupermarketAuthoredWalkKeyframes)
+        {
+            if (!PosesAreNearlyEqual(afterWalkPose, turnPose))
+                yield return StartCoroutine(MovePose(afterWalkPose, turnPose, walkTurnDuration, 1f));
 
-        if (!PosesAreNearlyEqual(turnPose, enterPose))
-            yield return StartCoroutine(MovePose(turnPose, enterPose, enterStoreDuration, true));
+            if (!PosesAreNearlyEqual(turnPose, enterPose))
+                yield return StartCoroutine(MovePose(turnPose, enterPose, enterStoreDuration, 1f));
+        }
 
         // Do not animate enterPose → explorePose: eased lerp often passes through the doorway hull
         // and briefly shows the exterior. Final SetPose(explorePose) below snaps to the marker in one frame.
@@ -349,7 +372,7 @@ public class StoreFlowIntroController : MonoBehaviour
         playerController.SetPose(fromMenu.position, fromMenu.rotation);
         float dur = Mathf.Max(0f, menuToCarDuration);
         if (dur > 0.001f)
-            yield return StartCoroutine(MovePose(fromMenu, carPose, dur, true));
+            yield return StartCoroutine(MovePose(fromMenu, carPose, dur, 0f));
         else
             playerController.SetPose(carPose.position, carPose.rotation);
         if (fadeBlackHoldTime > 0f)
@@ -486,7 +509,7 @@ public class StoreFlowIntroController : MonoBehaviour
         return new CinematicPose(p, q);
     }
 
-    static void SampleWalkPath(StoreIntroPathSample[] s, float timeAlongPath, out Vector3 pos, out Quaternion rot)
+    static void SampleWalkPath(StoreIntroPathSample[] s, float timeAlongPath, out Vector3 pos, out Quaternion rot, out float pathFovDegrees)
     {
         float t = Mathf.Clamp(timeAlongPath, s[0].t, s[s.Length - 1].t);
         int i = s.Length - 2;
@@ -506,17 +529,35 @@ public class StoreFlowIntroController : MonoBehaviour
         Quaternion q0 = Quaternion.Normalize(new Quaternion(s[i].qx, s[i].qy, s[i].qz, s[i].qw));
         Quaternion q1 = Quaternion.Normalize(new Quaternion(s[i + 1].qx, s[i + 1].qy, s[i + 1].qz, s[i + 1].qw));
         rot = Quaternion.Slerp(q0, q1, u);
+        pathFovDegrees = ResolveSegmentFov(s[i], s[i + 1], u);
     }
 
-    void ApplyViewBob(ref Vector3 pos, ref Quaternion rot, float bobTime)
+    /// <summary>Returns -1 if neither sample defines FOV (leave camera as-is).</summary>
+    static float ResolveSegmentFov(StoreIntroPathSample a, StoreIntroPathSample b, float u)
+    {
+        bool ha = a.fov > 0.5f;
+        bool hb = b.fov > 0.5f;
+        if (ha && hb)
+            return Mathf.Lerp(a.fov, b.fov, u);
+        if (ha)
+            return a.fov;
+        if (hb)
+            return b.fov;
+        return -1f;
+    }
+
+    void ApplyViewBob(ref Vector3 pos, ref Quaternion rot, float bobTime, float multiplier = 1f)
     {
         float cycle = bobTime * walkBobFrequency * Mathf.PI * 2f;
-        Vector3 upOffset = Vector3.up * (Mathf.Sin(cycle) * walkBobVerticalAmplitude);
-        Vector3 sideOffset = rot * Vector3.right * (Mathf.Cos(cycle * 0.5f) * walkBobLateralAmplitude);
+        float vAmp = walkBobVerticalAmplitude * multiplier;
+        float latAmp = walkBobLateralAmplitude * multiplier;
+        float tiltAmp = walkBobTiltAmplitude * multiplier;
+        Vector3 upOffset = Vector3.up * (Mathf.Sin(cycle) * vAmp);
+        Vector3 sideOffset = rot * Vector3.right * (Mathf.Cos(cycle * 0.5f) * latAmp);
         pos += upOffset + sideOffset;
 
-        float pitchBob = Mathf.Sin(cycle) * walkBobTiltAmplitude;
-        float rollBob = Mathf.Cos(cycle * 0.5f) * walkBobTiltAmplitude * 0.6f;
+        float pitchBob = Mathf.Sin(cycle) * tiltAmp;
+        float rollBob = Mathf.Cos(cycle * 0.5f) * tiltAmp * 0.6f;
         rot = rot * Quaternion.Euler(pitchBob, 0f, rollBob);
     }
 
@@ -526,6 +567,9 @@ public class StoreFlowIntroController : MonoBehaviour
         float speed = Mathf.Max(0.05f, recordedWalkPathPlaybackSpeed);
         float pathDuration = pathLastT / speed;
         float bobClock = 0f;
+        float bobMul = Mathf.Max(0f, recordedWalkViewBobMultiplier);
+        float defaultFov = playerCamera != null ? playerCamera.fieldOfView : 60f;
+        float pathStartFov = samples[0].fov > 0.5f ? samples[0].fov : defaultFov;
 
         float blendDur = Mathf.Max(0f, exitToRecordedPathBlendDuration);
         if (blendDur > 0f && Vector3.Distance(exitPose.position, pathStart.position) > 0.02f)
@@ -538,8 +582,10 @@ public class StoreFlowIntroController : MonoBehaviour
                 Vector3 pos = Vector3.Lerp(exitPose.position, pathStart.position, t);
                 Quaternion rot = Quaternion.Slerp(exitPose.rotation, pathStart.rotation, t);
                 bobClock += Time.deltaTime;
-                ApplyViewBob(ref pos, ref rot, bobClock);
+                ApplyViewBob(ref pos, ref rot, bobClock, bobMul);
                 playerController.SetPose(pos, rot);
+                if (playerCamera != null)
+                    playerCamera.fieldOfView = Mathf.Lerp(defaultFov, pathStartFov, t);
                 yield return null;
             }
         }
@@ -549,18 +595,22 @@ public class StoreFlowIntroController : MonoBehaviour
         {
             pathElapsed += Time.deltaTime;
             float pathT = Mathf.Clamp(pathElapsed * speed, 0f, pathLastT);
-            SampleWalkPath(samples, pathT, out Vector3 pos, out Quaternion rot);
+            SampleWalkPath(samples, pathT, out Vector3 pos, out Quaternion rot, out float pathFov);
             bobClock += Time.deltaTime;
-            ApplyViewBob(ref pos, ref rot, bobClock);
+            ApplyViewBob(ref pos, ref rot, bobClock, bobMul);
             playerController.SetPose(pos, rot);
+            if (playerCamera != null && pathFov > 0.5f)
+                playerCamera.fieldOfView = pathFov;
             yield return null;
         }
 
-        SampleWalkPath(samples, pathLastT, out Vector3 endPos, out Quaternion endRot);
+        SampleWalkPath(samples, pathLastT, out Vector3 endPos, out Quaternion endRot, out float endFov);
         playerController.SetPose(endPos, endRot);
+        if (playerCamera != null)
+            playerCamera.fieldOfView = endFov > 0.5f ? endFov : defaultFov;
     }
 
-    IEnumerator MovePose(CinematicPose from, CinematicPose to, float duration, bool walking)
+    IEnumerator MovePose(CinematicPose from, CinematicPose to, float duration, float bobMultiplier)
     {
         if (duration <= 0f)
         {
@@ -577,14 +627,61 @@ public class StoreFlowIntroController : MonoBehaviour
             Vector3 pos = Vector3.Lerp(from.position, to.position, t);
             Quaternion rot = Quaternion.Slerp(from.rotation, to.rotation, t);
 
-            if (walking)
-                ApplyViewBob(ref pos, ref rot, elapsed);
+            if (bobMultiplier > 0f)
+                ApplyViewBob(ref pos, ref rot, elapsed, bobMultiplier);
 
             playerController.SetPose(pos, rot);
             yield return null;
         }
 
         playerController.SetPose(to.position, to.rotation);
+    }
+
+    static CinematicPose SupermarketAuthoredWalk_EndPose() =>
+        SupermarketAuthoredWalk_Keyframes()[4];
+
+    static CinematicPose[] SupermarketAuthoredWalk_Keyframes()
+    {
+        return new[]
+        {
+            // kf[0] getting out of car — must match customCarExitPosition
+            new CinematicPose(new Vector3(6.571137f, 1.879308f, 8.971723f),  NormQ(0.09794629f, 0.003738982f, 0.003216869f, 0.9951795f)),
+            // kf[1] looking at store sign
+            new CinematicPose(new Vector3(6.566163f, 1.884071f, 8.968981f),  NormQ(-0.2084328f, -0.385563f, -0.0859946f, 0.8947077f)),
+            // kf[2] looking at store entrance
+            new CinematicPose(new Vector3(6.575522f, 1.879907f, 8.97035f),   NormQ(0.0557442f, 0.31272f, -0.01475228f, 0.9480934f)),
+            // kf[3] walking towards store entrance
+            new CinematicPose(new Vector3(10.37755f, 1.806972f, 13.06137f),  NormQ(0.007409158f, 0.3652648f, 0.000834107f, 0.9308738f)),
+            // kf[4] walking into the store
+            new CinematicPose(new Vector3(10.42295f, 1.838974f, 17.21366f),  NormQ(0.002088835f, -0.001087437f, 0.003498064f, 0.9999911f)),
+        };
+    }
+
+    static Quaternion NormQ(float x, float y, float z, float w) =>
+        Quaternion.Normalize(new Quaternion(x, y, z, w));
+
+    IEnumerator FollowSupermarketAuthoredKeyframeWalk()
+    {
+        CinematicPose[] kf = SupermarketAuthoredWalk_Keyframes();
+        float lookM = Mathf.Max(0f, supermarketAuthoredLookBobMultiplier);
+        float walkM = Mathf.Max(0f, recordedWalkViewBobMultiplier);
+
+        float[] d = supermarketAuthoredSegmentDurations;
+        if (d == null || d.Length < 4)
+            d = new[] { 0.9f, 0.85f, 3.45f, 5.4f };
+
+        // Use the live custom exit pose as pose0 so that if the setup script has updated
+        // customCarExitPosition (because the car moved) there is no positional snap.
+        CinematicPose pose0 = useCustomSequencePoses ? ResolveCarExitPose() : kf[0];
+
+        yield return StartCoroutine(MovePose(pose0, kf[1], Mathf.Max(0.05f, d[0]), lookM));
+
+        if (supermarketAuthoredSignLookHoldDuration > 0f)
+            yield return new WaitForSeconds(supermarketAuthoredSignLookHoldDuration);
+
+        yield return StartCoroutine(MovePose(kf[1], kf[2], Mathf.Max(0.05f, d[1]), lookM));
+        yield return StartCoroutine(MovePose(kf[2], kf[3], Mathf.Max(0.05f, d[2]), walkM));
+        yield return StartCoroutine(MovePose(kf[3], kf[4], Mathf.Max(0.05f, d[3]), walkM));
     }
 
     float EvaluateEase(float t)

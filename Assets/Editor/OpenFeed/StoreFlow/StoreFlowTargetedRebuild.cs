@@ -350,7 +350,7 @@ public static class StoreFlowTargetedRebuild
         CreatePrim("Sidewalk", PrimitiveType.Cube, ground.transform, new Vector3(0f, 0.03f, 9.1f), Vector3.zero, new Vector3(14f, 0.12f, 2.2f), concrete, true);
         CreatePrim("Curb", PrimitiveType.Cube, ground.transform, new Vector3(0f, 0.07f, 8.05f), Vector3.zero, new Vector3(15f, 0.15f, 0.15f), concrete, false);
 
-        GameObject floorCol = CreatePrim("StoreInteriorFloorCollider", PrimitiveType.Cube, ground.transform, new Vector3(0f, 0.03f, 12.8f), Vector3.zero, new Vector3(14f, 0.12f, 10f), null, true);
+        GameObject floorCol = CreatePrim("StoreInteriorFloorCollider", PrimitiveType.Cube, ground.transform, new Vector3(0f, -0.41f, 12.8f), Vector3.zero, new Vector3(14f, 1f, 10f), null, true);
         Renderer fr = floorCol.GetComponent<Renderer>();
         if (fr != null)
             fr.enabled = false;

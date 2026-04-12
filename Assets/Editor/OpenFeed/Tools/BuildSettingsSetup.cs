@@ -11,8 +11,10 @@ public class BuildSettingsSetup : Editor
         string[] scenePaths = new string[]
         {
             "Assets/Scenes/MainMenu.unity",
+            "Assets/supermarket.unity",
             "Assets/Scenes/GroceryStore.unity",
-            "Assets/Scenes/Driving.unity",
+            "Assets/ForestDrive.unity",
+            "Assets/Scenes/MainArea.unity",
             "Assets/Scenes/Desk.unity",
         };
 
@@ -23,20 +25,20 @@ public class BuildSettingsSetup : Editor
         }
 
         EditorBuildSettings.scenes = buildScenes.ToArray();
-        Debug.Log("OPENFEED Build Settings configured with all 4 scenes:\n" +
-            "  0: MainMenu\n  1: GroceryStore\n  2: Driving\n  3: Desk");
+        Debug.Log("OPENFEED Build Settings configured with all scenes:\n" +
+            "  MainMenu, supermarket, GroceryStore, ForestDrive, MainArea, Desk");
     }
 
     [MenuItem("OPEN FEED/Project/Create Empty Scenes", false, 30)]
     static void CreateAllScenes()
     {
-        // Create GroceryStore and Driving scene files if they don't exist
+        // Create GroceryStore and ForestDrive scene files if they don't exist
         CreateSceneIfMissing("Assets/Scenes/GroceryStore.unity");
-        CreateSceneIfMissing("Assets/Scenes/Driving.unity");
+        CreateSceneIfMissing("Assets/ForestDrive.unity");
 
         Debug.Log("OPENFEED scene files created. Now run the generators:\n" +
-            "  1. Open GroceryStore scene -> OPEN FEED > Grocery Store > Generate\n" +
-            "  2. Open Driving scene -> OPEN FEED > Driving > Generate\n" +
+            "  1. Open GroceryStore scene -> OPEN FEED > Store Flow > Generate Scene\n" +
+            "  2. OPEN FEED > Forest Drive > Generate & Save Scene\n" +
             "  3. Run: OPEN FEED > Project > Build Settings (All Scenes)");
     }
 

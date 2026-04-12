@@ -312,8 +312,8 @@
       <a href="#" class="active">[feeds]</a>
       <a href="#">[map]</a>
       <a href="#">[submit]</a>
-      <a href="#">[faq]</a>
-      <a href="#">[about]</a>
+      <a href="#faqSection">[faq]</a>
+      <a href="about.html">[about]</a>
     </div>
     <div class="nav-status" id="navStatus"></div>
   </div>
@@ -322,7 +322,7 @@
     <div class="notice">
       <b>Notice:</b> openfeed.icu indexes publicly accessible camera feeds. We do not host or operate any cameras.
       All streams listed here are accessible without authentication. Click any feed to view in full size.
-      <a href="#">read more</a>
+      <a href="about.html">read more</a>
     </div>
 
     <div id="feedSection">
@@ -391,17 +391,17 @@
 
   <script>
     var CAMERAS = [
-      { id: "001", label: "Gas Station - Route 14", country: "US", tz: "CST", status: "live", quality: "240p", viewers: 23, thumb: "thumbs/cam001.jpg" },
+      { id: "001", label: "Highway Motel Lobby", country: "US", tz: "CST", status: "live", quality: "240p", viewers: 23, thumb: "thumbs/cam001.jpg" },
       { id: "002", label: "Shop Interior - District 4", country: "TW", tz: "CST", status: "live", quality: "144p", viewers: 41, thumb: "thumbs/cam002.jpg" },
-      { id: "003", label: "Hallway - Block 9, Floor 3", country: "UA", tz: "EET", status: "live", quality: "240p", viewers: 112, isNew: true, thumb: "thumbs/cam003.jpg" },
+      { id: "003", label: "Laundromat - After Hours", country: "US", tz: "MST", status: "live", quality: "240p", viewers: 112, isNew: true, thumb: "thumbs/cam003.jpg" },
       { id: "004", label: "Back Alley - Unknown", country: "??", tz: "---", status: "offline", quality: "---", viewers: 7 },
-      { id: "005", label: "Parking Garage B2", country: "DE", tz: "CET", status: "live", quality: "320p", viewers: 18, thumb: "thumbs/cam005.jpg" },
+      { id: "005", label: "Snow Field - Unmarked Relay", country: "??", tz: "---", status: "live", quality: "320p", viewers: 18, thumb: "thumbs/cam005.jpg" },
       { id: "006", label: "Laundromat", country: "US", tz: "EST", status: "live", quality: "240p", viewers: 9, thumb: "thumbs/cam006.jpg" },
       { id: "007", label: "Warehouse Loading Dock", country: "PL", tz: "CET", status: "live", quality: "144p", viewers: 34, thumb: "thumbs/cam007.jpg" },
       { id: "008", label: "Hotel Lobby", country: "TH", tz: "ICT", status: "live", quality: "480p", viewers: 56, thumb: "thumbs/cam008.jpg" },
       { id: "009", label: "Underpass Cam", country: "BR", tz: "BRT", status: "offline", quality: "---", viewers: 3 },
       { id: "010", label: "Rooftop - Building 14", country: "JP", tz: "JST", status: "live", quality: "240p", viewers: 71, thumb: "thumbs/cam010.jpg" },
-      { id: "011", label: "Stairwell C", country: "RO", tz: "EET", status: "live", quality: "144p", viewers: 15, thumb: "thumbs/cam011.jpg" },
+      { id: "011", label: "Staff Corridor - Rear Wing", country: "UA", tz: "EET", status: "live", quality: "144p", viewers: 15, thumb: "thumbs/cam011.jpg" },
       { id: "012", label: "Bus Depot - Cam 3", country: "MX", tz: "CST", status: "live", quality: "320p", viewers: 28, thumb: "thumbs/cam012.jpg" },
       { id: "013", label: "Courtyard", country: "EG", tz: "EET", status: "live", quality: "240p", viewers: 6, isNew: true, thumb: "thumbs/cam013.jpg" },
       { id: "014", label: "Convenience Store", country: "KR", tz: "KST", status: "live", quality: "480p", viewers: 44, thumb: "thumbs/cam014.jpg" },
@@ -663,7 +663,17 @@
       var links = document.getElementsByTagName("a");
       for (var i = 0; i < links.length; i++) {
         links[i].onclick = function () {
-          return false;
+          var h = this.getAttribute("href");
+          if (h === null || h === "" || h === "#") {
+            return false;
+          }
+          if (h.charAt(0) === "#" && h.length > 1) {
+            return true;
+          }
+          if (h.charAt(0) === "#") {
+            return false;
+          }
+          return true;
         };
       }
     }

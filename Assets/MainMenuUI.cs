@@ -1,8 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 using TMPro;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 /// <summary>
 /// Builds and manages the stylized main menu UI at runtime.
@@ -31,9 +36,38 @@ public class MainMenuUI : MonoBehaviour
     private static readonly Color colVersionText = new Color(0.25f, 0.25f, 0.28f, 0.3f);
     private static readonly Color colOverlay = new Color(0, 0, 0, 0.35f);
 
+    const string CrtFeedShaderName = "OPENFEED/MainMenu CRT Feed";
+    const string BigCamsSubPath = "MonitorSite/bigcams";
+
+    static readonly string[] KnownBigCamFiles =
+    {
+        "001.png", "002.png", "003.png", "004.png", "005.png", "006.png", "007.png",
+        "008.png", "009.png", "010.png", "011.png", "012.png", "013.png", "014.png"
+    };
+
+    static readonly int IdRollShift = Shader.PropertyToID("_RollShift");
+    static readonly int IdStaticIntensity = Shader.PropertyToID("_StaticIntensity");
+    static readonly int IdNoiseSeed = Shader.PropertyToID("_NoiseSeed");
+
     private Canvas menuCanvas;
     private CanvasGroup canvasGroup;
     private bool isTransitioning = false;
+    private Material _crtFeedMaterial;
+    private Texture2D _loadedCrtFeed;
+    private bool _crtMenuActive;
+    private Color _titleAnimBase;
+    private Color _subtitleAnimBase;
+    private float _crtGlitchTimer;
+    private float _crtRollTarget;
+    private float _crtRollCurrent;
+    private float _crtStaticTarget = 0.1f;
+    private Color _btnNormal;
+    private Color _btnHover;
+    private Color _btnPress;
+    private RawImage _crtRawFeed;
+    private AspectRatioFitter _crtAspectFitter;
+    private CanvasGroup _crtFeedCanvasGroup;
+    private CanvasGroup _transitionBlackout;
 
     // Button references for animations
     private TextMeshProUGUI playText;
@@ -45,9 +79,15 @@ public class MainMenuUI : MonoBehaviour
     AudioSource musicSource;
     bool menuMusicCancelled;
 
+    void Awake()
+    {
+        GameFlowManager.EnsureExists();
+    }
+
     void Start()
     {
         EnsureAudioListener();
+        PruneExtraAudioListeners();
 
         // Ensure EventSystem exists
         if (FindAnyObjectByType<EventSystem>() == null)
@@ -57,29 +97,280 @@ public class MainMenuUI : MonoBehaviour
             esObj.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
         }
 
-        BuildMenu();
-        StartCoroutine(FadeIn());
-        StartCoroutine(AmbientAnimations());
+        if (ShouldUseCrtCamFeedMenu())
+        {
+            Texture2D feed = TryLoadRandomBigcamSync();
+            BuildMenu(feed, true);
+#if (UNITY_ANDROID || UNITY_WEBGL) && !UNITY_EDITOR
+            if (feed == null)
+                StartCoroutine(LoadStreamingBigcamAndApply());
+#endif
+            StartCoroutine(FadeIn());
+            StartCoroutine(AmbientAnimations());
+        }
+        else
+        {
+            BuildMenu(null, false);
+            StartCoroutine(FadeIn());
+            StartCoroutine(AmbientAnimations());
+        }
     }
 
     void OnDestroy()
     {
         StopMenuMusic();
+        if (_loadedCrtFeed != null)
+            Destroy(_loadedCrtFeed);
+        if (_crtFeedMaterial != null)
+            Destroy(_crtFeedMaterial);
+    }
+
+    void ReplaceCrtFeedTexture(Texture2D newTex)
+    {
+        if (newTex == null || _crtRawFeed == null)
+            return;
+
+        if (_loadedCrtFeed != null)
+            Destroy(_loadedCrtFeed);
+
+        newTex.filterMode = FilterMode.Point;
+        newTex.wrapMode = TextureWrapMode.Clamp;
+        newTex.Apply(false, true);
+        _loadedCrtFeed = newTex;
+        _crtRawFeed.texture = newTex;
+        if (_crtAspectFitter != null)
+            _crtAspectFitter.aspectRatio = newTex.width / Mathf.Max(1f, (float)newTex.height);
+    }
+
+    Texture2D TryLoadRandomBigcamSync()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        return null;
+#elif UNITY_WEBGL && !UNITY_EDITOR
+        return null;
+#else
+        Texture2D tex = null;
+        string folder = Path.Combine(Application.streamingAssetsPath,
+            BigCamsSubPath.Replace('/', Path.DirectorySeparatorChar));
+
+        if (Directory.Exists(folder))
+        {
+            string[] files = Directory.GetFiles(folder)
+                .Where(p =>
+                {
+                    string e = Path.GetExtension(p).ToLowerInvariant();
+                    return e == ".png" || e == ".jpg" || e == ".jpeg";
+                })
+                .ToArray();
+
+            if (files.Length > 0)
+            {
+                string pick = files[Random.Range(0, files.Length)];
+                try
+                {
+                    byte[] bytes = File.ReadAllBytes(pick);
+                    tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                    tex.LoadImage(bytes);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning("[MainMenuUI] Could not load bigcam: " + e.Message);
+                    tex = null;
+                }
+            }
+        }
+        else
+        {
+            foreach (string name in KnownBigCamFiles.OrderBy(_ => Random.value))
+            {
+                string path = Path.Combine(Application.streamingAssetsPath,
+                    BigCamsSubPath.Replace('/', Path.DirectorySeparatorChar), name);
+                if (!File.Exists(path))
+                    continue;
+                try
+                {
+                    byte[] bytes = File.ReadAllBytes(path);
+                    tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                    tex.LoadImage(bytes);
+                    break;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning("[MainMenuUI] Could not load bigcam: " + e.Message);
+                }
+            }
+        }
+
+        if (tex != null)
+        {
+            tex.filterMode = FilterMode.Point;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            tex.Apply(false, true);
+            _loadedCrtFeed = tex;
+        }
+
+        return tex;
+#endif
+    }
+
+    /// <summary>
+    /// Surveillance-style noise frame when bigcam PNGs are missing from StreamingAssets.
+    /// </summary>
+    static Texture2D CreateProceduralCctvFallbackTexture()
+    {
+        const int w = 640;
+        const int h = 360;
+        var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+        tex.filterMode = FilterMode.Point;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        float seed = Random.Range(0f, 500f);
+        var pixels = new Color[w * h];
+        int i = 0;
+        for (int y = 0; y < h; y++)
+        {
+            float scan = 0.88f + 0.12f * Mathf.Sin(y * 0.22f);
+            for (int x = 0; x < w; x++)
+            {
+                float n = Mathf.PerlinNoise(x * 0.035f + seed, y * 0.035f + seed * 0.17f);
+                float v = (0.1f + n * 0.38f) * scan;
+                pixels[i++] = new Color(v * 0.52f, v * 0.68f, v * 0.45f);
+            }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply(false, true);
+        return tex;
+    }
+
+#if (UNITY_ANDROID || UNITY_WEBGL) && !UNITY_EDITOR
+    IEnumerator LoadStreamingBigcamAndApply()
+    {
+        Texture2D tex = null;
+
+#if UNITY_ANDROID
+        var shuffled = new List<string>(KnownBigCamFiles);
+        for (int i = shuffled.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+        }
+
+        foreach (string name in shuffled)
+        {
+            string url = Path.Combine(Application.streamingAssetsPath, BigCamsSubPath, name)
+                .Replace("\\", "/");
+            using (UnityWebRequest req = UnityWebRequestTexture.GetTexture(url))
+            {
+                yield return req.SendWebRequest();
+                if (req.result != UnityWebRequest.Result.Success)
+                    continue;
+                tex = DownloadHandlerTexture.GetContent(req);
+                if (tex != null)
+                    break;
+            }
+        }
+#elif UNITY_WEBGL
+        string pickName = KnownBigCamFiles[Random.Range(0, KnownBigCamFiles.Length)];
+        string url = Path.Combine(Application.streamingAssetsPath, BigCamsSubPath, pickName)
+            .Replace("\\", "/");
+        using (UnityWebRequest req = UnityWebRequestTexture.GetTexture(url))
+        {
+            yield return req.SendWebRequest();
+            if (req.result == UnityWebRequest.Result.Success)
+                tex = DownloadHandlerTexture.GetContent(req);
+        }
+#endif
+
+        if (tex != null)
+            ReplaceCrtFeedTexture(tex);
+        else
+            ReplaceCrtFeedTexture(CreateProceduralCctvFallbackTexture());
+    }
+#endif
+
+    void Update()
+    {
+        if (!_crtMenuActive || _crtFeedMaterial == null)
+            return;
+
+        _crtGlitchTimer -= Time.deltaTime;
+        if (_crtGlitchTimer <= 0f)
+        {
+            _crtGlitchTimer = Random.Range(0.35f, 1.8f);
+            if (Random.value < 0.45f)
+                _crtRollTarget = Random.Range(-0.035f, 0.035f);
+            else
+                _crtRollTarget = 0f;
+            if (Random.value < 0.3f)
+                _crtStaticTarget = Random.Range(0.14f, 0.28f);
+            else
+                _crtStaticTarget = Random.Range(0.06f, 0.12f);
+        }
+
+        _crtRollCurrent = Mathf.Lerp(_crtRollCurrent, _crtRollTarget, Time.deltaTime * 8f);
+        _crtFeedMaterial.SetFloat(IdRollShift, _crtRollCurrent);
+
+        float staticNow = Mathf.Lerp(0.06f, _crtStaticTarget,
+            0.5f + 0.5f * Mathf.Sin(Time.time * 6.7f));
+        _crtFeedMaterial.SetFloat(IdStaticIntensity, staticNow);
+        _crtFeedMaterial.SetFloat(IdNoiseSeed, Time.time * 3.17f);
+    }
+
+    /// <summary>
+    /// Full-screen surveillance feed + CRT/static shader — used for every main-menu entry
+    /// (dedicated MainMenu scene or booting straight into supermarket with MainMenuUI).
+    /// </summary>
+    static bool ShouldUseCrtCamFeedMenu()
+    {
+        string n = SceneManager.GetActiveScene().name;
+        if (string.Equals(n, "MainMenu", System.StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (string.Equals(n, "supermarket", System.StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (GameFlowManager.Instance != null)
+        {
+            if (string.Equals(n, GameFlowManager.Instance.mainMenuScene, System.StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(n, GameFlowManager.Instance.storeScene, System.StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     // ============================
     // BUILD MENU UI
     // ============================
 
-    void BuildMenu()
+    void BuildMenu(Texture2D crtFeed, bool crtStyle)
     {
+        _crtMenuActive = crtStyle;
+        _crtGlitchTimer = Random.Range(0.2f, 1f);
+        _crtRollCurrent = 0f;
+        _crtRollTarget = 0f;
+
+        _titleAnimBase = colTitle;
+        _subtitleAnimBase = colSubtitle;
+        _btnNormal = colButton;
+        _btnHover = colButtonHover;
+        _btnPress = colButtonPress;
+
+        if (crtStyle)
+        {
+            _subtitleAnimBase = new Color(0.74f, 0.76f, 0.74f, 0.9f);
+            _btnNormal = new Color(0.72f, 0.74f, 0.72f, 0.96f);
+            _btnHover = new Color(0.92f, 0.9f, 0.8f, 1f);
+            _btnPress = new Color(0.98f, 0.95f, 0.88f, 1f);
+        }
+
         // Canvas
         GameObject canvasObj = new GameObject("MainMenuCanvas");
         canvasObj.transform.SetParent(transform);
 
         menuCanvas = canvasObj.AddComponent<Canvas>();
         menuCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        menuCanvas.sortingOrder = 100;
+        // GameFlowManager canvas uses 999 — stay above it so the menu is never covered.
+        menuCanvas.sortingOrder = FindAnyObjectByType<GameFlowManager>() != null ? 2000 : 100;
 
         CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -88,18 +379,92 @@ public class MainMenuUI : MonoBehaviour
 
         canvasObj.AddComponent<GraphicRaycaster>();
 
-        canvasGroup = canvasObj.AddComponent<CanvasGroup>();
-        canvasGroup.alpha = 0f;
+        Transform uiContentParent;
 
-        // ---- Dark overlay (subtle vignette-like darkening) ----
-        GameObject overlay = CreateUIObj("Overlay", canvasObj.transform);
+        // ---- Supermarket: feed is not under the fading CanvasGroup so it shows immediately ----
+        if (crtStyle)
+        {
+            Texture2D displayTex = crtFeed;
+            if (displayTex == null)
+            {
+                // No files under StreamingAssets/MonitorSite/bigcams (common in fresh clones) — use a
+                // visible CCTV-style frame so the CRT shader + static read clearly instead of pure black.
+                displayTex = CreateProceduralCctvFallbackTexture();
+                _loadedCrtFeed = displayTex;
+            }
+
+            GameObject feedRoot = CreateUIObj("CrtCamFeed", canvasObj.transform);
+            StretchFull(feedRoot);
+            feedRoot.transform.SetAsFirstSibling();
+
+            _crtFeedCanvasGroup = feedRoot.AddComponent<CanvasGroup>();
+            _crtFeedCanvasGroup.alpha = 1f;
+            _crtFeedCanvasGroup.blocksRaycasts = false;
+            _crtFeedCanvasGroup.interactable = false;
+
+            AspectRatioFitter arf = feedRoot.AddComponent<AspectRatioFitter>();
+            arf.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            arf.aspectRatio = displayTex.width / Mathf.Max(1f, (float)displayTex.height);
+            _crtAspectFitter = arf;
+
+            RawImage rawFeed = feedRoot.AddComponent<RawImage>();
+            rawFeed.texture = displayTex;
+            rawFeed.uvRect = new Rect(0f, 0f, 1f, 1f);
+            rawFeed.raycastTarget = false;
+            _crtRawFeed = rawFeed;
+
+            Shader crtShader = Shader.Find(CrtFeedShaderName);
+            if (crtShader != null)
+            {
+                if (_crtFeedMaterial != null)
+                    Destroy(_crtFeedMaterial);
+                _crtFeedMaterial = new Material(crtShader);
+                _crtFeedMaterial.SetFloat(IdStaticIntensity, 0.1f);
+                rawFeed.material = _crtFeedMaterial;
+            }
+            else
+                Debug.LogWarning("[MainMenuUI] Shader not found: " + CrtFeedShaderName);
+
+            GameObject uiFade = CreateUIObj("UiFade", canvasObj.transform);
+            StretchFull(uiFade);
+            canvasGroup = uiFade.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            uiContentParent = uiFade.transform;
+        }
+        else
+        {
+            _crtRawFeed = null;
+            _crtAspectFitter = null;
+            _crtFeedCanvasGroup = null;
+            canvasGroup = canvasObj.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            uiContentParent = canvasObj.transform;
+        }
+
+        // ---- Dark overlay ----
+        GameObject overlay = CreateUIObj("Overlay", uiContentParent);
         Image overlayImg = overlay.AddComponent<Image>();
         overlayImg.color = colOverlay;
         overlayImg.raycastTarget = false;
         StretchFull(overlay);
 
+        // ---- Local dark backing behind left-column UI (feeds / busy BG) ----
+        if (crtStyle)
+        {
+            GameObject cloud = CreateUIObj("TextReadabilityBacking", uiContentParent);
+            RectTransform cloudRT = cloud.GetComponent<RectTransform>();
+            cloudRT.anchorMin = new Vector2(0f, 0f);
+            cloudRT.anchorMax = new Vector2(0f, 1f);
+            cloudRT.pivot = new Vector2(0f, 0.5f);
+            cloudRT.sizeDelta = new Vector2(920f, 0f);
+            cloudRT.anchoredPosition = Vector2.zero;
+            Image cloudImg = cloud.AddComponent<Image>();
+            cloudImg.color = new Color(0f, 0f, 0f, 0.52f);
+            cloudImg.raycastTarget = false;
+        }
+
         // ---- Main container (centered, left-aligned content) ----
-        GameObject container = CreateUIObj("Container", canvasObj.transform);
+        GameObject container = CreateUIObj("Container", uiContentParent);
         RectTransform contRT = container.GetComponent<RectTransform>();
         contRT.anchorMin = new Vector2(0, 0);
         contRT.anchorMax = new Vector2(1, 1);
@@ -107,7 +472,6 @@ public class MainMenuUI : MonoBehaviour
         contRT.offsetMax = Vector2.zero;
 
         // ---- Title: OPEN FEED ----
-        // Positioned left-of-center, vertically centered with slight upward offset
         GameObject titleObj = CreateUIObj("Title", container.transform);
         titleText = titleObj.AddComponent<TextMeshProUGUI>();
         titleText.text = "OPEN FEED";
@@ -146,7 +510,7 @@ public class MainMenuUI : MonoBehaviour
         taglineText.fontSize = 18;
         taglineText.fontStyle = FontStyles.Italic;
         taglineText.alignment = TextAlignmentOptions.Left;
-        taglineText.color = colSubtitle;
+        taglineText.color = _subtitleAnimBase;
         taglineText.enableAutoSizing = false;
         taglineText.raycastTarget = false;
 
@@ -165,8 +529,7 @@ public class MainMenuUI : MonoBehaviour
         settingsText = CreateMenuButton(container.transform, "SETTINGS", buttonStartY - buttonSpacing, null);
         quitText = CreateMenuButton(container.transform, "QUIT", buttonStartY - buttonSpacing * 2, OnQuitClicked);
 
-        // Dim out settings (not implemented)
-        settingsText.color = new Color(colButton.r, colButton.g, colButton.b, 0.2f);
+        settingsText.color = new Color(_btnNormal.r, _btnNormal.g, _btnNormal.b, crtStyle ? 0.4f : 0.2f);
 
         // ---- Version text (bottom-left) ----
         GameObject verObj = CreateUIObj("Version", container.transform);
@@ -201,6 +564,18 @@ public class MainMenuUI : MonoBehaviour
         hintRT.pivot = new Vector2(1, 0);
         hintRT.sizeDelta = new Vector2(300, 30);
         hintRT.anchoredPosition = new Vector2(-30, 20);
+
+        // ---- Full-screen black (Play: fade in first to hide world; stays until menu canvas off) ----
+        GameObject bo = CreateUIObj("TransitionBlackout", canvasObj.transform);
+        StretchFull(bo);
+        Image boImg = bo.AddComponent<Image>();
+        boImg.color = Color.black;
+        boImg.raycastTarget = false;
+        _transitionBlackout = bo.AddComponent<CanvasGroup>();
+        _transitionBlackout.alpha = 0f;
+        _transitionBlackout.blocksRaycasts = false;
+        _transitionBlackout.interactable = false;
+        bo.transform.SetAsLastSibling();
     }
 
     // ============================
@@ -241,7 +616,7 @@ public class MainMenuUI : MonoBehaviour
         dashText.text = "\u2014";
         dashText.fontSize = 22;
         dashText.alignment = TextAlignmentOptions.Left;
-        dashText.color = new Color(colButtonHover.r, colButtonHover.g, colButtonHover.b, 0f);
+        dashText.color = new Color(_btnHover.r, _btnHover.g, _btnHover.b, 0f);
         dashText.enableAutoSizing = false;
         dashText.raycastTarget = false;
 
@@ -259,7 +634,7 @@ public class MainMenuUI : MonoBehaviour
         labelText.fontSize = 26;
         labelText.characterSpacing = 8f;
         labelText.alignment = TextAlignmentOptions.Left;
-        labelText.color = colButton;
+        labelText.color = _btnNormal;
         labelText.enableAutoSizing = false;
         labelText.raycastTarget = false;
 
@@ -273,9 +648,9 @@ public class MainMenuUI : MonoBehaviour
         MenuButtonHover hover = btnObj.AddComponent<MenuButtonHover>();
         hover.labelText = labelText;
         hover.dashText = dashText;
-        hover.normalColor = colButton;
-        hover.hoverColor = colButtonHover;
-        hover.pressColor = colButtonPress;
+        hover.normalColor = _btnNormal;
+        hover.hoverColor = _btnHover;
+        hover.pressColor = _btnPress;
 
         return labelText;
     }
@@ -295,24 +670,34 @@ public class MainMenuUI : MonoBehaviour
     {
         StopMenuMusic();
 
-        // Fade out menu
-        yield return StartCoroutine(FadeCanvasGroup(canvasGroup, 1f, 0f, 0.6f));
+        const float blackDur = 0.22f;
+        if (_transitionBlackout != null)
+        {
+            _transitionBlackout.blocksRaycasts = true;
+            yield return StartCoroutine(FadeCanvasGroup(_transitionBlackout, _transitionBlackout.alpha, 1f, blackDur));
+        }
+
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
-
-        StoreFlowIntroController storeFlowIntro = FindAnyObjectByType<StoreFlowIntroController>();
-        if (storeFlowIntro != null && storeFlowIntro.BeginIntroSequence())
-            yield break;
+        canvasGroup.alpha = 0f;
+        if (_crtFeedCanvasGroup != null)
+            _crtFeedCanvasGroup.alpha = 0f;
 
         SixTwelveIntroController intro = FindAnyObjectByType<SixTwelveIntroController>();
         if (intro != null && intro.BeginIntroSequence())
-            yield break;
-
-        // Tell GameFlowManager to start the game
-        if (GameFlowManager.Instance != null)
         {
-            GameFlowManager.Instance.StartGame();
+            yield return null;
+            if (menuCanvas != null)
+                menuCanvas.enabled = false;
+            yield break;
         }
+
+        GameFlowManager gfm = GameFlowManager.Instance ?? GameFlowManager.EnsureExists();
+        gfm.StartStoreFlowFromMainMenuExposition();
+
+        yield return null;
+        if (menuCanvas != null)
+            menuCanvas.enabled = false;
     }
 
     void OnQuitClicked()
@@ -326,7 +711,12 @@ public class MainMenuUI : MonoBehaviour
     {
         StopMenuMusic();
 
-        yield return StartCoroutine(FadeCanvasGroup(canvasGroup, 1f, 0f, 0.8f));
+        const float dur = 0.8f;
+        float uiA = canvasGroup.alpha;
+        StartCoroutine(FadeCanvasGroup(canvasGroup, uiA, 0f, dur));
+        if (_crtFeedCanvasGroup != null)
+            StartCoroutine(FadeCanvasGroup(_crtFeedCanvasGroup, _crtFeedCanvasGroup.alpha, 0f, dur));
+        yield return new WaitForSeconds(dur);
 
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
@@ -366,6 +756,38 @@ public class MainMenuUI : MonoBehaviour
         cam = FindAnyObjectByType<Camera>();
         if (cam != null)
             cam.gameObject.AddComponent<AudioListener>();
+    }
+
+    static void PruneExtraAudioListeners()
+    {
+        var listeners = FindObjectsByType<AudioListener>(FindObjectsInactive.Include);
+        if (listeners == null || listeners.Length <= 1)
+            return;
+
+        AudioListener keep = null;
+        if (Camera.main != null)
+            keep = Camera.main.GetComponent<AudioListener>();
+
+        if (keep == null)
+        {
+            foreach (AudioListener l in listeners)
+            {
+                if (l != null && l.enabled)
+                {
+                    keep = l;
+                    break;
+                }
+            }
+        }
+
+        if (keep == null)
+            keep = listeners[0];
+
+        foreach (AudioListener l in listeners)
+        {
+            if (l != null && l != keep)
+                l.enabled = false;
+        }
     }
 
     void EnsureMusicSource()
@@ -458,16 +880,16 @@ public class MainMenuUI : MonoBehaviour
             if (titleText != null)
             {
                 float breath = 0.8f + Mathf.Sin(Time.time * 0.4f) * 0.05f;
-                Color c = colTitle;
+                Color c = _titleAnimBase;
                 c.a = breath;
                 titleText.color = c;
             }
 
             if (taglineText != null)
             {
-                float pulse = 0.35f + Mathf.Sin(Time.time * 0.6f + 1f) * 0.12f;
-                Color c = colSubtitle;
-                c.a = pulse;
+                float wobble = 0.94f + Mathf.Sin(Time.time * 0.6f + 1f) * 0.05f;
+                Color c = _subtitleAnimBase;
+                c.a = Mathf.Clamp01(wobble * _subtitleAnimBase.a);
                 taglineText.color = c;
             }
 

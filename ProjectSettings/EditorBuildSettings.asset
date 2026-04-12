@@ -9,11 +9,17 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: 55cab1ba0499e6e43a93c65e660ec9d3
   - enabled: 1
+    path: Assets/supermarket.unity
+    guid: 6082caac21eb3aa4c99d542e71b720c8
+  - enabled: 1
     path: Assets/Scenes/GroceryStore.unity
     guid: a486c1a9f7f42c74198b0608e1d6e55a
   - enabled: 1
-    path: Assets/Scenes/Driving.unity
-    guid: ee23947d2f6663b44a92062132126273
+    path: Assets/ForestDrive.unity
+    guid: e234b4214a74dad40a6977bb25f940f0
+  - enabled: 1
+    path: Assets/Scenes/MainArea.unity
+    guid: d9eed7fea99e37a4484015cb25bf7493
   - enabled: 1
     path: Assets/Scenes/Desk.unity
     guid: a6919a80e5918e447b6eee07d3adf942

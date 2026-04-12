@@ -1,8 +1,12 @@
-using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
 
 public class DrivingSceneGenerator : Editor
 {
+    const string ForestDriveScenePath = "Assets/ForestDrive.unity";
+    const string SquareTileTreePrefabPath = "Assets/SquareTileTerrain/Example/Tree/TreePrefab.prefab";
+
     [MenuItem("OPEN FEED/Driving/Clear", false, 200)]
     static void ClearScene()
     {
@@ -14,11 +18,82 @@ public class DrivingSceneGenerator : Editor
         }
     }
 
+    /// <summary>Rebuilds content in the <b>currently open</b> scene (use for Driving.unity or any test scene).</summary>
     [MenuItem("OPEN FEED/Driving/Generate", false, 0)]
     static void GenerateScene()
     {
+        GenerateIntoActiveScene(preserveCarAndCamera: true);
+    }
+
+    /// <summary>Rebuilds road/trees/etc. and replaces <c>CarInterior</c> + reparents camera from generator defaults.</summary>
+    [MenuItem("OPEN FEED/Driving/Generate (full reset car & camera)", false, 11)]
+    static void GenerateSceneFullReset()
+    {
+        GenerateIntoActiveScene(preserveCarAndCamera: false);
+    }
+
+    /// <summary>Opens <c>ForestDrive.unity</c>, regenerates <c>DrivingScene</c>, saves the asset.</summary>
+    [MenuItem("OPEN FEED/Forest Drive/Generate & Save Scene", false, 0)]
+    static void GenerateForestDriveScene()
+    {
+        GenerateForestDriveSceneInternal(preserveCarAndCamera: true);
+    }
+
+    /// <summary>Same as Generate &amp; Save Scene but rebuilds <c>CarInterior</c> and camera from code.</summary>
+    [MenuItem("OPEN FEED/Forest Drive/Generate & Save Scene (full reset)", false, 11)]
+    static void GenerateForestDriveSceneFullReset()
+    {
+        GenerateForestDriveSceneInternal(preserveCarAndCamera: false);
+    }
+
+    static void GenerateForestDriveSceneInternal(bool preserveCarAndCamera)
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            return;
+
+        if (!System.IO.File.Exists(System.IO.Path.Combine(Application.dataPath, "..", ForestDriveScenePath.Replace('/', System.IO.Path.DirectorySeparatorChar))))
+        {
+            Debug.LogError($"OPENFEED: Scene asset not found: {ForestDriveScenePath}");
+            return;
+        }
+
+        EditorSceneManager.OpenScene(ForestDriveScenePath);
+        GenerateIntoActiveScene(preserveCarAndCamera);
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        EditorSceneManager.SaveOpenScenes();
+        Debug.Log(preserveCarAndCamera
+            ? "OPENFEED: ForestDrive.unity saved (CarInterior + Main Camera under DrivingScene were kept if present)."
+            : "OPENFEED: ForestDrive.unity saved (full reset: car rig and camera rebuilt).");
+    }
+
+    /// <param name="preserveCarAndCamera">If true, keeps existing <c>CarInterior</c> and <c>Main Camera</c> when they are children of <c>DrivingScene</c> (your manual Impreza pose, dash glow, etc.).</param>
+    static void GenerateIntoActiveScene(bool preserveCarAndCamera = true)
+    {
         GameObject existing = GameObject.Find("DrivingScene");
-        if (existing != null) DestroyImmediate(existing);
+        Transform preservedCarInterior = null;
+        GameObject preservedMainCamera = null;
+
+        if (existing != null && preserveCarAndCamera)
+        {
+            Transform ci = existing.transform.Find("CarInterior");
+            if (ci != null)
+            {
+                preservedCarInterior = ci;
+                preservedCarInterior.SetParent(null, worldPositionStays: true);
+            }
+
+            GameObject camGo = GameObject.FindGameObjectWithTag("MainCamera");
+            if (camGo == null)
+                camGo = GameObject.Find("Main Camera");
+            if (camGo != null && camGo.transform.IsChildOf(existing.transform))
+            {
+                preservedMainCamera = camGo;
+                preservedMainCamera.transform.SetParent(null, worldPositionStays: true);
+            }
+        }
+
+        if (existing != null)
+            DestroyImmediate(existing);
 
         Light[] allLights = FindObjectsByType<Light>();
         foreach (Light l in allLights)
@@ -29,238 +104,91 @@ public class DrivingSceneGenerator : Editor
 
         GameObject root = new GameObject("DrivingScene");
 
-        // ============================
-        // MATERIALS
-        // ============================
-        Material matRoad = CreateMatte("Road", new Color(0.025f, 0.025f, 0.03f));
-        Material matRoadWet = CreateMatte("RoadWet", new Color(0.015f, 0.015f, 0.025f));
-        Material matLaneLine = CreateEmissive("LaneLine", new Color(0.15f, 0.14f, 0.08f),
+        Material matRoad = CreateMatte("Drive_Road", new Color(0.025f, 0.025f, 0.03f));
+        Material matRoadWet = CreateMatte("Drive_RoadWet", new Color(0.015f, 0.015f, 0.025f));
+        Material matLaneLine = CreateEmissive("Drive_LaneLine", new Color(0.15f, 0.14f, 0.08f),
             new Color(0.2f, 0.18f, 0.1f), 0.3f);
-        Material matShoulder = CreateMatte("Shoulder", new Color(0.035f, 0.035f, 0.04f));
-        Material matDirt = CreateMatte("Dirt", new Color(0.03f, 0.028f, 0.025f));
-        Material matGrass = CreateMatte("Grass", new Color(0.02f, 0.03f, 0.02f));
-        Material matTree = CreateMatte("TreeTrunk", new Color(0.03f, 0.025f, 0.02f));
-        Material matFoliage = CreateMatte("Foliage", new Color(0.02f, 0.035f, 0.02f));
-        Material matPole = CreateMatte("Pole", new Color(0.05f, 0.05f, 0.055f));
-        Material matGuardrail = CreateMatte("Guardrail", new Color(0.06f, 0.06f, 0.065f));
-        Material matLampGlow = CreateEmissive("LampGlow", new Color(0.6f, 0.5f, 0.3f),
-            new Color(0.7f, 0.55f, 0.3f), 2f);
-        Material matHeadlight = CreateEmissive("Headlight", new Color(0.8f, 0.75f, 0.55f),
-            new Color(0.9f, 0.85f, 0.6f), 1.5f);
-        Material matTaillight = CreateEmissive("Taillight", new Color(0.4f, 0.02f, 0.01f),
-            new Color(0.5f, 0.05f, 0.02f), 0.8f);
-        Material matDash = CreateEmissive("Dashboard", new Color(0.02f, 0.04f, 0.02f),
+        Material matShoulder = CreateMatte("Drive_Shoulder", new Color(0.035f, 0.035f, 0.04f));
+        Material matDirt = CreateMatte("Drive_Dirt", new Color(0.03f, 0.028f, 0.025f));
+        Material matGrass = CreateMatte("Drive_Grass", new Color(0.02f, 0.03f, 0.02f));
+        Material matDash = CreateEmissive("Drive_Dashboard", new Color(0.02f, 0.04f, 0.02f),
             new Color(0.03f, 0.08f, 0.03f), 0.3f);
-        Material matInterior = CreateMatte("Interior", new Color(0.03f, 0.03f, 0.035f));
-        Material matSky = CreateMatte("Sky", new Color(0.01f, 0.008f, 0.025f));
 
-        // ============================
-        // ROAD (long strip extending forward)
-        // ============================
-        float roadLen = 200f;
-        float roadW = 8f;
+        // Must cover CutscenePlayer scroll: roadScrollSpeed * drivingDuration (defaults ~19*48≈912) + margin.
+        const float forestRoadLength = 1250f;
+        float roadLen = forestRoadLength;
+        float roadW = 4f;
 
         GameObject road = new GameObject("Road");
         road.transform.parent = root.transform;
 
-        // Main road surface
         CreatePrim("RoadSurface", PrimitiveType.Cube, road.transform,
-            new Vector3(0, -0.05f, roadLen / 2 - 10f), Vector3.zero,
+            new Vector3(0, -0.05f, roadLen / 2f - 10f), Vector3.zero,
             new Vector3(roadW, 0.1f, roadLen), matRoad);
 
-        // Wet road reflections
-        for (int i = 0; i < 8; i++)
+        float wetZ = 12f;
+        int wi = 0;
+        while (wetZ < roadLen - 18f)
         {
-            float z = i * 25f;
-            CreatePrim($"WetPatch_{i}", PrimitiveType.Cube, road.transform,
-                new Vector3(-0.5f + i % 3 * 0.8f, 0.005f, z), new Vector3(0, 5 + i * 3, 0),
-                new Vector3(2f + i % 2, 0.003f, 8f + i % 3 * 3f), matRoadWet);
+            CreatePrim($"WetPatch_{wi}", PrimitiveType.Cube, road.transform,
+                new Vector3(-0.3f + wi % 3 * 0.5f, 0.005f, wetZ), new Vector3(0, 4 + wi * 2, 0),
+                new Vector3(1.4f + wi % 2 * 0.3f, 0.003f, 10f + wi % 2 * 4f), matRoadWet);
+            wetZ += 22f + (wi % 5) * 2.8f;
+            wi++;
         }
 
-        // Center lane dashes
-        for (int i = 0; i < 40; i++)
-        {
-            float z = i * 5f;
-            CreatePrim($"CenterLine_{i}", PrimitiveType.Cube, road.transform,
-                new Vector3(0, 0.01f, z), Vector3.zero, new Vector3(0.12f, 0.01f, 3f), matLaneLine);
-        }
-
-        // Edge lines (solid)
+        // Single-lane backcountry: edge lines only (no center dashes)
         CreatePrim("EdgeLineL", PrimitiveType.Cube, road.transform,
-            new Vector3(-roadW / 2 + 0.3f, 0.01f, roadLen / 2 - 10f), Vector3.zero,
-            new Vector3(0.1f, 0.01f, roadLen), matLaneLine);
+            new Vector3(-roadW / 2f + 0.12f, 0.01f, roadLen / 2f - 10f), Vector3.zero,
+            new Vector3(0.08f, 0.01f, roadLen), matLaneLine);
         CreatePrim("EdgeLineR", PrimitiveType.Cube, road.transform,
-            new Vector3(roadW / 2 - 0.3f, 0.01f, roadLen / 2 - 10f), Vector3.zero,
-            new Vector3(0.1f, 0.01f, roadLen), matLaneLine);
+            new Vector3(roadW / 2f - 0.12f, 0.01f, roadLen / 2f - 10f), Vector3.zero,
+            new Vector3(0.08f, 0.01f, roadLen), matLaneLine);
 
-        // Shoulders
+        float shoulderW = 1.15f;
         CreatePrim("ShoulderL", PrimitiveType.Cube, road.transform,
-            new Vector3(-roadW / 2 - 1f, -0.06f, roadLen / 2 - 10f), Vector3.zero,
-            new Vector3(2f, 0.08f, roadLen), matShoulder);
+            new Vector3(-roadW / 2f - shoulderW / 2f, -0.06f, roadLen / 2f - 10f), Vector3.zero,
+            new Vector3(shoulderW, 0.08f, roadLen), matShoulder);
         CreatePrim("ShoulderR", PrimitiveType.Cube, road.transform,
-            new Vector3(roadW / 2 + 1f, -0.06f, roadLen / 2 - 10f), Vector3.zero,
-            new Vector3(2f, 0.08f, roadLen), matShoulder);
+            new Vector3(roadW / 2f + shoulderW / 2f, -0.06f, roadLen / 2f - 10f), Vector3.zero,
+            new Vector3(shoulderW, 0.08f, roadLen), matShoulder);
 
-        // Dirt/grass beyond shoulders
+        float terrainHalfW = 14f;
         CreatePrim("TerrainL", PrimitiveType.Cube, road.transform,
-            new Vector3(-roadW / 2 - 15f, -0.15f, roadLen / 2 - 10f), Vector3.zero,
-            new Vector3(30f, 0.2f, roadLen + 20f), matDirt);
+            new Vector3(-roadW / 2f - shoulderW - terrainHalfW, -0.15f, roadLen / 2f - 10f), Vector3.zero,
+            new Vector3(terrainHalfW * 2f, 0.2f, roadLen + 20f), matDirt);
         CreatePrim("TerrainR", PrimitiveType.Cube, road.transform,
-            new Vector3(roadW / 2 + 15f, -0.15f, roadLen / 2 - 10f), Vector3.zero,
-            new Vector3(30f, 0.2f, roadLen + 20f), matDirt);
+            new Vector3(roadW / 2f + shoulderW + terrainHalfW, -0.15f, roadLen / 2f - 10f), Vector3.zero,
+            new Vector3(terrainHalfW * 2f, 0.2f, roadLen + 20f), matDirt);
 
-        // Far ground
         CreatePrim("FarGround", PrimitiveType.Cube, road.transform,
-            new Vector3(0, -0.3f, roadLen / 2), Vector3.zero,
-            new Vector3(100f, 0.1f, roadLen + 40f), matGrass);
+            new Vector3(0, -0.3f, roadLen / 2f), Vector3.zero,
+            new Vector3(72f, 0.1f, roadLen + 40f), matGrass);
 
-        // ============================
-        // STREET LIGHTS
-        // ============================
+        // Empty — CutscenePlayer still scrolls this transform (highway lamps off for forest road)
         GameObject streetLights = new GameObject("StreetLights");
         streetLights.transform.parent = root.transform;
 
-        for (int i = 0; i < 12; i++)
-        {
-            float z = i * 16f;
-            float side = (i % 2 == 0) ? -1f : 1f;
-            float x = side * (roadW / 2 + 1.5f);
-
-            // Pole
-            CreatePrim($"Pole_{i}", PrimitiveType.Cylinder, streetLights.transform,
-                new Vector3(x, 2.5f, z), Vector3.zero, new Vector3(0.08f, 2.5f, 0.08f), matPole);
-
-            // Arm
-            CreatePrim($"Arm_{i}", PrimitiveType.Cube, streetLights.transform,
-                new Vector3(x - side * 1f, 5f, z), Vector3.zero, new Vector3(2.2f, 0.05f, 0.05f), matPole);
-
-            // Lamp fixture
-            CreatePrim($"Lamp_{i}", PrimitiveType.Cube, streetLights.transform,
-                new Vector3(x - side * 2f, 4.9f, z), Vector3.zero, new Vector3(0.3f, 0.08f, 0.15f), matLampGlow);
-
-            // Light source
-            GameObject lightObj = new GameObject($"StreetLight_{i}");
-            lightObj.transform.parent = streetLights.transform;
-            lightObj.transform.localPosition = new Vector3(x - side * 2f, 4.8f, z);
-            Light lt = lightObj.AddComponent<Light>();
-            lt.type = LightType.Spot;
-            lt.color = new Color(0.6f, 0.5f, 0.3f);
-            lt.intensity = 1.5f;
-            lt.range = 12f;
-            lt.spotAngle = 70f;
-            lt.transform.localRotation = Quaternion.Euler(90, 0, 0);
-            lt.shadows = (i % 3 == 0) ? LightShadows.Soft : LightShadows.None;
-        }
-
-        // ============================
-        // TREES (sparse, dark silhouettes)
-        // ============================
         GameObject trees = new GameObject("Trees");
         trees.transform.parent = root.transform;
+        GameObject treePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(SquareTileTreePrefabPath);
+        if (treePrefab == null)
+            Debug.LogError("OPENFEED Forest Drive: TreePrefab missing at " + SquareTileTreePrefabPath);
+        else
+            ScatterDenseForest(trees.transform, treePrefab, roadLen, roadW, shoulderW, seed: 42);
 
-        System.Random rng = new System.Random(42);
-        for (int i = 0; i < 30; i++)
-        {
-            float side = (i % 2 == 0) ? -1f : 1f;
-            float x = side * (roadW / 2 + 4f + (float)rng.NextDouble() * 12f);
-            float z = (float)rng.NextDouble() * roadLen;
-            float height = 3f + (float)rng.NextDouble() * 4f;
-            float trunkH = height * 0.4f;
-
-            CreatePrim($"Trunk_{i}", PrimitiveType.Cylinder, trees.transform,
-                new Vector3(x, trunkH / 2, z), Vector3.zero,
-                new Vector3(0.15f, trunkH / 2, 0.15f), matTree);
-
-            CreatePrim($"Foliage_{i}", PrimitiveType.Sphere, trees.transform,
-                new Vector3(x, trunkH + height * 0.2f, z), Vector3.zero,
-                new Vector3(height * 0.5f, height * 0.4f, height * 0.5f), matFoliage);
-        }
-
-        // ============================
-        // GUARDRAILS
-        // ============================
+        // No guardrails on backcountry segment — keep node for scroll compatibility
         GameObject guardrails = new GameObject("Guardrails");
         guardrails.transform.parent = root.transform;
 
-        for (int side = -1; side <= 1; side += 2)
+        if (preservedCarInterior != null)
         {
-            float x = side * (roadW / 2 + 0.5f);
-            string sName = side < 0 ? "L" : "R";
-
-            // Posts
-            for (int i = 0; i < 25; i++)
-            {
-                float z = i * 8f;
-                CreatePrim($"GPost_{sName}_{i}", PrimitiveType.Cube, guardrails.transform,
-                    new Vector3(x, 0.3f, z), Vector3.zero, new Vector3(0.06f, 0.6f, 0.06f), matPole);
-            }
-
-            // Rail
-            CreatePrim($"GRail_{sName}", PrimitiveType.Cube, guardrails.transform,
-                new Vector3(x, 0.5f, roadLen / 2 - 10f), Vector3.zero,
-                new Vector3(0.04f, 0.15f, roadLen), matGuardrail);
+            preservedCarInterior.SetParent(root.transform, worldPositionStays: true);
+            Debug.Log("OPENFEED: Kept existing CarInterior (your Impreza / dash / lights). Forest Drive → Generate (full reset) rebuilds from code.");
         }
+        else
+            BuildDefaultCarRig(root.transform, matDash);
 
-        // ============================
-        // CAR INTERIOR (dashboard view)
-        // ============================
-        GameObject carInterior = new GameObject("CarInterior");
-        carInterior.transform.parent = root.transform;
-
-        // Dashboard
-        CreatePrim("Dashboard", PrimitiveType.Cube, carInterior.transform,
-            new Vector3(0, 0.55f, 1.2f), new Vector3(-5, 0, 0), new Vector3(1.8f, 0.15f, 0.8f), matInterior);
-
-        // Dashboard glow (instrument cluster)
-        CreatePrim("DashGlow", PrimitiveType.Cube, carInterior.transform,
-            new Vector3(0, 0.64f, 0.95f), new Vector3(60, 0, 0), new Vector3(0.5f, 0.01f, 0.2f), matDash);
-
-        // Steering wheel (simplified)
-        CreatePrim("SteeringCol", PrimitiveType.Cylinder, carInterior.transform,
-            new Vector3(-0.35f, 0.7f, 1f), new Vector3(65, 0, 0), new Vector3(0.03f, 0.2f, 0.03f), matInterior);
-
-        // Rearview mirror
-        CreatePrim("RearMirror", PrimitiveType.Cube, carInterior.transform,
-            new Vector3(0, 1.3f, 1.1f), new Vector3(0, 0, 5), new Vector3(0.35f, 0.08f, 0.04f), matInterior);
-
-        // A-pillars (windshield frame)
-        CreatePrim("APillarL", PrimitiveType.Cube, carInterior.transform,
-            new Vector3(-0.95f, 1f, 1.3f), new Vector3(0, 0, 12), new Vector3(0.06f, 1.2f, 0.06f), matInterior);
-        CreatePrim("APillarR", PrimitiveType.Cube, carInterior.transform,
-            new Vector3(0.95f, 1f, 1.3f), new Vector3(0, 0, -12), new Vector3(0.06f, 1.2f, 0.06f), matInterior);
-
-        // Roof edge
-        CreatePrim("RoofEdge", PrimitiveType.Cube, carInterior.transform,
-            new Vector3(0, 1.55f, 0.8f), Vector3.zero, new Vector3(2f, 0.04f, 1.5f), matInterior);
-
-        // Headlight cones (projected onto road, visible from inside)
-        GameObject hlL = new GameObject("HeadlightL");
-        hlL.transform.parent = carInterior.transform;
-        hlL.transform.localPosition = new Vector3(-0.5f, 0.5f, 2f);
-        hlL.transform.localRotation = Quaternion.Euler(8, -3, 0);
-        Light hLeft = hlL.AddComponent<Light>();
-        hLeft.type = LightType.Spot;
-        hLeft.color = new Color(0.85f, 0.78f, 0.55f);
-        hLeft.intensity = 3f;
-        hLeft.range = 40f;
-        hLeft.spotAngle = 45f;
-        hLeft.shadows = LightShadows.Soft;
-
-        GameObject hlR = new GameObject("HeadlightR");
-        hlR.transform.parent = carInterior.transform;
-        hlR.transform.localPosition = new Vector3(0.5f, 0.5f, 2f);
-        hlR.transform.localRotation = Quaternion.Euler(8, 3, 0);
-        Light hRight = hlR.AddComponent<Light>();
-        hRight.type = LightType.Spot;
-        hRight.color = new Color(0.85f, 0.78f, 0.55f);
-        hRight.intensity = 3f;
-        hRight.range = 40f;
-        hRight.spotAngle = 45f;
-        hRight.shadows = LightShadows.Soft;
-
-        // ============================
-        // RAIN / SNOW PARTICLES
-        // ============================
         GameObject rainObj = new GameObject("Rain");
         rainObj.transform.parent = root.transform;
         rainObj.transform.localPosition = new Vector3(0, 8f, 10f);
@@ -281,7 +209,7 @@ public class DrivingSceneGenerator : Editor
 
         var shape = ps.shape;
         shape.shapeType = ParticleSystemShapeType.Box;
-        shape.scale = new Vector3(12f, 0.5f, 30f);
+        shape.scale = new Vector3(7f, 0.5f, 30f);
 
         var vel = ps.velocityOverLifetime;
         vel.enabled = true;
@@ -293,18 +221,14 @@ public class DrivingSceneGenerator : Editor
         Material rainMat = new Material(Shader.Find("Particles/Standard Unlit"));
         if (rainMat != null)
         {
-            rainMat.name = "RainParticle";
+            rainMat.name = "Drive_RainParticle";
             rainMat.SetColor("_Color", new Color(0.5f, 0.5f, 0.6f, 0.3f));
             psr.material = rainMat;
         }
 
-        // ============================
-        // SCROLLING WAYPOINTS (for road animation)
-        // ============================
         GameObject waypoints = new GameObject("CutsceneWaypoints");
         waypoints.transform.parent = root.transform;
 
-        // Camera stays roughly fixed inside car, road scrolls
         CreateWaypoint(waypoints.transform, "WP_DriveStart",
             new Vector3(-0.3f, 1.05f, 0.4f), new Vector3(3, 0, 0));
         CreateWaypoint(waypoints.transform, "WP_DriveMid",
@@ -314,46 +238,136 @@ public class DrivingSceneGenerator : Editor
         CreateWaypoint(waypoints.transform, "WP_DriveEnd",
             new Vector3(-0.3f, 1.05f, 0.4f), new Vector3(3, 0, 0));
 
-        // ============================
-        // SCENE LIGHTING
-        // ============================
         GameObject moonObj = new GameObject("Moonlight");
         moonObj.transform.parent = root.transform;
         moonObj.transform.localRotation = Quaternion.Euler(25, -40, 0);
         Light moon = moonObj.AddComponent<Light>();
         moon.type = LightType.Directional;
-        moon.color = new Color(0.12f, 0.08f, 0.2f);
-        moon.intensity = 0.05f;
-        moon.shadows = LightShadows.Soft;
+        moon.color = new Color(0.1f, 0.1f, 0.18f);
+        moon.intensity = 0.018f;
+        moon.shadows = LightShadows.None;
 
-        // ============================
-        // CAMERA
-        // ============================
-        Camera cam = SetupCamera(root.transform);
-        // Inside car, driver perspective
-        cam.transform.localPosition = new Vector3(-0.3f, 1.05f, 0.4f);
-        cam.transform.localRotation = Quaternion.Euler(3, 0, 0);
-        cam.fieldOfView = 60f;
-        cam.backgroundColor = new Color(0.01f, 0.008f, 0.025f);
-        cam.clearFlags = CameraClearFlags.SolidColor;
+        float driveCamFar = Mathf.Clamp(roadLen + 420f, 500f, 2200f);
+        if (preservedMainCamera != null)
+        {
+            preservedMainCamera.transform.SetParent(root.transform, worldPositionStays: true);
+            Camera cam = preservedMainCamera.GetComponent<Camera>();
+            if (cam != null)
+            {
+                cam.nearClipPlane = 0.05f;
+                cam.farClipPlane = Mathf.Max(cam.farClipPlane, driveCamFar);
+            }
+        }
+        else
+        {
+            Camera cam = SetupCamera(root.transform);
+            cam.transform.localPosition = new Vector3(-0.3f, 1.05f, 0.4f);
+            cam.transform.localRotation = Quaternion.Euler(3, 0, 0);
+            cam.fieldOfView = 60f;
+            cam.backgroundColor = new Color(0.01f, 0.008f, 0.025f);
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.farClipPlane = driveCamFar;
+        }
 
-        // ============================
-        // RENDER SETTINGS
-        // ============================
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.01f, 0.008f, 0.015f);
+        RenderSettings.ambientLight = new Color(0.003f, 0.003f, 0.006f);
+        RenderSettings.reflectionIntensity = 0f;
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.ExponentialSquared;
-        RenderSettings.fogDensity = 0.015f;
-        RenderSettings.fogColor = new Color(0.015f, 0.01f, 0.03f);
+        RenderSettings.fogDensity = 0.03f;
+        RenderSettings.fogColor = new Color(0.006f, 0.005f, 0.016f);
+
+        if (FindAnyObjectByType<GameFlowManager>() == null)
+        {
+            GameObject gfmGo = new GameObject("GameFlowManager");
+            gfmGo.AddComponent<GameFlowManager>();
+        }
 
         Selection.activeGameObject = root;
-        Debug.Log("OPENFEED Driving Scene generated.");
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        Debug.Log("OPENFEED DrivingScene generated (narrow forest road).");
     }
 
-    // ============================
-    // HELPERS
-    // ============================
+    static void BuildDefaultCarRig(Transform root, Material matDash)
+    {
+        GameObject carInterior = new GameObject("CarInterior");
+        carInterior.transform.SetParent(root, false);
+
+        OpenFeedDrivingCarBuilder.AddExteriorCarUnderCarInterior(carInterior.transform);
+
+        GameObject dashFill = new GameObject("DashInteriorFill");
+        dashFill.transform.SetParent(carInterior.transform, false);
+        dashFill.transform.localPosition = new Vector3(0.04f, 0.98f, 0.88f);
+        Light fillL = dashFill.AddComponent<Light>();
+        fillL.type = LightType.Point;
+        fillL.color = new Color(0.92f, 0.66f, 0.38f);
+        fillL.intensity = 0.11f;
+        fillL.range = 1.85f;
+        fillL.shadows = LightShadows.None;
+
+        CreatePrim("DashGlow", PrimitiveType.Cube, carInterior.transform,
+            new Vector3(0.019f, 0.771f, 1.022f), new Vector3(104.949f, 0f, 0f),
+            new Vector3(0.263115f, 0.01f, 0.2f), matDash);
+
+        GameObject hlL = new GameObject("HeadlightL");
+        hlL.transform.parent = carInterior.transform;
+        hlL.transform.localPosition = new Vector3(-0.5f, 0.5f, 2f);
+        hlL.transform.localRotation = Quaternion.Euler(8, -3, 0);
+        Light hLeft = hlL.AddComponent<Light>();
+        hLeft.type = LightType.Spot;
+        hLeft.color = new Color(1f, 0.94f, 0.8f);
+        hLeft.intensity = 20f;
+        hLeft.range = 110f;
+        hLeft.spotAngle = 62f;
+        hLeft.shadows = LightShadows.Soft;
+
+        GameObject hlR = new GameObject("HeadlightR");
+        hlR.transform.parent = carInterior.transform;
+        hlR.transform.localPosition = new Vector3(0.5f, 0.5f, 2f);
+        hlR.transform.localRotation = Quaternion.Euler(8, 3, 0);
+        Light hRight = hlR.AddComponent<Light>();
+        hRight.type = LightType.Spot;
+        hRight.color = new Color(1f, 0.94f, 0.8f);
+        hRight.intensity = 20f;
+        hRight.range = 110f;
+        hRight.spotAngle = 62f;
+        hRight.shadows = LightShadows.Soft;
+    }
+
+    static void ScatterDenseForest(Transform treesRoot, GameObject treePrefab, float roadLen, float roadW, float shoulderW, int seed)
+    {
+        var rng = new System.Random(seed);
+        float halfRoad = roadW * 0.5f;
+        float innerEdge = halfRoad + shoulderW + 0.35f;
+        float zSpacing = 1.55f;
+        int zSteps = Mathf.CeilToInt((roadLen + 30f) / zSpacing);
+
+        for (int zi = 0; zi < zSteps; zi++)
+        {
+            float z = zi * zSpacing + (float)rng.NextDouble() * 0.45f;
+            for (int side = -1; side <= 1; side += 2)
+            {
+                for (int row = 0; row < 5; row++)
+                {
+                    float depth = innerEdge + row * 1.75f + (float)rng.NextDouble() * 1.05f;
+                    float jitterX = ((float)rng.NextDouble() - 0.5f) * 1.1f;
+                    float x = side * (depth + jitterX);
+                    float zJ = z + ((float)rng.NextDouble() - 0.5f) * 0.65f;
+
+                    GameObject tr = (GameObject)PrefabUtility.InstantiatePrefab(treePrefab, treesRoot);
+                    tr.name = "TreePrefab";
+                    tr.transform.localPosition = new Vector3(x, 0f, zJ);
+                    tr.transform.localRotation = Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                    float s = 0.82f + (float)rng.NextDouble() * 0.45f;
+                    tr.transform.localScale = new Vector3(s, s, s);
+
+                    foreach (Collider c in tr.GetComponentsInChildren<Collider>(true))
+                        DestroyImmediate(c);
+                }
+            }
+        }
+    }
+
     static void CreateWaypoint(Transform parent, string name, Vector3 pos, Vector3 rot)
     {
         GameObject wp = new GameObject(name);
@@ -378,7 +392,7 @@ public class DrivingSceneGenerator : Editor
         }
         cam.transform.parent = root;
         c.nearClipPlane = 0.05f;
-        c.farClipPlane = 200f;
+        c.farClipPlane = 800f;
         return c;
     }
 

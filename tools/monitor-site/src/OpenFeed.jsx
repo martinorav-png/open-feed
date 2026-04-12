@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 
 const CAMERAS = [
-  { id: "001", label: "Gas Station - Route 14", country: "US", tz: "CST", status: "live", quality: "240p", viewers: 23 },
+  { id: "001", label: "Highway Motel Lobby", country: "US", tz: "CST", status: "live", quality: "240p", viewers: 23 },
   { id: "002", label: "Shop Interior - District 4", country: "TW", tz: "CST", status: "live", quality: "144p", viewers: 41 },
-  { id: "003", label: "Hallway - Block 9, Floor 3", country: "UA", tz: "EET", status: "live", quality: "240p", viewers: 112, isNew: true },
+  { id: "003", label: "Laundromat - After Hours", country: "US", tz: "MST", status: "live", quality: "240p", viewers: 112, isNew: true },
   { id: "004", label: "Back Alley - Unknown", country: "??", tz: "---", status: "offline", quality: "---", viewers: 7 },
-  { id: "005", label: "Parking Garage B2", country: "DE", tz: "CET", status: "live", quality: "320p", viewers: 18 },
+  { id: "005", label: "Snow Field - Unmarked Relay", country: "??", tz: "---", status: "live", quality: "320p", viewers: 18 },
   { id: "006", label: "Laundromat", country: "US", tz: "EST", status: "live", quality: "240p", viewers: 9 },
   { id: "007", label: "Warehouse Loading Dock", country: "PL", tz: "CET", status: "live", quality: "144p", viewers: 34 },
   { id: "008", label: "Hotel Lobby", country: "TH", tz: "ICT", status: "live", quality: "480p", viewers: 56 },
   { id: "009", label: "Underpass Cam", country: "BR", tz: "BRT", status: "offline", quality: "---", viewers: 3 },
   { id: "010", label: "Rooftop - Building 14", country: "JP", tz: "JST", status: "live", quality: "240p", viewers: 71 },
-  { id: "011", label: "Stairwell C", country: "RO", tz: "EET", status: "live", quality: "144p", viewers: 15 },
+  { id: "011", label: "Staff Corridor - Rear Wing", country: "UA", tz: "EET", status: "live", quality: "144p", viewers: 15 },
   { id: "012", label: "Bus Depot - Cam 3", country: "MX", tz: "CST", status: "live", quality: "320p", viewers: 28 },
   { id: "013", label: "Courtyard", country: "EG", tz: "EET", status: "live", quality: "240p", viewers: 6, isNew: true },
   { id: "014", label: "Convenience Store", country: "KR", tz: "KST", status: "live", quality: "480p", viewers: 44 },

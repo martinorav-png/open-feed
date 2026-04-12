@@ -70,7 +70,12 @@ public static class SupermarketSceneGenerator
         // 3 — supermarket building
         GameObject storeRoot = InstantiateSupermarketFbx();
         if (storeRoot != null)
+        {
             SupermarketFbxTextureAssigner.ApplyTo(storeRoot);
+            int col = SupermarketInteriorColliders.AddMissingMeshColliders(storeRoot.transform, refreshExistingMeshColliders: true);
+            if (col > 0)
+                Debug.Log($"[Supermarket] Interior mesh colliders: {col} (FBX may also add colliders on import).");
+        }
 
         // 4 — interior ceiling lights
         SupermarketStripLightsSetup.ApplyToScene(out StringBuilder _);
@@ -228,15 +233,33 @@ public static class SupermarketSceneGenerator
 
     static void EnsureBootstrap()
     {
+        const string IntroTitleGuid = "548f0cd7485a15c4a896f5f429338f62";
+        const string MenuThemeGuid = "0faf0b1a9b8c054408971869ce773dbf";
+
         if (Object.FindAnyObjectByType<GameFlowManager>() == null)
         {
             GameFlowManager gfm = new GameObject("GameFlowManager").AddComponent<GameFlowManager>();
             gfm.useStoreIntroWhenAvailable = true;
             gfm.fallbackToStoreCutscene   = false;
+            gfm.storeScene = "supermarket";
+        }
+        else
+        {
+            GameFlowManager existing = Object.FindAnyObjectByType<GameFlowManager>();
+            if (existing != null)
+                existing.storeScene = "supermarket";
         }
 
         if (Object.FindAnyObjectByType<MainMenuUI>() == null)
-            new GameObject("MainMenuUI").AddComponent<MainMenuUI>();
+        {
+            MainMenuUI ui = new GameObject("MainMenuUI").AddComponent<MainMenuUI>();
+            var so = new SerializedObject(ui);
+            so.FindProperty("introTitleClip").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(IntroTitleGuid));
+            so.FindProperty("menuThemeClip").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(MenuThemeGuid));
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
     }
 
     // ── 7: Nighttime render settings ───────────────────────────────────────────

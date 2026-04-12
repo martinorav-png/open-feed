@@ -37,11 +37,32 @@ public class StoreFirstPersonController : MonoBehaviour
     void Awake()
     {
         characterController = GetComponent<CharacterController>();
+        EnsureGltfStoreFloorColliderOnObject6();
         if (cameraPivot == null && Camera.main != null)
             cameraPivot = Camera.main.transform;
 
         if (cameraPivot != null)
             cameraPivotBaseLocal = cameraPivot.localPosition;
+    }
+
+    /// <summary>scene.gltf floor mesh is often named Object_6; import has no collider — add a static MeshCollider for CharacterController.</summary>
+    static void EnsureGltfStoreFloorColliderOnObject6()
+    {
+        Transform[] transforms = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform t = transforms[i];
+            if (t == null || t.name != "Object_6")
+                continue;
+            if (t.GetComponent<MeshCollider>() != null)
+                continue;
+            MeshFilter mf = t.GetComponent<MeshFilter>();
+            if (mf == null || mf.sharedMesh == null)
+                continue;
+            MeshCollider mc = t.gameObject.AddComponent<MeshCollider>();
+            mc.sharedMesh = mf.sharedMesh;
+            mc.convex = false;
+        }
     }
 
     void Start()

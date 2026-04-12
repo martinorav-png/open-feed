@@ -994,7 +994,8 @@ public class StoreFlowSceneGenerator : Editor
         CreatePrim("ParkingLot", PrimitiveType.Cube, ground.transform, new Vector3(0f, -0.05f, 3f), Vector3.zero, new Vector3(24f, 0.1f, 18f), asphalt, true);
         CreatePrim("Road", PrimitiveType.Cube, ground.transform, new Vector3(0f, -0.04f, 14f), Vector3.zero, new Vector3(28f, 0.08f, 4f), asphalt, true);
         CreatePrim("Sidewalk", PrimitiveType.Cube, ground.transform, new Vector3(0f, 0.03f, 9.1f), Vector3.zero, new Vector3(14f, 0.12f, 2.2f), concrete, true);
-        GameObject floorCol = CreatePrim("StoreInteriorFloorCollider", PrimitiveType.Cube, ground.transform, new Vector3(0f, 0.03f, 12.86f), Vector3.zero, new Vector3(14f, 0.12f, 10f), null, true);
+        // Thick box (y scale 1) so CharacterController does not tunnel through a paper-thin floor; top surface stays ~y≈0.09 under Ground.
+        GameObject floorCol = CreatePrim("StoreInteriorFloorCollider", PrimitiveType.Cube, ground.transform, new Vector3(0f, -0.41f, 12.86f), Vector3.zero, new Vector3(14f, 1f, 10f), null, true);
         Renderer floorColR = floorCol.GetComponent<Renderer>();
         if (floorColR != null)
             floorColR.enabled = false;

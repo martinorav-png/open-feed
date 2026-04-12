@@ -12,26 +12,41 @@ public static class StoreFlowExteriorNightSetup
     {
         if (sceneRoot == null)
             return;
-        if (sceneRoot.gameObject.scene.name != "GroceryStore")
+        string sn = sceneRoot.gameObject.scene.name;
+        if (sn != "GroceryStore" && sn != "supermarket")
             return;
 
         ApplyNightRenderSettingsShared();
     }
 
-    /// <summary>Fog, flat ambient, reflection — same tuning as the store generator.</summary>
+    /// <summary>
+    /// Parking-lot exterior: linear fog pulls the horizon into a dark veil (URP still uses RenderSettings fog).
+    /// Skybox procedural exposure is reduced so the rim does not blow out.
+    /// </summary>
     public static void ApplyNightRenderSettingsShared()
     {
         RenderSettings.ambientMode = AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.08f, 0.09f, 0.12f);
+        RenderSettings.ambientLight = new Color(0.05f, 0.055f, 0.075f);
         RenderSettings.fog = true;
-        RenderSettings.fogMode = FogMode.Exponential;
-        RenderSettings.fogDensity = 0.012f;
-        RenderSettings.fogColor = new Color(0.04f, 0.05f, 0.08f);
-        RenderSettings.reflectionIntensity = 0.7f;
+        RenderSettings.fogMode = FogMode.Linear;
+        RenderSettings.fogColor = new Color(0.01f, 0.012f, 0.02f, 1f);
+        RenderSettings.fogStartDistance = 8f;
+        RenderSettings.fogEndDistance = 95f;
+        RenderSettings.fogDensity = 0.02f;
+        RenderSettings.reflectionIntensity = 0.35f;
 
         EnsureSkyMaterial();
         if (s_NightSkyMaterial != null)
             RenderSettings.skybox = s_NightSkyMaterial;
+    }
+
+    /// <summary>Call when the player enters the shopping floor — exterior fog reads as haze indoors.</summary>
+    public static void ApplyInteriorShoppingRenderSettings()
+    {
+        RenderSettings.fog = false;
+        RenderSettings.ambientMode = AmbientMode.Flat;
+        RenderSettings.ambientLight = new Color(0.14f, 0.14f, 0.15f);
+        RenderSettings.reflectionIntensity = 0.5f;
     }
 
     static void EnsureSkyMaterial()
@@ -49,13 +64,13 @@ public static class StoreFlowExteriorNightSetup
         s_NightSkyMaterial.name = "StoreFlow_RuntimeNightSky";
 
         if (s_NightSkyMaterial.HasProperty("_SkyTint"))
-            s_NightSkyMaterial.SetColor("_SkyTint", new Color(0.1f, 0.12f, 0.26f, 1f));
+            s_NightSkyMaterial.SetColor("_SkyTint", new Color(0.05f, 0.06f, 0.14f, 1f));
         if (s_NightSkyMaterial.HasProperty("_GroundColor"))
-            s_NightSkyMaterial.SetColor("_GroundColor", new Color(0.02f, 0.025f, 0.045f, 1f));
+            s_NightSkyMaterial.SetColor("_GroundColor", new Color(0.01f, 0.012f, 0.022f, 1f));
         if (s_NightSkyMaterial.HasProperty("_AtmosphereThickness"))
-            s_NightSkyMaterial.SetFloat("_AtmosphereThickness", 0.92f);
+            s_NightSkyMaterial.SetFloat("_AtmosphereThickness", 0.62f);
         if (s_NightSkyMaterial.HasProperty("_Exposure"))
-            s_NightSkyMaterial.SetFloat("_Exposure", 0.42f);
+            s_NightSkyMaterial.SetFloat("_Exposure", 0.28f);
         if (s_NightSkyMaterial.HasProperty("_SunDisk"))
             s_NightSkyMaterial.SetFloat("_SunDisk", 0f);
 
