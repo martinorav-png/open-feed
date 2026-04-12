@@ -375,7 +375,7 @@ public static class StoreFlowTargetedRebuild
             float x = -12f + i * 8f;
             CreatePrim($"LampPole_{i}", PrimitiveType.Cylinder, props.transform, new Vector3(x, 3.2f, 6.1f), Vector3.zero, new Vector3(0.1f, 3.2f, 0.1f), poleMat, false);
             CreatePrim($"LampHead_{i}", PrimitiveType.Cube, props.transform, new Vector3(x, 6.25f, 6.1f), Vector3.zero, new Vector3(0.55f, 0.2f, 0.45f), lightMat, false);
-            AddLight(props.transform, $"LampLight_{i}", new Vector3(x, 5.9f, 6.1f), LightType.Point, new Color(1f, 0.88f, 0.64f), 1.25f, 8f, 0f);
+            AddLight(props.transform, $"LampLight_{i}", new Vector3(x, 5.9f, 6.1f), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.StorefrontRowPointIntensity, StoreFlowStreetLightTuning.StorefrontRowPointRange, 0f);
         }
 
         CreatePrim("GuardRailL", PrimitiveType.Cube, props.transform, new Vector3(-13.8f, 0.55f, 5.7f), Vector3.zero, new Vector3(0.24f, 1.1f, 16f), railMat, false);
@@ -400,20 +400,20 @@ public static class StoreFlowTargetedRebuild
 
     static void BuildExteriorLights(Transform root)
     {
-        AddLight(root, "StoreGlow", new Vector3(0f, 2.9f, 9.6f), LightType.Point, new Color(1f, 0.92f, 0.82f), 1.7f, 10f, 0f);
-        AddLight(root, "StreetLampLeft", new Vector3(-5.4f, 4.2f, 7.5f), LightType.Point, new Color(1f, 0.84f, 0.6f), 1.4f, 8f, 0f);
-        AddLight(root, "StreetLampRight", new Vector3(5.4f, 4.2f, 7.5f), LightType.Point, new Color(1f, 0.84f, 0.6f), 1.4f, 8f, 0f);
+        AddLight(root, "StoreGlow", new Vector3(0f, 2.9f, 9.6f), LightType.Point, StoreFlowAccentLightColor.Rgb, 1.7f, 10f, 0f);
+        AddLight(root, "StreetLampLeft", new Vector3(-5.4f, 4.2f, 7.5f), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.FlankPolePointIntensity, StoreFlowStreetLightTuning.FlankPolePointRange, 0f);
+        AddLight(root, "StreetLampRight", new Vector3(5.4f, 4.2f, 7.5f), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.FlankPolePointIntensity, StoreFlowStreetLightTuning.FlankPolePointRange, 0f);
         GameObject canopyLight = new GameObject("CanopyLight");
         canopyLight.transform.SetParent(root, false);
         canopyLight.transform.localPosition = new Vector3(0f, 3.6f, 7.8f);
         Light cl = canopyLight.AddComponent<Light>();
         cl.type = LightType.Point;
-        cl.color = new Color(1f, 0.96f, 0.88f);
+        cl.color = StoreFlowAccentLightColor.Rgb;
         cl.intensity = 1f;
         cl.range = 5f;
         cl.shadows = LightShadows.Soft;
 
-        AddLight(root, "FreezerSpill", new Vector3(0f, 1.5f, 16.8f), LightType.Point, new Color(0.45f, 0.76f, 1f), 0.6f, 5f, 0f);
+        AddLight(root, "FreezerSpill", new Vector3(0f, 1.5f, 16.8f), LightType.Point, StoreFlowAccentLightColor.Rgb, 0.6f, 5f, 0f);
 
         GameObject flick = new GameObject("FlickerLight");
         flick.transform.SetParent(root, false);
@@ -421,7 +421,7 @@ public static class StoreFlowTargetedRebuild
         TrySetTag(flick, "FlickerLight");
         Light fl = flick.AddComponent<Light>();
         fl.type = LightType.Point;
-        fl.color = new Color(1f, 0.96f, 0.88f);
+        fl.color = StoreFlowAccentLightColor.Rgb;
         fl.intensity = 0.5f;
         fl.range = 3.5f;
         fl.shadows = LightShadows.Soft;

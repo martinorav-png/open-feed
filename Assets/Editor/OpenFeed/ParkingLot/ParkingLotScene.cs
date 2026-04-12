@@ -148,7 +148,7 @@ public class ParkingLotSceneGenerator : Editor
         storeGlow.transform.localPosition = new Vector3(0, 2f, 7.5f);
         Light storeLight = storeGlow.AddComponent<Light>();
         storeLight.type = LightType.Point;
-        storeLight.color = new Color(0.75f, 0.7f, 0.55f);
+        storeLight.color = StoreFlowAccentLightColor.Rgb;
         storeLight.intensity = 1.5f;
         storeLight.range = 8f;
         storeLight.shadows = LightShadows.Soft;
@@ -245,7 +245,7 @@ public class ParkingLotSceneGenerator : Editor
             new Vector3(6f, 0, -2f),
         };
 
-        Color lampColor = new Color(0.9f, 0.7f, 0.35f);
+        Color lampColor = StoreFlowAccentLightColor.Rgb;
 
         for (int i = 0; i < lampPositions.Length; i++)
         {
@@ -279,8 +279,9 @@ public class ParkingLotSceneGenerator : Editor
             Light ll = lampLight.AddComponent<Light>();
             ll.type = LightType.Point;
             ll.color = lampColor;
-            ll.intensity = i < 2 ? 1.8f : 1.0f; // Front lamps brighter
-            ll.range = 12f;
+            ll.intensity = i < 2 ? StoreFlowStreetLightTuning.ParkingLotFrontPointIntensity
+                : StoreFlowStreetLightTuning.ParkingLotRearPointIntensity;
+            ll.range = StoreFlowStreetLightTuning.ParkingLotPointRange;
             ll.shadows = LightShadows.Soft;
 
             // Downward cone light for pool of light effect
@@ -291,8 +292,9 @@ public class ParkingLotSceneGenerator : Editor
             Light ls = lampSpot.AddComponent<Light>();
             ls.type = LightType.Spot;
             ls.color = lampColor;
-            ls.intensity = i < 2 ? 2.5f : 1.5f;
-            ls.range = 10f;
+            ls.intensity = i < 2 ? StoreFlowStreetLightTuning.ParkingLotFrontSpotIntensity
+                : StoreFlowStreetLightTuning.ParkingLotRearSpotIntensity;
+            ls.range = StoreFlowStreetLightTuning.ParkingLotSpotRange;
             ls.spotAngle = 70f;
             ls.shadows = LightShadows.Soft;
         }

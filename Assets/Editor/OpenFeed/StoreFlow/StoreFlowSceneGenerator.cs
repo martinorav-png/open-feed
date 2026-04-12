@@ -6,6 +6,7 @@ using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class StoreFlowSceneGenerator : Editor
 {
@@ -230,18 +231,43 @@ public class StoreFlowSceneGenerator : Editor
 
     const string GroceryStoreScenePath = "Assets/Scenes/GroceryStore.unity";
 
-    /// <summary>Opens GroceryStore and writes night sky + fog/ambient into the scene (same as generator end).</summary>
+    /// <summary>
+    /// Applies night sky + fog/ambient to the <b>currently open</b> scene (does not switch scenes).
+    /// </summary>
     [MenuItem("OPEN FEED/Store Flow/Apply Night Render Settings", false, 300)]
-    static void ApplyGroceryStoreNightRenderSettingsMenu()
+    static void ApplyNightRenderSettingsToCurrentSceneMenu()
+    {
+        Scene scene = EditorSceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            EditorUtility.DisplayDialog("Apply night render settings", "No valid scene is loaded.", "OK");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(scene.path))
+        {
+            EditorUtility.DisplayDialog(
+                "Apply night render settings",
+                "Save this scene as a .unity asset first, then run the command again.",
+                "OK");
+            return;
+        }
+
+        StoreFlowExteriorNightSetup.ApplyNightRenderSettingsShared();
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (EditorSceneManager.SaveScene(scene))
+            Debug.Log($"OPENFEED: Night sky, fog, and ambient applied to '{scene.name}' ({scene.path}).");
+        else
+            Debug.LogWarning("OPENFEED: Night render settings applied but scene save was cancelled or failed.");
+    }
+
+    /// <summary>Opens the GroceryStore scene asset only (no automatic night pass — use Apply Night Render Settings after if needed).</summary>
+    [MenuItem("OPEN FEED/Store Flow/Open GroceryStore Scene", false, 301)]
+    static void OpenGroceryStoreSceneMenu()
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             return;
-
         EditorSceneManager.OpenScene(GroceryStoreScenePath);
-        StoreFlowExteriorNightSetup.ApplyNightRenderSettingsShared();
-        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-        EditorSceneManager.SaveOpenScenes();
-        Debug.Log("OPENFEED: GroceryStore night sky, fog, and ambient applied and scene saved.");
     }
 
     /// <summary>Deletes TreePrefab instances under StoreFlowScene that sit in the store/parking exclusion (fixes bad scatter from older generator runs).</summary>
@@ -929,11 +955,11 @@ public class StoreFlowSceneGenerator : Editor
             {
                 CreatePrim("HwyLampPole_L_" + li, PrimitiveType.Cylinder, hw.transform, new Vector3(-lampX, 3.2f, z), Vector3.zero, new Vector3(0.1f, 3.2f, 0.1f), poleMat, false);
                 CreatePrim("HwyLampHead_L_" + li, PrimitiveType.Cube, hw.transform, new Vector3(-lampX, 6.25f, z), Vector3.zero, new Vector3(0.55f, 0.2f, 0.45f), lightMat, false);
-                AddLight(hw.transform, "HwyLampLight_L_" + li, new Vector3(-lampX, 5.9f, z), LightType.Point, new Color(1f, 0.88f, 0.64f), 1.55f, 28f, 0f);
+                AddLight(hw.transform, "HwyLampLight_L_" + li, new Vector3(-lampX, 5.9f, z), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.HighwayPointIntensity, StoreFlowStreetLightTuning.HighwayPointRange, 0f);
 
                 CreatePrim("HwyLampPole_R_" + li, PrimitiveType.Cylinder, hw.transform, new Vector3(lampX, 3.2f, z), Vector3.zero, new Vector3(0.1f, 3.2f, 0.1f), poleMat, false);
                 CreatePrim("HwyLampHead_R_" + li, PrimitiveType.Cube, hw.transform, new Vector3(lampX, 6.25f, z), Vector3.zero, new Vector3(0.55f, 0.2f, 0.45f), lightMat, false);
-                AddLight(hw.transform, "HwyLampLight_R_" + li, new Vector3(lampX, 5.9f, z), LightType.Point, new Color(1f, 0.88f, 0.64f), 1.55f, 28f, 0f);
+                AddLight(hw.transform, "HwyLampLight_R_" + li, new Vector3(lampX, 5.9f, z), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.HighwayPointIntensity, StoreFlowStreetLightTuning.HighwayPointRange, 0f);
                 li++;
             }
         }
@@ -1048,7 +1074,7 @@ public class StoreFlowSceneGenerator : Editor
             float x = -12f + i * 8f;
             CreatePrim($"LampPole_{i}", PrimitiveType.Cylinder, props.transform, new Vector3(x, 3.2f, lampZ), Vector3.zero, new Vector3(0.1f, 3.2f, 0.1f), poleMat, false);
             CreatePrim($"LampHead_{i}", PrimitiveType.Cube, props.transform, new Vector3(x, 6.25f, lampZ), Vector3.zero, new Vector3(0.55f, 0.2f, 0.45f), lightMat, false);
-            AddLight(props.transform, $"LampLight_{i}", new Vector3(x, 5.9f, lampZ), LightType.Point, new Color(1f, 0.88f, 0.64f), 1.35f, 11f, 0f);
+            AddLight(props.transform, $"LampLight_{i}", new Vector3(x, 5.9f, lampZ), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.StorefrontRowPointIntensity, StoreFlowStreetLightTuning.StorefrontRowPointRange, 0f);
         }
 
         float railZ = StoreFlowGuardRailCenterZ;
@@ -1288,7 +1314,7 @@ public class StoreFlowSceneGenerator : Editor
         for (int li = 0; li < lightZ.Length; li++)
         {
             float z = lightZ[li];
-            AddSpotLightAimedAt(store, "PackFillLight_" + li, new Vector3(0f, 3.2f, z), new Vector3(0f, 0.1f, z), new Color(1f, 0.98f, 0.92f), 0.42f, 8f, 75f);
+            AddSpotLightAimedAt(store, "PackFillLight_" + li, new Vector3(0f, 3.2f, z), new Vector3(0f, 0.1f, z), StoreFlowAccentLightColor.Rgb, 0.42f, 8f, 75f);
         }
 
         Debug.Log(
@@ -1423,12 +1449,12 @@ public class StoreFlowSceneGenerator : Editor
             {
                 float ax = aisleCenterX[a];
                 CreatePrim($"LightStrip_{i}_{a}", PrimitiveType.Cube, store.transform, new Vector3(ax, 3.35f, z), Vector3.zero, new Vector3(0.22f, 0.06f, 5.6f), lightMat, false);
-                AddSpotLightAimedAt(store.transform, $"InteriorLight_{i}_{a}", new Vector3(ax, 3.05f, z), new Vector3(ax, 0.15f, z), new Color(1f, 0.98f, 0.9f), 0.38f, 6.5f, 68f);
+                AddSpotLightAimedAt(store.transform, $"InteriorLight_{i}_{a}", new Vector3(ax, 3.05f, z), new Vector3(ax, 0.15f, z), StoreFlowAccentLightColor.Rgb, 0.38f, 6.5f, 68f);
             }
         }
 
-        AddSpotLightAimedAt(store.transform, "AisleLight_L", new Vector3(-4.2f, 2.8f, 12.9f), new Vector3(-5.75f, 0.12f, 12.9f), new Color(1f, 0.97f, 0.88f), 0.34f, 5.5f, 58f);
-        AddSpotLightAimedAt(store.transform, "AisleLight_R", new Vector3(4.2f, 2.8f, 12.9f), new Vector3(5.75f, 0.12f, 12.9f), new Color(1f, 0.97f, 0.88f), 0.34f, 5.5f, 58f);
+        AddSpotLightAimedAt(store.transform, "AisleLight_L", new Vector3(-4.2f, 2.8f, 12.9f), new Vector3(-5.75f, 0.12f, 12.9f), StoreFlowAccentLightColor.Rgb, 0.34f, 5.5f, 58f);
+        AddSpotLightAimedAt(store.transform, "AisleLight_R", new Vector3(4.2f, 2.8f, 12.9f), new Vector3(5.75f, 0.12f, 12.9f), StoreFlowAccentLightColor.Rgb, 0.34f, 5.5f, 58f);
     }
 
     static void BuildZAlignedShelfRows(Transform store, Material shelf, Material trim,
@@ -1603,9 +1629,9 @@ public class StoreFlowSceneGenerator : Editor
     static void BuildExteriorLighting(Transform root, Material lightMat)
     {
         float lotLightZ = StoreFlowParkingLampRowZ;
-        AddLight(root, "StoreGlow", new Vector3(0f, 2.9f, 9.6f), LightType.Point, new Color(1f, 0.92f, 0.82f), 1.7f, 10f, 0f);
-        AddLight(root, "StreetLampLeft", new Vector3(-5.4f, 4.2f, lotLightZ), LightType.Point, new Color(1f, 0.84f, 0.6f), 1.45f, 11f, 0f);
-        AddLight(root, "StreetLampRight", new Vector3(5.4f, 4.2f, lotLightZ), LightType.Point, new Color(1f, 0.84f, 0.6f), 1.45f, 11f, 0f);
+        AddLight(root, "StoreGlow", new Vector3(0f, 2.9f, 9.6f), LightType.Point, StoreFlowAccentLightColor.Rgb, 1.7f, 10f, 0f);
+        AddLight(root, "StreetLampLeft", new Vector3(-5.4f, 4.2f, lotLightZ), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.FlankPolePointIntensity, StoreFlowStreetLightTuning.FlankPolePointRange, 0f);
+        AddLight(root, "StreetLampRight", new Vector3(5.4f, 4.2f, lotLightZ), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.FlankPolePointIntensity, StoreFlowStreetLightTuning.FlankPolePointRange, 0f);
         GameObject moon = new GameObject("Moonlight");
         moon.transform.SetParent(root, false);
         moon.transform.localRotation = Quaternion.Euler(34f, -30f, 0f);
@@ -1891,7 +1917,7 @@ public class StoreFlowSceneGenerator : Editor
             CreatePrim("DoorFrame", PrimitiveType.Cube, bay.transform, new Vector3(0f, 1.2f, -0.42f), Vector3.zero, new Vector3(2.5f, 2.25f, 0.08f), trim, false);
             CreatePrim("GlassL", PrimitiveType.Cube, bay.transform, new Vector3(-0.62f, 1.2f, -0.46f), Vector3.zero, new Vector3(1.12f, 2.1f, 0.03f), glass, false);
             CreatePrim("GlassR", PrimitiveType.Cube, bay.transform, new Vector3(0.62f, 1.2f, -0.46f), Vector3.zero, new Vector3(1.12f, 2.1f, 0.03f), glass, false);
-            AddLight(bay.transform, "FreezerLight", new Vector3(0f, 1.55f, -0.28f), LightType.Point, new Color(0.45f, 0.76f, 1f), 0.95f, 3.3f, 0f);
+            AddLight(bay.transform, "FreezerLight", new Vector3(0f, 1.55f, -0.28f), LightType.Point, StoreFlowAccentLightColor.Rgb, 0.95f, 3.3f, 0f);
 
             for (int shelf = 0; shelf < 3; shelf++)
             {

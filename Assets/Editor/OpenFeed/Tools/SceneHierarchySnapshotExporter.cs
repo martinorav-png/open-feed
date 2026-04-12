@@ -15,7 +15,7 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public static class SceneHierarchySnapshotExporter
 {
-    const string FormatId = "openfeed-scene-snapshot-v1";
+    const string FormatId = "openfeed-scene-snapshot-v2";
     const string DefaultSnapshotsDir = "tools/scene-snapshots";
 
     [MenuItem("OPEN FEED/Tools/Export Scene Snapshot to JSON file…", false, 11)]
@@ -109,7 +109,7 @@ public static class SceneHierarchySnapshotExporter
         sb.Append(ind).Append("{\n");
         AppendProp(sb, "name", t.name, indent + 2, true);
         AppendProp(sb, "path", path, indent + 2, true);
-        AppendProp(sb, "instanceId", t.gameObject.GetInstanceID(), indent + 2, false);
+        AppendProp(sb, "entityId", EntityId.ToULong(t.gameObject.GetEntityId()).ToString(), indent + 2, false);
         AppendProp(sb, "activeSelf", t.gameObject.activeSelf ? "true" : "false", indent + 2, false);
         AppendProp(sb, "activeInHierarchy", t.gameObject.activeInHierarchy ? "true" : "false", indent + 2, false);
         AppendProp(sb, "tag", t.tag, indent + 2, true);

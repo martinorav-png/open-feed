@@ -15,10 +15,8 @@ public static class SupermarketStripLightsSetup
     const string SupermarketScenePath = "Assets/supermarket.unity";
     static readonly string[] TargetNames = { "Object_12", "Object_15", "Object_7079", "Object_9" };
 
-    static readonly Color WarmStrip = new Color(1f, 0.96f, 0.88f);
-
     /// <summary>Scales emissive + point lights together (5× vs previous strip tuning).</summary>
-    const float BrightnessMultiplier = 5f;
+    const float BrightnessMultiplier = 4.1f;
 
     const float EmissionIntensity = 2.45f * BrightnessMultiplier;
     const float PointLightBase = 0.92f * BrightnessMultiplier;
@@ -233,7 +231,7 @@ public static class SupermarketStripLightsSetup
 
             Material copy = new Material(m);
             copy.name = m.name + "_Luminaire";
-            EnableUrpLitEmission(copy, WarmStrip, EmissionIntensity);
+            EnableUrpLitEmission(copy, StoreFlowAccentLightColor.Rgb, EmissionIntensity);
             updated[i] = copy;
         }
 
@@ -282,7 +280,7 @@ public static class SupermarketStripLightsSetup
 
             Light light = lg.AddComponent<Light>();
             light.type = LightType.Point;
-            light.color = WarmStrip;
+            light.color = StoreFlowAccentLightColor.Rgb;
             light.intensity = perLight;
             light.range = range;
             light.shadows = LightShadows.None;

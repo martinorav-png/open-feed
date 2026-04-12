@@ -131,10 +131,10 @@ public class SixTwelveSceneGenerator : Editor
         CreateCollisionBox("InteriorWalkFloor", root.transform, new Vector3(0f, 0.02f, 10.9f), new Vector3(14f, 0.16f, 8f));
         CreateCollisionBox("BackInteriorWalkFloor", root.transform, new Vector3(0f, 0.02f, 14.5f), new Vector3(12f, 0.16f, 6f));
 
-        AddLight(root.transform, "StoreGlow", new Vector3(0f, 2.6f, 8f), LightType.Point, new Color(1f, 0.9f, 0.78f), 2.2f, 8f, 0f);
-        AddLight(root.transform, "DoorGlow", new Vector3(0f, 1.5f, 6.8f), LightType.Spot, new Color(1f, 0.92f, 0.8f), 3.4f, 8f, 75f, new Vector3(35f, 0f, 0f));
-        AddLight(root.transform, "StreetLampLeft", new Vector3(-6f, 4.6f, 5.5f), LightType.Point, new Color(1f, 0.82f, 0.58f), 2.2f, 12f, 0f);
-        AddLight(root.transform, "StreetLampRight", new Vector3(6f, 4.6f, 5.5f), LightType.Point, new Color(1f, 0.82f, 0.58f), 2.2f, 12f, 0f);
+        AddLight(root.transform, "StoreGlow", new Vector3(0f, 2.6f, 8f), LightType.Point, StoreFlowAccentLightColor.Rgb, 2.2f, 8f, 0f);
+        AddLight(root.transform, "DoorGlow", new Vector3(0f, 1.5f, 6.8f), LightType.Spot, StoreFlowAccentLightColor.Rgb, 3.4f, 8f, 75f, new Vector3(35f, 0f, 0f));
+        AddLight(root.transform, "StreetLampLeft", new Vector3(-6f, 4.6f, 5.5f), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.SixTwelveFlankPointIntensity, StoreFlowStreetLightTuning.SixTwelveFlankPointRange, 0f);
+        AddLight(root.transform, "StreetLampRight", new Vector3(6f, 4.6f, 5.5f), LightType.Point, StoreFlowAccentLightColor.Rgb, StoreFlowStreetLightTuning.SixTwelveFlankPointIntensity, StoreFlowStreetLightTuning.SixTwelveFlankPointRange, 0f);
 
         GameObject moon = new GameObject("Moonlight");
         moon.transform.parent = root.transform;
@@ -389,7 +389,7 @@ public class SixTwelveSceneGenerator : Editor
 
             Light light = lightObj.AddComponent<Light>();
             light.type = LightType.Point;
-            light.color = new Color(1f, 0.96f, 0.88f);
+            light.color = StoreFlowAccentLightColor.Rgb;
             light.intensity = 0.45f;
             light.range = Mathf.Clamp(Mathf.Max(size.x, size.z) * 1.15f, 1.8f, 3.2f);
             light.shadows = LightShadows.None;

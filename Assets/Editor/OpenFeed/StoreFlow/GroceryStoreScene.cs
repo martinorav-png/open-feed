@@ -102,8 +102,8 @@ public class GroceryStoreSceneGenerator : Editor
         Material matFreezerInterior = CreateMatte("FreezerInterior", new Color(0.98f, 0.99f, 1f));
         Material matFreezerTrim = CreateMatte("FreezerTrim", new Color(0.76f, 0.8f, 0.86f));
         Material matFreezerGlass = CreateTransparent("FreezerGlass", new Color(0.82f, 0.92f, 1f, 0.2f), 0.06f, 0f);
-        Material matFluorescent = CreateEmissive("Fluorescent", new Color(1f, 0.98f, 0.92f),
-            new Color(1f, 0.98f, 0.92f), 7f);
+        Material matFluorescent = CreateEmissive("Fluorescent", StoreFlowAccentLightColor.Rgb,
+            StoreFlowAccentLightColor.Rgb, 7f);
         Material matSignage = CreateUnlitTextured("Signage", "Assets/ModelsPlace/6twelve/source/6twelve/Textures/Sign_01.png",
             Color.white, new Vector2(1f, 1f));
         Material matDoor = CreateTextured("StoreDoor", "Assets/ModelsPlace/6twelve/source/6twelve/Textures/Door.jpg",
@@ -198,7 +198,7 @@ public class GroceryStoreSceneGenerator : Editor
                 lightObj.transform.localPosition = new Vector3(x, storeH - 0.3f, z);
                 Light lt = lightObj.AddComponent<Light>();
                 lt.type = LightType.Point;
-                lt.color = new Color(1f, 0.98f, 0.94f);
+                lt.color = StoreFlowAccentLightColor.Rgb;
                 lt.intensity = 4.2f;
                 lt.range = 8f;
                 lt.shadows = LightShadows.None;
@@ -561,7 +561,7 @@ public class GroceryStoreSceneGenerator : Editor
             fzLight.transform.localPosition = new Vector3(0.95f * side, 1.25f, -0.08f);
             Light fl = fzLight.AddComponent<Light>();
             fl.type = LightType.Point;
-            fl.color = new Color(0.82f, 0.92f, 1f);
+            fl.color = StoreFlowAccentLightColor.Rgb;
             fl.intensity = 8f;
             fl.range = 3f;
             fl.shadows = LightShadows.None;

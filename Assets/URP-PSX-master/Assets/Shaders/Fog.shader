@@ -52,8 +52,6 @@ Shader "PostEffect/Fog"
         {
             half fog = 0.0;
             fog = exp2(_Density * z);
-            //fog = _Density * z;
-            //fog = exp2(-fog * fog);
             return saturate(fog);
         }
 
@@ -69,29 +67,15 @@ Shader "PostEffect/Fog"
 
         float4 Frag (v2f i) : SV_Target
         {
-            //uvs
             float2 screenPos = i.screenPosition.xy;
             float2 screenParam = _ScreenParams.xy;
             float2 uv = i.uv;
             
-            //base texture 
             float4 Color = tex2D(_MainTex, uv) ;            
             
-            //lighting 
-            float3 worldCam = _WorldSpaceCameraPos;
-            float3 lightDirection = normalize(_WorldSpaceLightPos0.xyz);
-            float3 viewDirection = normalize(float3(float4(_WorldSpaceCameraPos.xyz, 1.0) - i.worldPos.xyz));
-            //float d = length(viewDirection);
-            //float l = saturate((d - _FogNear) / (_FogFar - _FogNear) / clamp(i.worldPos.y / _FogAltScale + 1, 1, _FogThinning));
-            
-            //background and color 
             float4 ambientColor = float4(0.1,0.1,0.1,0.1);
-            float4 background = tex2D(_MainTex, i.uv);
             
-            //depth handling
             float Depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv);
-            float linearDepth = Linear01Depth(Depth);
-            //float finalDepth = linearDepth * _FogDistance;
             
             float dist = ComputeDistance(Depth);
             float fog = 1.0 - ComputeFog(dist, _FogDensity);

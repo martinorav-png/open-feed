@@ -41,6 +41,8 @@ public class GameFlowManager : MonoBehaviour
     [Header("Main menu → store (black + typewriter exposition)")]
     [Tooltip("Full-screen black hold while subtitles type out before exterior gameplay.")]
     public float mainMenuStoreBlackSeconds = 20f;
+    [Tooltip("During the black exposition, press Space to skip the rest and go straight to the parking lot.")]
+    public bool mainMenuStoreExpositionSkippableWithSpace = true;
     [Tooltip("Seconds between each typed character (unscaled).")]
     public float mainMenuStoreTypeSecondsPerChar = 0.028f;
     [Tooltip("Play typing SFX every N characters (1 = every character).")]
@@ -103,6 +105,7 @@ public class GameFlowManager : MonoBehaviour
     bool _hasMainMenuUI;
     bool _suppressStoreIntroOnNextLoad;
     bool _menuStoreExpositionFlowActive;
+    bool _menuStoreExpositionSkipRequested;
     AudioSource _menuStoreExpoAudio;
     AudioSource _menuStoreCarBed;
     AudioClip _menuStoreResolvedTypingClip;
@@ -253,6 +256,8 @@ public class GameFlowManager : MonoBehaviour
         // Let scene objects finish Awake/Start before intro lookup.
         yield return null;
 
+        StoreFlowExteriorNightSetup.ApplyActiveStoreExteriorIfMatch();
+
         // When arriving from the main menu, TransitionToScene is still fading in.
         // Wait until the transition completes so the intro doesn't start while the
         // GameFlowManager overlay is covering the screen.
@@ -376,6 +381,10 @@ public class GameFlowManager : MonoBehaviour
         else
             yield return null;
 
+        // Fog/sky/ambient must not depend on SupermarketDriveInIntro.Awake (intro object may be inactive until exposition ends).
+        StoreFlowExteriorNightSetup.ApplyActiveStoreExteriorIfMatch();
+
+        _menuStoreExpositionSkipRequested = false;
         yield return MenuStoreExpositionHoldRoutine();
 
         SupermarketDriveInIntro driveIn = FindSupermarketDriveInIntroForHandoff();
@@ -437,8 +446,9 @@ public class GameFlowManager : MonoBehaviour
         if (lines == null || lines.Length == 0)
             lines = new[] { "…" };
 
-        for (int i = 0; i < lines.Length && Time.unscaledTime < deadline; i++)
+        for (int i = 0; i < lines.Length && Time.unscaledTime < deadline && !_menuStoreExpositionSkipRequested; i++)
         {
+            PollMenuStoreExpositionSkip();
             while (!parkPlayed && Time.unscaledTime >= parkAt)
             {
                 PlayMenuStoreOneShot(mainMenuStoreParkSfx, mainMenuStoreCarSfxVolume);
@@ -446,13 +456,16 @@ public class GameFlowManager : MonoBehaviour
             }
 
             yield return MenuStoreTypeLineRoutine(lines[i], deadline);
-            if (Time.unscaledTime >= deadline)
+            if (Time.unscaledTime >= deadline || _menuStoreExpositionSkipRequested)
                 break;
 
             float pause = 0.55f;
             float pauseEnd = Time.unscaledTime + pause;
-            while (Time.unscaledTime < pauseEnd && Time.unscaledTime < deadline)
+            while (Time.unscaledTime < pauseEnd && Time.unscaledTime < deadline && !_menuStoreExpositionSkipRequested)
+            {
+                PollMenuStoreExpositionSkip();
                 yield return null;
+            }
         }
 
         while (!parkPlayed && Time.unscaledTime >= parkAt)
@@ -461,10 +474,22 @@ public class GameFlowManager : MonoBehaviour
             parkPlayed = true;
         }
 
-        while (Time.unscaledTime < deadline)
+        while (Time.unscaledTime < deadline && !_menuStoreExpositionSkipRequested)
+        {
+            PollMenuStoreExpositionSkip();
             yield return null;
+        }
 
         StopMenuStoreCarBed();
+    }
+
+    void PollMenuStoreExpositionSkip()
+    {
+        if (!mainMenuStoreExpositionSkippableWithSpace || _menuStoreExpositionSkipRequested)
+            return;
+        Keyboard kb = Keyboard.current;
+        if (kb != null && kb.spaceKey.wasPressedThisFrame)
+            _menuStoreExpositionSkipRequested = true;
     }
 
     IEnumerator MenuStoreTypeLineRoutine(string line, float deadline)
@@ -478,7 +503,8 @@ public class GameFlowManager : MonoBehaviour
 
         for (int i = 0; i < line.Length; i++)
         {
-            if (Time.unscaledTime >= deadline)
+            PollMenuStoreExpositionSkip();
+            if (_menuStoreExpositionSkipRequested || Time.unscaledTime >= deadline)
             {
                 menuStoreExpositionText.text = line;
                 yield break;
@@ -491,8 +517,11 @@ public class GameFlowManager : MonoBehaviour
                 PlayMenuStoreTypingSound();
 
             float next = Time.unscaledTime + cps;
-            while (Time.unscaledTime < next && Time.unscaledTime < deadline)
+            while (Time.unscaledTime < next && Time.unscaledTime < deadline && !_menuStoreExpositionSkipRequested)
+            {
+                PollMenuStoreExpositionSkip();
                 yield return null;
+            }
         }
     }
 
