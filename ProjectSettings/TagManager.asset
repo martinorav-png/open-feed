@@ -10,6 +10,7 @@ TagManager:
   - MonitorScreen
   - DeskObject
   - Inspectable
+  - ShoppingCart
   layers:
   - Default
   - TransparentFX

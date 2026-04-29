@@ -43,6 +43,11 @@ public class StoreFirstPersonController : MonoBehaviour
 
         if (cameraPivot != null)
             cameraPivotBaseLocal = cameraPivot.localPosition;
+
+        if (GetComponent<StoreShoppingCartInteraction>() == null)
+            gameObject.AddComponent<StoreShoppingCartInteraction>();
+        if (GetComponent<StoreInteriorCollisionBootstrap>() == null)
+            gameObject.AddComponent<StoreInteriorCollisionBootstrap>();
     }
 
     /// <summary>scene.gltf floor mesh is often named Object_6; import has no collider — add a static MeshCollider for CharacterController.</summary>

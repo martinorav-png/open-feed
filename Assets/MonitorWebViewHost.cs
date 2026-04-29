@@ -36,6 +36,17 @@ public class MonitorWebViewHost : MonoBehaviour
     Transform _scrollContent;
     Camera _cam;
 
+    // Fullscreen overlay support
+    RenderMode _originalRenderMode;
+    Camera _originalWorldCamera;
+    Vector2 _originalSizeDelta;
+    Vector2 _originalAnchorMin;
+    Vector2 _originalAnchorMax;
+    Vector2 _originalAnchoredPosition;
+    Transform _originalParent;
+    int _originalSiblingIndex;
+    GameObject _fullscreenOverlayRoot;
+
     void Awake()
     {
         _canvas = GetComponent<Canvas>();
@@ -80,6 +91,93 @@ public class MonitorWebViewHost : MonoBehaviour
         {
             _web.SetVisibility(active && _initialized);
             _web.SetInteractionEnabled(active && _initialized);
+
+            if (active && _initialized)
+            {
+                // Scroll to top, re-run intro, and apply styles (styles also auto-apply on every page load via ld callback)
+                InjectPageStyles();
+                _web.EvaluateJS(
+                    "window.scrollTo(0,0);" +
+                    "try { sessionStorage.removeItem('openfeed_intro'); } catch(e) {}" +
+                    "if (typeof introRun === 'function') { introDone = false; introRun(); }"
+                );
+            }
+        }
+
+        if (fullscreenWhileBrowsing && _canvas != null)
+        {
+            if (active)
+                EnterFullscreenCanvas();
+            else
+                ExitFullscreenCanvas();
+        }
+    }
+
+    /// <summary>Run arbitrary JS in the hosted webview. Safe to call when not yet initialized.</summary>
+    public void EvaluateJS(string js)
+    {
+        if (_web != null && _initialized)
+            _web.EvaluateJS(js);
+    }
+
+    void InjectPageStyles()
+    {
+        if (_web == null) return;
+        _web.EvaluateJS(
+            "(function(){" +
+            "var s = document.getElementById('__unityGammaFix');" +
+            "if (!s) { s = document.createElement('style'); s.id = '__unityGammaFix'; document.head.appendChild(s); }" +
+            "s.textContent = 'html { filter: brightness(1.35) contrast(0.95) !important; }';" +
+            "})();"
+        );
+    }
+
+    void EnterFullscreenCanvas()
+    {
+        var rt = GetComponent<RectTransform>();
+        _originalRenderMode = _canvas.renderMode;
+        _originalWorldCamera = _canvas.worldCamera;
+        _originalParent = transform.parent;
+        _originalSiblingIndex = transform.GetSiblingIndex();
+        if (rt != null)
+        {
+            _originalSizeDelta = rt.sizeDelta;
+            _originalAnchorMin = rt.anchorMin;
+            _originalAnchorMax = rt.anchorMax;
+            _originalAnchoredPosition = rt.anchoredPosition;
+        }
+
+        // Reparent to scene root so world-space parent doesn't interfere
+        transform.SetParent(null, false);
+
+        _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        _canvas.sortingOrder = 100;
+
+        if (rt != null)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+        }
+    }
+
+    void ExitFullscreenCanvas()
+    {
+        var rt = GetComponent<RectTransform>();
+
+        _canvas.renderMode = _originalRenderMode;
+        _canvas.worldCamera = _originalWorldCamera;
+
+        transform.SetParent(_originalParent, false);
+        transform.SetSiblingIndex(_originalSiblingIndex);
+
+        if (rt != null)
+        {
+            rt.anchorMin = _originalAnchorMin;
+            rt.anchorMax = _originalAnchorMax;
+            rt.sizeDelta = _originalSizeDelta;
+            rt.anchoredPosition = _originalAnchoredPosition;
         }
     }
 
@@ -98,7 +196,7 @@ public class MonitorWebViewHost : MonoBehaviour
             started: _ => { },
             hooked: _ => { },
             cookies: _ => { },
-            ld: _ => { }
+            ld: _ => InjectPageStyles()
         );
 
         while (!_web.IsInitialized())
@@ -204,6 +302,25 @@ public class MonitorWebViewHost : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        if (!_initialized || _web == null || !_browsing)
+            return;
+
+        // Forward Unity mouse scroll to the webview via JS (fixes scroll in bitmap/overlay mode)
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (Mathf.Abs(scroll) > 0.001f)
+        {
+            int pixels = Mathf.RoundToInt(-scroll * 300f);
+            _web.EvaluateJS(
+                "(function(){" +
+                "var el = document.scrollingElement || document.documentElement || document.body;" +
+                "el.scrollTop += " + pixels + ";" +
+                "})();"
+            );
+        }
+    }
+
     void LateUpdate()
     {
         if (!_initialized || _web == null || !_browsing)
@@ -211,7 +328,9 @@ public class MonitorWebViewHost : MonoBehaviour
 
         if (fullscreenWhileBrowsing)
         {
+            // Force webview to cover the full screen every frame (handles window resize too)
             _web.SetMargins(0, 0, 0, 0);
+            _web.SetVisibility(true);
             return;
         }
 

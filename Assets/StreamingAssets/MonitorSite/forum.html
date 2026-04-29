@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>openfeed.icu :: community :: signal_theory</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: #e8e8e0;
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 12px;
+      color: #222;
+    }
+
+    a { color: #0000cc; }
+
+    .header-bar {
+      background: #fff;
+      border-bottom: 2px solid #888;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo { font-family: monospace; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+    .logo .colon { color: #c00; }
+    .header-sub { font-family: Verdana, sans-serif; font-size: 10px; color: #777; margin-left: 10px; }
+    .header-right { font-family: monospace; font-size: 11px; color: #555; }
+
+    .nav-bar {
+      background: #d4d4cc;
+      border-bottom: 1px solid #aaa;
+      padding: 4px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-bar a { font-family: monospace; font-size: 11px; margin-right: 14px; color: #0000cc; text-decoration: none; }
+    .nav-bar a:hover { text-decoration: underline; }
+    .nav-status { font-family: monospace; font-size: 10px; color: #888; }
+
+    .content { padding: 12px 16px 32px; max-width: 800px; }
+
+    .breadcrumb {
+      font-size: 10px;
+      color: #666;
+      margin-bottom: 10px;
+      font-family: monospace;
+    }
+    .breadcrumb a { color: #0000cc; }
+
+    .thread-title {
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: bold;
+      color: #222;
+      border-bottom: 2px solid #aaa;
+      padding-bottom: 7px;
+      margin-bottom: 12px;
+    }
+
+    /* ── POSTS ── */
+    .post {
+      display: flex;
+      border: 1px solid #bbb;
+      margin-bottom: 4px;
+      background: #f5f5ee;
+    }
+
+    .post-sidebar {
+      width: 110px;
+      flex-shrink: 0;
+      background: #eaeae2;
+      border-right: 1px solid #bbb;
+      padding: 8px 6px;
+      text-align: center;
+    }
+
+    .post-username { color: #000080; font-weight: bold; font-size: 11px; margin-bottom: 2px; font-family: monospace; }
+    .post-rank     { color: #888; font-size: 9px; margin-bottom: 6px; }
+
+    .post-avatar {
+      background: #ddd;
+      border: 1px solid #bbb;
+      padding: 4px;
+      font-size: 8px;
+      color: #555;
+      line-height: 1.5;
+      white-space: pre;
+      font-family: monospace;
+      margin: 4px 0;
+      text-align: left;
+    }
+
+    .post-count { color: #888; font-size: 9px; font-family: monospace; }
+
+    .post-body { flex: 1; padding: 7px 12px; min-width: 0; }
+
+    .post-meta {
+      font-size: 9px;
+      color: #999;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
+      margin-bottom: 8px;
+      font-family: monospace;
+    }
+
+    .post-meta .mod-action { color: #900; }
+
+    .post-text {
+      color: #333;
+      line-height: 1.9;
+      font-size: 11px;
+    }
+
+    .post-text .hl  { color: #006000; background: #efffef; padding: 0 3px; font-family: monospace; }
+    .post-text .key { color: #004080; font-weight: bold; font-family: monospace; }
+
+    .post-text .code-block {
+      background: #f0f0e8;
+      border: 1px solid #ccc;
+      border-left: 3px solid #888;
+      padding: 8px 10px;
+      margin: 9px 0;
+      color: #333;
+      line-height: 1.8;
+      font-size: 10px;
+      font-family: monospace;
+      overflow-x: auto;
+    }
+
+    .post-text .redacted {
+      background: #333;
+      color: #333;
+      user-select: none;
+      padding: 0 3px;
+    }
+
+    .post-sig {
+      border-top: 1px solid #ddd;
+      margin-top: 9px;
+      padding-top: 5px;
+      font-size: 9px;
+      color: #aaa;
+      font-family: monospace;
+    }
+
+    .thread-footer {
+      font-size: 9px;
+      color: #888;
+      padding: 6px 2px;
+      border-top: 1px solid #ccc;
+      margin-top: 4px;
+      font-family: monospace;
+    }
+
+    .tools-callout {
+      border: 1px solid #aaa;
+      background: #fffff0;
+      padding: 8px 12px;
+      margin: 14px 0 4px;
+      font-size: 10px;
+      color: #555;
+      line-height: 1.8;
+    }
+
+    .tools-callout a { color: #0000cc; }
+
+    .footer-area {
+      font-size: 9px;
+      color: #999;
+      text-align: center;
+      padding: 8px 0 16px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <div>
+      <span class="logo">OPEN<span class="colon">:</span>FEED</span>
+      <span class="header-sub">community &rsaquo; signal_theory</span>
+    </div>
+    <div class="header-right">forum index</div>
+  </div>
+
+  <div class="nav-bar">
+    <div>
+      <a href="index.html">[feeds]</a>
+      <a href="tools.html">[tools]</a>
+      <a href="#">[community]</a>
+      <a href="#">[submit]</a>
+    </div>
+    <div class="nav-status">logged in as: guest</div>
+  </div>
+
+  <div class="content">
+
+    <div class="breadcrumb">
+      <a href="index.html">home</a> &rsaquo; <a href="#">community</a> &rsaquo; <a href="#">signal_theory</a> &rsaquo; CAM_005 interference pattern
+    </div>
+
+    <div class="thread-title">
+      [THREAD] CAM_005 interference pattern &mdash; anyone else tracking this?
+    </div>
+
+    <!-- POST 1: OP -->
+    <div class="post">
+      <div class="post-sidebar">
+        <div class="post-username">anon_lurk0r</div>
+        <div class="post-rank">member</div>
+        <div class="post-avatar">  .---.
+ ( o,o)
+ | ) (|
+  "-"-"</div>
+        <div class="post-count">posts: 312<br>since: 2017</div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">#1 &nbsp;&nbsp; 2019-11-14 &nbsp; 03:22:41 &nbsp;|&nbsp; edited: 04:09:17</div>
+        <div class="post-text">
+          been watching the <span class="hl">005 feed</span> on openfeed.icu for about three weeks. the snow field one. most people dismiss it as dead signal or a busted relay.<br><br>
+
+          it's not.<br><br>
+
+          roughly every 25&ndash;35 seconds there's a burst. seven frames. irregular interval, not a glitch. i started capturing stills and finally ran analysis on the sequence.<br><br>
+
+          the burst is <em>structured</em>. not interference from a nearby transmitter, not compression artifact. the timing is deliberate.<br><br>
+
+          fed the frame sequence through my capture setup and got a partial header decode:<br><br>
+
+          <div class="code-block">&gt; FRAME ANALYSIS :: CAM_005<br>
+&gt; capture: 2019-11-13 / frames: 847<br>
+&gt; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+&gt; burst avg interval &nbsp;: 28.4s<br>
+&gt; burst length &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 7 frames / 380&#8211;640ms ea.<br>
+&gt; final frame hold &nbsp;&nbsp;&nbsp;: 4.8&#8211;7.2s<br>
+&gt; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+&gt; HEADER DECODE (partial):<br>
+&gt; &nbsp;&nbsp;TYPE &nbsp;&nbsp;: <span class="key">ECHO</span><br>
+&gt; &nbsp;&nbsp;SEQ &nbsp;&nbsp;&nbsp;: <span class="key">7734</span><br>
+&gt; &nbsp;&nbsp;ORIGIN : <span class="redacted">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</span><br>
+&gt; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+&gt; classification: possible auth handshake.<br>
+&gt; target: unknown.</div>
+
+          <span class="hl">ECHO</span> + <span class="hl">7734</span> means something. if you have a stream decoder, try running it through &mdash; might be an access key. post results below.<br><br>
+
+          posting this before the feed changes again. it's already shifted twice since i started watching.
+        </div>
+        <div class="post-sig">-- anon_lurk0r &nbsp;|&nbsp; "the camera doesn't lie. the framing does."</div>
+      </div>
+    </div>
+
+    <!-- POST 2 -->
+    <div class="post">
+      <div class="post-sidebar">
+        <div class="post-username">vx_static</div>
+        <div class="post-rank">lurker</div>
+        <div class="post-avatar">  _____
+ |     |
+ | &gt;_&lt; |
+ |_____|</div>
+        <div class="post-count">posts: 17<br>since: 2019</div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">#2 &nbsp;&nbsp; 2019-11-14 &nbsp; 06:47:03</div>
+        <div class="post-text">
+          interesting. ECHO prefix shows up in some older private relay protocols circa 2014&ndash;2017. SEQ 7734 looks like a stream reference ID rather than a random seed.<br><br>
+          if anyone has a recent StreamDecrypt build the ECHO cipher table should handle it. try openfeed as the stream ID.
+        </div>
+      </div>
+    </div>
+
+    <!-- POST 3: OP reply -->
+    <div class="post">
+      <div class="post-sidebar">
+        <div class="post-username">anon_lurk0r</div>
+        <div class="post-rank">member</div>
+        <div class="post-avatar">  .---.
+ ( o,o)
+ | ) (|
+  "-"-"</div>
+        <div class="post-count">posts: 312<br>since: 2017</div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">#3 &nbsp;&nbsp; 2019-11-14 &nbsp; 09:15:22</div>
+        <div class="post-text">
+          confirmed. ran <span class="hl">ECHO-7734</span> through my decoder against the openfeed stream. got a live reference back. stream is real.<br><br>
+          not going to post what came through. check it yourself if you have the tool.<br><br>
+          i'll be offline for a bit. getting unusual traffic since posting this.
+        </div>
+        <div class="post-sig">-- anon_lurk0r &nbsp;|&nbsp; "the camera doesn't lie. the framing does."</div>
+      </div>
+    </div>
+
+    <!-- POST 4: deleted -->
+    <div class="post">
+      <div class="post-sidebar">
+        <div class="post-username" style="color:#bbb">[deleted]</div>
+        <div class="post-rank">&nbsp;</div>
+        <div class="post-avatar" style="color:#ccc">  [    ]
+ [    ]
+ [    ]</div>
+        <div class="post-count" style="color:#ccc">posts: &mdash;</div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">#4 &nbsp;&nbsp; 2019-11-14 &nbsp; 11:02:57 &nbsp;|&nbsp; <span class="mod-action">removed by moderator</span></div>
+        <div class="post-text" style="color:#bbb; font-style:italic;">[this post has been removed]</div>
+      </div>
+    </div>
+
+    <div class="thread-footer">
+      4 posts &nbsp;|&nbsp; last activity: 2019-11-14 &nbsp;|&nbsp; views: 1,203 &nbsp;|&nbsp;
+      <span style="color:#900">thread locked by moderator</span>
+    </div>
+
+    <div class="tools-callout">
+      <b>Note:</b> have a stream decoder? use the key found in this thread.<br>
+      if you don't have one: <a href="tools.html">[tools]</a> &mdash; StreamDecrypt v2.1 is available from the feed index.
+    </div>
+
+    <div class="footer-area">
+      openfeed.icu community &nbsp;&middot;&nbsp; not moderated &nbsp;&middot;&nbsp; post at your own risk
+    </div>
+
+  </div>
+
+</body>
+</html>

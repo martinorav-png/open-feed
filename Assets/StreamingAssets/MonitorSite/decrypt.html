@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamDecrypt v2.1</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #070707;
+      font-family: monospace;
+      font-size: 12px;
+      color: #888;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== FORUM BACKGROUND ===== */
+    #forumBg {
+      min-height: 100vh;
+      padding: 16px 20px 80px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .forum-wrap {
+      width: 700px;
+      max-width: 100%;
+    }
+
+    .forum-topbar {
+      background: #0c0c0c;
+      border: 1px solid #161616;
+      border-bottom: none;
+      padding: 4px 8px;
+      font-size: 9px;
+      color: #282828;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .forum-topbar a { color: #2a3a2a; text-decoration: none; }
+
+    .forum-titlebar {
+      background: #0a120a;
+      border: 1px solid #161e16;
+      padding: 5px 8px;
+      font-size: 11px;
+      color: #2e4a2e;
+      margin-bottom: 10px;
+    }
+
+    .forum-threadtitle {
+      font-size: 13px;
+      color: #3a5a3a;
+      font-weight: bold;
+      padding: 6px 0 8px;
+      border-bottom: 1px solid #141414;
+      margin-bottom: 10px;
+    }
+
+    .forum-post {
+      display: flex;
+      border: 1px solid #141414;
+      margin-bottom: 3px;
+      background: #0b0b0b;
+    }
+
+    .post-sidebar {
+      width: 110px;
+      flex-shrink: 0;
+      background: #090909;
+      border-right: 1px solid #141414;
+      padding: 8px 6px;
+    }
+
+    .post-username { color: #3a6a3a; font-weight: bold; font-size: 10px; margin-bottom: 2px; }
+    .post-rank     { color: #1e2e1e; font-size: 9px; margin-bottom: 4px; }
+
+    .post-avatar {
+      background: #060606;
+      border: 1px solid #141414;
+      padding: 3px 4px;
+      font-size: 8px;
+      color: #1e2e1e;
+      line-height: 1.5;
+      white-space: pre;
+      margin: 5px 0;
+    }
+
+    .post-count { color: #1c1c1c; font-size: 9px; }
+
+    .post-body { flex: 1; padding: 7px 12px; }
+
+    .post-meta {
+      font-size: 9px;
+      color: #1e1e1e;
+      border-bottom: 1px solid #111;
+      padding-bottom: 5px;
+      margin-bottom: 8px;
+    }
+
+    .post-meta .del { color: #3a1a1a; }
+
+    .post-text {
+      color: #4a4a4a;
+      line-height: 1.85;
+      font-size: 11px;
+    }
+
+    .post-text .hl    { color: #4a7a4a; background: #0b160b; padding: 0 3px; }
+    .post-text .key   { color: #6aaa6a; font-weight: bold; }
+    .post-text .dim   { color: #282828; }
+
+    .post-text .code  {
+      background: #060606;
+      border: 1px solid #141414;
+      border-left: 2px solid #1a3a1a;
+      padding: 7px 10px;
+      margin: 9px 0;
+      color: #3a5a3a;
+      line-height: 1.8;
+      font-size: 10px;
+    }
+
+    .post-text .redacted {
+      background: #111;
+      color: #111;
+      user-select: none;
+      padding: 0 3px;
+      border-radius: 1px;
+    }
+
+    .post-sig {
+      border-top: 1px solid #0f0f0f;
+      margin-top: 9px;
+      padding-top: 5px;
+      font-size: 9px;
+      color: #1c1c1c;
+    }
+
+    .forum-footer {
+      font-size: 9px;
+      color: #161616;
+      padding: 6px 2px;
+      border-top: 1px solid #111;
+      margin-top: 4px;
+    }
+
+    /* ===== FLOATING APP WINDOW ===== */
+    #appOverlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #appWindow {
+      pointer-events: all;
+      width: 460px;
+      max-width: 96vw;
+      background: #0c0c0c;
+      border: 1px solid #202020;
+      box-shadow:
+        0 12px 48px rgba(0,0,0,0.9),
+        0 0 0 1px #080808,
+        inset 0 1px 0 rgba(255,255,255,0.03);
+      position: relative;
+    }
+
+    /* Title bar */
+    .win-titlebar {
+      background: linear-gradient(to right, #0d1a0d, #0b160b);
+      border-bottom: 1px solid #1a2e1a;
+      padding: 5px 7px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .win-titlebar:active { cursor: grabbing; }
+
+    .win-title {
+      font-size: 10px;
+      color: #3a6a3a;
+      letter-spacing: 0.4px;
+    }
+
+    .win-title .crk {
+      color: #5a4a1a;
+      font-size: 9px;
+      margin-left: 5px;
+    }
+
+    .win-ctrls { display: flex; gap: 4px; }
+
+    .win-btn {
+      width: 11px; height: 11px;
+      border-radius: 1px;
+      border: 1px solid;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; line-height: 1;
+    }
+
+    .win-btn-close { background: #1e0808; border-color: #2e1010; color: #4a2020; }
+    .win-btn-close:hover { background: #2a0a0a; color: #6a2a2a; }
+    .win-btn-min   { background: #141408; border-color: #222210; color: #3a3a10; }
+
+    /* NFO strip */
+    .win-nfo {
+      background: #070707;
+      border-bottom: 1px solid #111;
+      padding: 5px 10px;
+      font-size: 9px;
+      color: #1e2e1e;
+      line-height: 1.7;
+    }
+
+    .win-nfo .acc { color: #2a4a2a; }
+
+    /* Body */
+    .win-body { padding: 12px; }
+
+    .win-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+
+    .win-field-label {
+      font-size: 9px;
+      color: #2e2e2e;
+      width: 88px;
+      flex-shrink: 0;
+      text-align: right;
+      letter-spacing: 0.3px;
+    }
+
+    .win-input {
+      flex: 1;
+      background: #040404;
+      border: 1px solid #1a241a;
+      color: #5a9a5a;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 4px 7px;
+      outline: none;
+      letter-spacing: 1px;
+    }
+
+    .win-input:focus { border-color: #244a24; box-shadow: 0 0 0 1px #0e1e0e inset; }
+    .win-input::placeholder { color: #141e14; letter-spacing: 0; font-size: 10px; }
+
+    /* Serial / keygen display */
+    .win-serial {
+      text-align: center;
+      font-size: 13px;
+      color: #1e3a1e;
+      letter-spacing: 3px;
+      padding: 4px 0;
+      margin: 2px 0 6px;
+      font-family: monospace;
+    }
+
+    /* Progress */
+    .win-progress-wrap {
+      background: #040404;
+      border: 1px solid #111;
+      height: 11px;
+      position: relative;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+
+    .win-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #1a3e1a, #2a6a2a);
+      transition: width 0.08s linear;
+    }
+
+    .win-progress-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      color: #2a4a2a;
+      letter-spacing: 1.5px;
+    }
+
+    /* Buttons */
+    .win-btns { display: flex; gap: 5px; margin-top: 8px; }
+
+    .win-btn-action {
+      font-family: monospace;
+      font-size: 10px;
+      padding: 5px 12px;
+      cursor: pointer;
+      border: 1px outset;
+      letter-spacing: 0.4px;
+    }
+
+    .win-btn-action.primary {
+      background: #0c220c;
+      border-color: #1a3e1a;
+      color: #4a8a4a;
+    }
+
+    .win-btn-action.primary:hover  { background: #0e280e; }
+    .win-btn-action.primary:active { border-style: inset; background: #0a1a0a; }
+    .win-btn-action.primary:disabled { opacity: 0.4; cursor: default; }
+
+    .win-btn-action.secondary {
+      background: #111;
+      border-color: #1c1c1c;
+      color: #303030;
+    }
+
+    .win-btn-action.secondary:active { border-style: inset; }
+
+    /* Output panel */
+    .win-output {
+      margin-top: 9px;
+      background: #040404;
+      border: 1px solid #111;
+      border-left: 2px solid #1a3a1a;
+      padding: 7px 9px;
+      font-size: 10px;
+      color: #3a6a3a;
+      line-height: 1.8;
+      display: none;
+    }
+
+    .win-output.show  { display: block; }
+    .win-output.err   { border-left-color: #3a1a1a; color: #5a3a3a; }
+
+    .win-output .ok  { color: #4a8a4a; }
+    .win-output .key { color: #7acc7a; font-weight: bold; }
+    .win-output .dim { color: #2a4a2a; }
+
+    /* Return button */
+    #returnBtn {
+      display: none;
+      margin-top: 7px;
+      font-family: monospace;
+      font-size: 10px;
+      background: #0b1e0b;
+      border: 1px solid #1e3e1e;
+      color: #4a8a4a;
+      padding: 4px 10px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      width: 100%;
+      text-align: left;
+    }
+
+    #returnBtn:hover   { background: #0e240e; }
+    #returnBtn.show    { display: block; }
+
+    /* Statusbar */
+    .win-statusbar {
+      background: #060606;
+      border-top: 1px solid #111;
+      padding: 3px 8px;
+      font-size: 8px;
+      color: #1a2a1a;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- FORUM BACKGROUND -->
+  <div id="forumBg">
+    <div class="forum-wrap">
+
+      <div class="forum-topbar">
+        <span><a href="#">signalwatch.net</a> &rsaquo; <a href="#">underground</a> &rsaquo; <a href="#">signal_theory</a></span>
+        <span>logged in as: <span style="color:#1e3e1e">guest</span></span>
+      </div>
+
+      <div class="forum-titlebar">
+        &rsaquo; signal_theory :: open discussion
+      </div>
+
+      <div class="forum-threadtitle">
+        [THREAD] CAM_005 interference pattern &mdash; anyone else tracking this?
+      </div>
+
+      <!-- POST 1: OP -->
+      <div class="forum-post">
+        <div class="post-sidebar">
+          <div class="post-username">anon_lurk0r</div>
+          <div class="post-rank">member</div>
+          <div class="post-avatar">  .---.
+ ( o,o)
+ | ) (|
+  "-"-"</div>
+          <div class="post-count">posts: 312<br>joined: 2017</div>
+        </div>
+        <div class="post-body">
+          <div class="post-meta">#1 &nbsp;&nbsp; 2019-11-14 &nbsp; 03:22:41 &nbsp;|&nbsp; edited: 04:09:17</div>
+          <div class="post-text">
+            been watching the <span class="hl">005 feed</span> on openfeed.icu for about three weeks. the snow field one. most people think it's dead signal or a busted relay.<br><br>
+
+            it's not.<br><br>
+
+            roughly every 25&ndash;35 seconds there's a burst. seven frames. irregular interval. i started capturing stills and finally had time to run analysis on them.<br><br>
+
+            the burst is <em>structured</em>. this is not interference from a nearby transmitter and it's not compression artifact. the timing is deliberate.<br><br>
+
+            ran the frame sequence through my capture setup and got a partial header decode:<br><br>
+
+            <div class="code">&gt; FRAME ANALYSIS :: CAM_005<br>
+&gt; capture: 2019-11-13 / frames: 847<br>
+&gt; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+&gt; burst avg interval : 28.4s<br>
+&gt; burst length &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 7 frames / 380&#8211;640ms ea.<br>
+&gt; final frame hold &nbsp;&nbsp;: 4.8&#8211;7.2s<br>
+&gt; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+&gt; HEADER DECODE (partial):<br>
+&gt; &nbsp; TYPE &nbsp; : <span class="key">ECHO</span><br>
+&gt; &nbsp; SEQ &nbsp;&nbsp; : <span class="key">7734</span><br>
+&gt; &nbsp; ORIGIN : <span class="redacted">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</span><br>
+&gt; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+&gt; possible auth handshake. target: unknown.</div>
+
+            <span class="hl">ECHO</span> + <span class="hl">7734</span> means something. if you have a StreamDecrypt build, try running it through &mdash; might be a stream access key. the stream id is probably from the feed index.<br><br>
+
+            posting here before this disappears. the feed has already changed twice since i started watching.
+          </div>
+          <div class="post-sig">-- anon_lurk0r &nbsp;|&nbsp; "the camera doesn't lie. the framing does."</div>
+        </div>
+      </div>
+
+      <!-- POST 2: reply -->
+      <div class="forum-post">
+        <div class="post-sidebar">
+          <div class="post-username">vx_static</div>
+          <div class="post-rank">lurker</div>
+          <div class="post-avatar">  _____
+ |     |
+ | &gt;_&lt; |
+ |_____|</div>
+          <div class="post-count">posts: 17<br>joined: 2019</div>
+        </div>
+        <div class="post-body">
+          <div class="post-meta">#2 &nbsp;&nbsp; 2019-11-14 &nbsp; 06:47:03</div>
+          <div class="post-text">
+            interesting. ECHO prefix shows up in some older private relay protocols from around 2014&ndash;2017. SEQ 7734 looks like a stream reference ID, not a random seed.<br><br>
+            where did you get StreamDecrypt? i'm running v1.8 but the ECHO cipher table isn't in it.
+          </div>
+        </div>
+      </div>
+
+      <!-- POST 3: OP reply -->
+      <div class="forum-post">
+        <div class="post-sidebar">
+          <div class="post-username">anon_lurk0r</div>
+          <div class="post-rank">member</div>
+          <div class="post-avatar">  .---.
+ ( o,o)
+ | ) (|
+  "-"-"</div>
+          <div class="post-count">posts: 312<br>joined: 2017</div>
+        </div>
+        <div class="post-body">
+          <div class="post-meta">#3 &nbsp;&nbsp; 2019-11-14 &nbsp; 09:15:22</div>
+          <div class="post-text">
+            v2.1 has it. can't say where i got it. you know how it is.<br><br>
+            try <span class="hl">ECHO-7734</span> as the key against the openfeed stream. stream id should be whatever the feed index uses.<br><br>
+            i'll check back. getting some weird traffic on my end since posting this.
+          </div>
+          <div class="post-sig">-- anon_lurk0r &nbsp;|&nbsp; "the camera doesn't lie. the framing does."</div>
+        </div>
+      </div>
+
+      <!-- POST 4: deleted -->
+      <div class="forum-post">
+        <div class="post-sidebar">
+          <div class="post-username dim">[deleted]</div>
+          <div class="post-rank">&nbsp;</div>
+          <div class="post-avatar dim">  [    ]
+ [    ]
+ [    ]</div>
+          <div class="post-count dim">posts: &mdash;</div>
+        </div>
+        <div class="post-body">
+          <div class="post-meta">#4 &nbsp;&nbsp; 2019-11-14 &nbsp; 11:02:57 &nbsp;|&nbsp; <span class="del">removed by moderator</span></div>
+          <div class="post-text dim" style="font-style:italic; color:#181818;">[this post has been removed]</div>
+        </div>
+      </div>
+
+      <div class="forum-footer">
+        4 posts &nbsp;|&nbsp; last activity: 2019-11-14 &nbsp;|&nbsp; views: 1,203 &nbsp;|&nbsp;
+        <span style="color:#1a0a0a">thread locked by moderator</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- STREAMDECRYPT APP WINDOW -->
+  <div id="appOverlay">
+    <div id="appWindow">
+
+      <div class="win-titlebar" id="winTitlebar">
+        <div class="win-title">
+          StreamDecrypt v2.1.0
+          <span class="crk">[UNLICENSED]</span>
+        </div>
+        <div class="win-ctrls">
+          <div class="win-btn win-btn-min">&#8211;</div>
+          <div class="win-btn win-btn-close" id="winClose">&#215;</div>
+        </div>
+      </div>
+
+      <div class="win-nfo">
+        <span class="acc">// StreamDecrypt</span> &mdash; ECHO cipher / relay stream decoder<br>
+        // cracked by <span class="acc">TeaM-STATIC</span> | private build | do not redistribute
+      </div>
+
+      <div class="win-body">
+
+        <div class="win-field">
+          <div class="win-field-label">STREAM ID:</div>
+          <input class="win-input" id="streamId" type="text" placeholder="e.g. openfeed" maxlength="32" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="win-field">
+          <div class="win-field-label">CIPHER KEY:</div>
+          <input class="win-input" id="cipherKey" type="text" placeholder="TYPE-0000" maxlength="20" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="win-serial" id="serialDisplay">---- ---- ---- ----</div>
+
+        <div class="win-progress-wrap">
+          <div class="win-progress-bar" id="progressBar"></div>
+          <div class="win-progress-label" id="progressLabel">STANDBY</div>
+        </div>
+
+        <div class="win-btns">
+          <button class="win-btn-action primary" id="decryptBtn" onclick="runDecrypt()">EXECUTE DECRYPT</button>
+          <button class="win-btn-action secondary" onclick="clearAll()">CLEAR</button>
+        </div>
+
+        <div class="win-output" id="appOutput"></div>
+        <button id="returnBtn" onclick="returnToFeed()">&rsaquo;&rsaquo; return to feed index</button>
+
+      </div>
+
+      <div class="win-statusbar">
+        <span id="statusLeft">ready</span>
+        <span>ECHO cipher engine v2.1.0 &nbsp;|&nbsp; session: local</span>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ===== KEYGEN-STYLE SERIAL SPINNER =====
+    var HEX = '0123456789ABCDEF';
+    var serialEl = document.getElementById('serialDisplay');
+    var serialTimer = null;
+
+    function randomSerial() {
+      var out = [];
+      for (var i = 0; i < 4; i++) {
+        var seg = '';
+        for (var j = 0; j < 4; j++) seg += HEX[Math.floor(Math.random() * 16)];
+        out.push(seg);
+      }
+      return out.join('-');
+    }
+
+    function startSerial() {
+      if (serialTimer) return;
+      serialTimer = setInterval(function () { serialEl.textContent = randomSerial(); }, 75);
+    }
+
+    function stopSerial(finalText) {
+      clearInterval(serialTimer);
+      serialTimer = null;
+      serialEl.textContent = finalText || '---- ---- ---- ----';
+    }
+
+    startSerial();
+
+    // ===== DECRYPT LOGIC =====
+    var VALID_KEYS = ['ECHO-7734', 'ECHO7734'];
+    var busy = false;
+
+    function normalise(s) { return s.trim().toUpperCase().replace(/[\s\-]+/g, ''); }
+
+    function runDecrypt() {
+      if (busy) return;
+      var rawKey = document.getElementById('cipherKey').value;
+      var key = normalise(rawKey);
+      var out = document.getElementById('appOutput');
+      var retBtn = document.getElementById('returnBtn');
+
+      out.className = 'win-output';
+      retBtn.className = '';
+
+      if (!key) {
+        showOutput('err', '&gt; ERROR: no cipher key provided.');
+        return;
+      }
+
+      busy = true;
+      var btn = document.getElementById('decryptBtn');
+      btn.disabled = true;
+      btn.textContent = 'PROCESSING...';
+      document.getElementById('statusLeft').textContent = 'decrypting...';
+
+      var bar   = document.getElementById('progressBar');
+      var label = document.getElementById('progressLabel');
+
+      var steps = [
+        { pct: 18,  text: 'READING STREAM HEADER...',    t: 280 },
+        { pct: 44,  text: 'VERIFYING ECHO HANDSHAKE...', t: 680 },
+        { pct: 69,  text: 'APPLYING CIPHER...',          t: 1080 },
+        { pct: 88,  text: 'DECODING PAYLOAD...',         t: 1480 },
+        { pct: 100, text: 'COMPLETE',                    t: 1860 }
+      ];
+
+      steps.forEach(function (s) {
+        setTimeout(function () {
+          bar.style.width = s.pct + '%';
+          label.textContent = s.text;
+        }, s.t);
+      });
+
+      setTimeout(function () {
+        busy = false;
+        btn.disabled = false;
+        btn.textContent = 'EXECUTE DECRYPT';
+
+        var valid = VALID_KEYS.indexOf(normalise(rawKey)) >= 0;
+
+        if (valid) {
+          stopSerial('ECHO-7734');
+          document.getElementById('statusLeft').textContent = 'auth accepted';
+          showOutput('ok',
+            '&gt; AUTH HANDSHAKE: <span class="ok">ACCEPTED</span>\n' +
+            '&gt; <span class="dim">&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>\n' +
+            '&gt; STREAM REF : <span class="key">E01</span>\n' +
+            '&gt; LABEL &nbsp;&nbsp;&nbsp;&nbsp; : <span class="dim">RESIDENTIAL BLOCK &#9472; CAM 2</span>\n' +
+            '&gt; REGION &nbsp;&nbsp;&nbsp; : <span class="dim">LT / EET</span>\n' +
+            '&gt; STATUS &nbsp;&nbsp;&nbsp; : <span class="ok">LIVE</span>\n' +
+            '&gt; <span class="dim">&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>\n' +
+            '&gt; feed access granted. return to index.'
+          );
+          retBtn.className = 'show';
+          saveSolved('puzzle_01', 'E01');
+        } else {
+          stopSerial('AUTH  FAIL');
+          setTimeout(startSerial, 1600);
+          document.getElementById('statusLeft').textContent = 'auth rejected';
+          bar.style.background = 'linear-gradient(to right, #2e0808, #4a1212)';
+          label.textContent = 'REJECTED';
+          showOutput('err',
+            '&gt; AUTH HANDSHAKE: <span style="color:#6a3030">REJECTED</span>\n' +
+            '&gt; invalid cipher key.\n' +
+            '&gt; expected ECHO-type sequence.'
+          );
+          setTimeout(function () {
+            bar.style.width = '0%';
+            bar.style.background = '';
+            label.textContent = 'STANDBY';
+          }, 1800);
+        }
+      }, 2050);
+    }
+
+    function showOutput(type, html) {
+      var el = document.getElementById('appOutput');
+      el.innerHTML = html.replace(/\n/g, '<br>');
+      el.className = 'win-output show' + (type === 'err' ? ' err' : '');
+    }
+
+    function clearAll() {
+      if (busy) return;
+      document.getElementById('streamId').value = '';
+      document.getElementById('cipherKey').value = '';
+      document.getElementById('appOutput').className = 'win-output';
+      document.getElementById('returnBtn').className = '';
+      document.getElementById('progressBar').style.width = '0%';
+      document.getElementById('progressBar').style.background = '';
+      document.getElementById('progressLabel').textContent = 'STANDBY';
+      document.getElementById('statusLeft').textContent = 'ready';
+    }
+
+    function saveSolved(puzzleId, feedId) {
+      try {
+        var raw = localStorage.getItem('openfeed_game');
+        var state = raw ? JSON.parse(raw) : {};
+        state.puzzlesSolved = state.puzzlesSolved || [];
+        state.extraFeeds    = state.extraFeeds    || [];
+        if (state.puzzlesSolved.indexOf(puzzleId) < 0) state.puzzlesSolved.push(puzzleId);
+        if (state.extraFeeds.indexOf(feedId) < 0)      state.extraFeeds.push(feedId);
+        localStorage.setItem('openfeed_game', JSON.stringify(state));
+      } catch (e) {}
+    }
+
+    function returnToFeed() {
+      window.location.href = 'index.html';
+    }
+
+    // Close button
+    document.getElementById('winClose').addEventListener('click', function () {
+      window.location.href = 'index.html';
+    });
+
+    // Enter key to decrypt
+    document.getElementById('cipherKey').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') runDecrypt();
+    });
+
+    // ===== DRAGGABLE WINDOW =====
+    (function () {
+      var win  = document.getElementById('appWindow');
+      var bar  = document.getElementById('winTitlebar');
+      var drag = false;
+      var ox, oy, sx, sy;
+
+      bar.addEventListener('mousedown', function (e) {
+        if (e.target.closest('.win-ctrls')) return;
+        drag = true;
+        var r = win.getBoundingClientRect();
+        ox = r.left; oy = r.top;
+        sx = e.clientX; sy = e.clientY;
+        win.style.position = 'fixed';
+        win.style.left   = ox + 'px';
+        win.style.top    = oy + 'px';
+        win.style.margin = '0';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function (e) {
+        if (!drag) return;
+        win.style.left = (ox + e.clientX - sx) + 'px';
+        win.style.top  = (oy + e.clientY - sy) + 'px';
+      });
+
+      document.addEventListener('mouseup', function () { drag = false; });
+    })();
+  </script>
+
+</body>
+</html>

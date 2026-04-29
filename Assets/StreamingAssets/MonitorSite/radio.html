@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>openfeed.icu :: signal receiver</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: #e8e8e0;
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 12px;
+      color: #222;
+    }
+
+    a { color: #0000cc; }
+
+    .header-bar {
+      background: #fff;
+      border-bottom: 2px solid #888;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo { font-family: monospace; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+    .logo .colon { color: #c00; }
+    .header-sub { font-family: Verdana, sans-serif; font-size: 10px; color: #777; margin-left: 10px; }
+    .header-right { font-family: monospace; font-size: 11px; color: #555; }
+
+    .nav-bar {
+      background: #d4d4cc;
+      border-bottom: 1px solid #aaa;
+      padding: 4px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-bar a { font-family: monospace; font-size: 11px; margin-right: 14px; color: #0000cc; text-decoration: none; }
+    .nav-bar a:hover { text-decoration: underline; }
+    .nav-status { font-family: monospace; font-size: 10px; color: #888; }
+
+    .content {
+      padding: 14px 16px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .notice {
+      border: 1px solid #bbb;
+      background: #fffff0;
+      padding: 6px 8px;
+      margin-bottom: 14px;
+      font-size: 10px;
+      color: #555;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    /* ── CHASSIS ── */
+    .chassis {
+      background: #1a1a1a;
+      border: 2px solid #444;
+      border-top: 3px solid #555;
+      width: 580px;
+      max-width: calc(100vw - 32px);
+      padding: 20px 24px 18px;
+      box-shadow: 3px 3px 0 #888, inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .chassis-label {
+      font-family: monospace;
+      font-size: 8px;
+      color: #3a3a3a;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .chassis-label span { color: #5a8a5a; }
+
+    /* ── LCD DISPLAY ROW ── */
+    .display-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .display-box {
+      background: #0a120a;
+      border: 2px inset #111;
+      flex: 1;
+      padding: 9px 12px 8px;
+    }
+
+    .display-title {
+      font-family: monospace;
+      font-size: 7px;
+      color: #1e2e1e;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+
+    .display-value {
+      font-family: monospace;
+      font-size: 34px;
+      color: #4a8a4a;
+      letter-spacing: 4px;
+      line-height: 1;
+      text-shadow: 0 0 8px rgba(60,120,60,0.4);
+      transition: color 0.3s, text-shadow 0.3s;
+    }
+
+    .display-value.locked {
+      color: #8aba6a;
+      text-shadow: 0 0 14px rgba(100,200,80,0.7);
+      animation: lockPulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes lockPulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.7; }
+    }
+
+    .display-unit {
+      font-family: monospace;
+      font-size: 8px;
+      color: #1e3a1e;
+      margin-top: 4px;
+    }
+
+    .signal-box {
+      width: 108px;
+      flex-shrink: 0;
+      background: #0a120a;
+      border: 2px inset #111;
+      padding: 9px 10px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .signal-title {
+      font-family: monospace;
+      font-size: 7px;
+      color: #1e2e1e;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+
+    .signal-bars { display: flex; align-items: flex-end; gap: 3px; height: 36px; }
+
+    .signal-bar {
+      flex: 1;
+      background: #0d1a0d;
+      transition: background 0.12s, box-shadow 0.12s;
+    }
+    .signal-bar.active { background: #3a7a3a; box-shadow: 0 0 3px rgba(60,130,60,0.5); }
+    .signal-bar.peak   { background: #8aba6a; box-shadow: 0 0 7px rgba(100,200,80,0.7); }
+
+    .signal-label {
+      font-family: monospace;
+      font-size: 7px;
+      color: #1e2e1e;
+      letter-spacing: 1px;
+      text-align: center;
+      margin-top: 5px;
+      transition: color 0.3s;
+    }
+    .signal-label.locked { color: #5a9a5a; }
+
+    /* ── DIAL + CONTROLS ── */
+    .dial-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #dialCanvas {
+      display: block;
+      cursor: grab;
+      flex-shrink: 0;
+    }
+    #dialCanvas:active   { cursor: grabbing; }
+    #dialCanvas.locked-state { cursor: default; }
+
+    .controls {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ctrl-group {
+      background: #111;
+      border: 1px solid #2a2a2a;
+      padding: 7px 9px;
+    }
+
+    .ctrl-group-label {
+      font-family: monospace;
+      font-size: 7px;
+      color: #2a3a2a;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .ctrl-btn-row { display: flex; gap: 4px; }
+
+    .ctrl-btn {
+      flex: 1;
+      background: #222;
+      border: 1px solid #333;
+      border-bottom: 2px solid #111;
+      color: #555;
+      font-family: monospace;
+      font-size: 10px;
+      padding: 5px 3px;
+      cursor: pointer;
+      text-align: center;
+      transition: color 0.1s;
+    }
+    .ctrl-btn:hover  { color: #888; border-color: #444; }
+    .ctrl-btn:active { border-bottom-width: 1px; transform: translateY(1px); }
+
+    .hint-box {
+      background: #0a120a;
+      border: 1px solid #1a2a1a;
+      padding: 8px 10px;
+      font-family: monospace;
+      font-size: 9px;
+      color: #2a4a2a;
+      line-height: 1.85;
+      min-height: 70px;
+    }
+    .hint-box .h-dim  { color: #1e2e1e; }
+    .hint-box .h-key  { color: #6aaa6a; font-weight: bold; }
+
+    /* ── SUCCESS ── */
+    #successPanel {
+      display: none;
+      margin-top: 14px;
+      border: 1px solid #bbb;
+      background: #fffff0;
+      padding: 10px 14px;
+      font-size: 10px;
+      color: #333;
+      max-width: 580px;
+      width: 100%;
+    }
+
+    #successPanel b { color: #060; }
+
+    .footer-area {
+      font-size: 9px;
+      color: #999;
+      margin-top: 16px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <div>
+      <span class="logo">OPEN<span class="colon">:</span>FEED</span>
+      <span class="header-sub">signal receiver</span>
+    </div>
+    <div class="header-right">SR-7 relay tool</div>
+  </div>
+
+  <div class="nav-bar">
+    <div>
+      <a href="index.html">[feeds]</a>
+      <a href="tools.html">[tools]</a>
+      <a href="radio.html" style="font-weight:bold;color:#000">[radio]</a>
+      <a href="#">[submit]</a>
+    </div>
+    <div class="nav-status" id="navStatus">receiver ready</div>
+  </div>
+
+  <div class="content">
+
+    <div class="notice">
+      <b>Signal Receiver SR-7</b> &mdash; short-range relay tool. tune the dial to acquire a locked frequency.
+      use the fine-adjust buttons or drag the dial directly.
+    </div>
+
+    <!-- CHASSIS -->
+    <div class="chassis">
+
+      <div class="chassis-label">SR-7 &nbsp; <span>SHORT-RANGE RELAY RECEIVER</span> &nbsp; v2.4</div>
+
+      <div class="display-row">
+        <div class="display-box">
+          <div class="display-title">TUNING &nbsp;&middot;&nbsp; DEGREES</div>
+          <div class="display-value" id="degDisplay">000</div>
+          <div class="display-unit">&#176; &nbsp;&nbsp; drag &nbsp;&middot;&nbsp; scroll &nbsp;&middot;&nbsp; arrow keys</div>
+        </div>
+        <div class="signal-box">
+          <div>
+            <div class="signal-title">SIG STR</div>
+            <div class="signal-bars" id="signalBars"></div>
+          </div>
+          <div class="signal-label" id="signalLabel">no lock</div>
+        </div>
+      </div>
+
+      <div class="dial-row">
+        <canvas id="dialCanvas" width="200" height="200"></canvas>
+        <div class="controls">
+
+          <div class="ctrl-group">
+            <div class="ctrl-group-label">FINE ADJUST</div>
+            <div class="ctrl-btn-row">
+              <div class="ctrl-btn" onclick="nudgeDeg(-10)">&#8722;10&#176;</div>
+              <div class="ctrl-btn" onclick="nudgeDeg(-1)">&#8722;1&#176;</div>
+              <div class="ctrl-btn" onclick="nudgeDeg(1)">+1&#176;</div>
+              <div class="ctrl-btn" onclick="nudgeDeg(10)">+10&#176;</div>
+            </div>
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-group-label">PRESETS</div>
+            <div class="ctrl-btn-row">
+              <div class="ctrl-btn" onclick="setDeg(0)">0&#176;</div>
+              <div class="ctrl-btn" onclick="setDeg(90)">90&#176;</div>
+              <div class="ctrl-btn" onclick="setDeg(180)">180&#176;</div>
+              <div class="ctrl-btn" onclick="setDeg(270)">270&#176;</div>
+            </div>
+          </div>
+
+          <div class="hint-box" id="hintBox">
+            <span class="h-dim">&gt; receiver ready. awaiting input.</span><br>
+            <span class="h-dim">&gt; rotate dial to find target frequency.</span><br>
+            <span class="h-dim">&gt; target: <span class="h-key">unknown</span></span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SUCCESS PANEL (outside chassis, styled as openfeed notice) -->
+    <div id="successPanel">
+      <b>&#9632; SIGNAL LOCKED</b> &mdash; <span id="successBody"></span><br>
+      <a href="index.html">&larr; return to feeds</a>
+    </div>
+
+    <div class="footer-area">
+      openfeed.icu &nbsp;&middot;&nbsp; signal receiver tool &nbsp;&middot;&nbsp; <a href="index.html">back to feeds</a>
+    </div>
+
+  </div>
+
+  <script>
+    // ── GATE: redirect if player hasn't seen the 317 clue ───────────────────
+    var GAME_KEY = 'openfeed_game';
+    var GAME = { chapter:1, extraFeeds:[], choices:{}, puzzlesSolved:[], path:null, elevatorClue:false };
+
+    (function() {
+      try {
+        var raw = localStorage.getItem(GAME_KEY);
+        if (raw) { var s = JSON.parse(raw); for (var k in s) GAME[k] = s[k]; }
+      } catch(e) {}
+      if (!GAME.elevatorClue || GAME.puzzlesSolved.indexOf('puzzle_01') < 0) {
+        window.location.replace('index.html');
+      }
+    })();
+
+    function gameSave() {
+      try { localStorage.setItem(GAME_KEY, JSON.stringify(GAME)); } catch(e) {}
+    }
+
+    function gameSolvePuzzle(id) {
+      if (GAME.puzzlesSolved.indexOf(id) < 0) GAME.puzzlesSolved.push(id);
+      gameSave();
+    }
+
+    function unlockExtraFeed(id) {
+      if (GAME.extraFeeds.indexOf(id) < 0) GAME.extraFeeds.push(id);
+      gameSave();
+    }
+
+    // ── AUDIO ────────────────────────────────────────────────────────────────
+    var _ac = null;
+    function getAC() {
+      if (!_ac) try { _ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+      if (_ac && _ac.state === 'suspended') try { _ac.resume(); } catch(e) {}
+      return _ac;
+    }
+
+    var _staticNode = null, _staticGain = null, _staticRunning = false;
+
+    function startStatic() {
+      if (_staticRunning) return;
+      var ctx = getAC(); if (!ctx) return;
+      _staticRunning = true;
+      var bufLen = ctx.sampleRate * 2;
+      var buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+      _staticNode = ctx.createBufferSource();
+      _staticNode.buffer = buf;
+      _staticNode.loop = true;
+      var bpf = ctx.createBiquadFilter();
+      bpf.type = 'bandpass';
+      bpf.frequency.value = 1200;
+      bpf.Q.value = 0.6;
+      _staticGain = ctx.createGain();
+      _staticGain.gain.value = 0;
+      _staticNode.connect(bpf);
+      bpf.connect(_staticGain);
+      _staticGain.connect(ctx.destination);
+      _staticNode.start();
+    }
+
+    function setStaticVolume(vol) {
+      if (!_staticGain) return;
+      _staticGain.gain.setTargetAtTime(vol, getAC().currentTime, 0.08);
+    }
+
+    function stopStatic() {
+      _staticRunning = false;
+      if (_staticNode) { try { _staticNode.stop(); } catch(e) {} _staticNode = null; }
+      _staticGain = null;
+    }
+
+    function playSfxLock() {
+      var ctx = getAC(); if (!ctx) return;
+      [523, 659, 784].forEach(function(f, i) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f; o.type = 'sine';
+        var t = ctx.currentTime + i * 0.13;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.18, t + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        o.start(t); o.stop(t + 0.46);
+      });
+    }
+
+    function playClueAudio() {
+      var a = new Audio('message2.mp3');
+      a.play().catch(function() {});
+    }
+
+    // ── DIAL ─────────────────────────────────────────────────────────────────
+    var TARGET_DEG = 317;
+    var LOCK_RANGE = 2;
+    var currentDeg = 0;
+    var isLocked   = false;
+
+    var canvas = document.getElementById('dialCanvas');
+    var ctx2d  = canvas.getContext('2d');
+    var CX = 100, CY = 100, RADIUS = 88;
+
+    // Build signal bars
+    var BAR_COUNT = 8;
+    var barsEl = document.getElementById('signalBars');
+    for (var bi = 0; bi < BAR_COUNT; bi++) {
+      var bar = document.createElement('div');
+      bar.className = 'signal-bar';
+      bar.style.height = (30 + (bi / (BAR_COUNT - 1)) * 70) + '%';
+      barsEl.appendChild(bar);
+    }
+
+    function updateSignalBars(dist) {
+      var strength = Math.max(0, 1 - Math.pow(dist / 40, 0.7));
+      if (dist <= LOCK_RANGE) strength = 1;
+      var active = Math.round(strength * BAR_COUNT);
+      var bars = barsEl.children;
+      for (var i = 0; i < BAR_COUNT; i++) {
+        bars[i].classList.remove('active', 'peak');
+        if (i < active) bars[i].classList.add(dist <= LOCK_RANGE ? 'peak' : 'active');
+      }
+      var lbl = document.getElementById('signalLabel');
+      lbl.classList.toggle('locked', dist <= LOCK_RANGE);
+      lbl.textContent = dist <= LOCK_RANGE ? 'LOCKED' : 'no lock';
+    }
+
+    function drawDial(deg) {
+      var c = ctx2d;
+      c.clearRect(0, 0, 200, 200);
+
+      // Outer ring
+      c.beginPath();
+      c.arc(CX, CY, RADIUS + 8, 0, Math.PI * 2);
+      c.strokeStyle = '#333';
+      c.lineWidth = 2;
+      c.stroke();
+
+      // Tick marks + labels
+      for (var t = 0; t < 360; t += 5) {
+        var isMajor = t % 45 === 0;
+        var isMed   = t % 15 === 0;
+        var len     = isMajor ? 12 : isMed ? 7 : 4;
+        var rad     = (t - 90) * Math.PI / 180;
+        var r0 = RADIUS + 7;
+        c.beginPath();
+        c.moveTo(CX + r0 * Math.cos(rad), CY + r0 * Math.sin(rad));
+        c.lineTo(CX + (r0 - len) * Math.cos(rad), CY + (r0 - len) * Math.sin(rad));
+        c.strokeStyle = isMajor ? '#555' : isMed ? '#333' : '#222';
+        c.lineWidth = isMajor ? 1.5 : 1;
+        c.stroke();
+      }
+
+      [0, 45, 90, 135, 180, 225, 270, 315].forEach(function(t) {
+        var rad = (t - 90) * Math.PI / 180;
+        var lr  = RADIUS - 18;
+        c.fillStyle = '#3a3a3a';
+        c.font = '8px monospace';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(t, CX + lr * Math.cos(rad), CY + lr * Math.sin(rad));
+      });
+
+      // Knob body
+      c.beginPath();
+      c.arc(CX, CY, RADIUS - 4, 0, Math.PI * 2);
+      c.fillStyle = '#181818';
+      c.fill();
+      c.strokeStyle = '#2a2a2a';
+      c.lineWidth = 1;
+      c.stroke();
+
+      // Groove lines
+      for (var g = 0; g < 16; g++) {
+        var ga = ((deg + g * 22.5) - 90) * Math.PI / 180;
+        c.beginPath();
+        c.moveTo(CX + 10 * Math.cos(ga), CY + 10 * Math.sin(ga));
+        c.lineTo(CX + (RADIUS - 6) * Math.cos(ga), CY + (RADIUS - 6) * Math.sin(ga));
+        c.strokeStyle = '#1e1e1e';
+        c.lineWidth = 1;
+        c.stroke();
+      }
+
+      // Pointer
+      var dist = Math.abs(angleDist(deg, TARGET_DEG));
+      var pColor = dist <= LOCK_RANGE ? '#6aaa4a' : dist < 15 ? '#4a7a3a' : '#3a5a2a';
+      var pRad = (deg - 90) * Math.PI / 180;
+      c.beginPath();
+      c.moveTo(CX, CY);
+      c.lineTo(CX + (RADIUS - 6) * Math.cos(pRad), CY + (RADIUS - 6) * Math.sin(pRad));
+      c.strokeStyle = pColor;
+      c.lineWidth = 2.5;
+      c.stroke();
+
+      c.beginPath();
+      c.arc(CX + (RADIUS - 6) * Math.cos(pRad), CY + (RADIUS - 6) * Math.sin(pRad), 3.5, 0, Math.PI * 2);
+      c.fillStyle = pColor;
+      c.fill();
+
+      // Center cap
+      c.beginPath();
+      c.arc(CX, CY, 10, 0, Math.PI * 2);
+      c.fillStyle = '#111';
+      c.fill();
+      c.strokeStyle = '#2a2a2a';
+      c.lineWidth = 1;
+      c.stroke();
+    }
+
+    function angleDist(a, b) {
+      var d = ((b - a) % 360 + 360) % 360;
+      return d > 180 ? d - 360 : d;
+    }
+
+    function applyDeg(deg) {
+      currentDeg = ((deg % 360) + 360) % 360;
+      drawDial(currentDeg);
+      document.getElementById('degDisplay').textContent = String(Math.round(currentDeg)).padStart(3, '0');
+
+      var dist = Math.abs(angleDist(currentDeg, TARGET_DEG));
+      updateSignalBars(dist);
+      setStaticVolume(dist <= LOCK_RANGE ? 0 : Math.min(0.22, 0.04 + (dist / 60) * 0.18));
+
+      if (!isLocked) updateHint(dist);
+      if (!isLocked && dist <= LOCK_RANGE) triggerLock();
+    }
+
+    function updateHint(dist) {
+      var box = document.getElementById('hintBox');
+      if (dist <= 20) {
+        box.innerHTML = '<span class="h-dim">&gt; signal detected nearby.</span><br><span style="color:#2a5a2a">&gt; fine-tune the dial &mdash; almost there.</span><br><span class="h-dim">&gt; target: <span class="h-key">close</span></span>';
+      } else if (dist <= 60) {
+        box.innerHTML = '<span class="h-dim">&gt; weak signal trace on this band.</span><br><span class="h-dim">&gt; continue rotating.</span><br><span class="h-dim">&gt; target: <span class="h-key">unknown</span></span>';
+      } else {
+        box.innerHTML = '<span class="h-dim">&gt; receiver ready. awaiting input.</span><br><span class="h-dim">&gt; rotate dial to find target frequency.</span><br><span class="h-dim">&gt; target: <span class="h-key">unknown</span></span>';
+      }
+    }
+
+    function triggerLock() {
+      isLocked = true;
+      stopStatic();
+      playSfxLock();
+      canvas.classList.add('locked-state');
+      document.getElementById('degDisplay').classList.add('locked');
+      document.getElementById('navStatus').textContent = 'LOCKED :: 317°';
+
+      gameSolvePuzzle('puzzle_02');
+      unlockExtraFeed('E02');
+
+      var panel = document.getElementById('successPanel');
+      panel.style.display = 'block';
+      document.getElementById('successBody').innerHTML =
+        'frequency <b>317&deg;</b> confirmed. relay signal acquired. audio transmission decoding&hellip; ' +
+        '<span style="color:#555;font-size:9px">feed E02 has been added to your index.</span>';
+
+      document.getElementById('hintBox').innerHTML =
+        '<span style="color:#3a6a3a">&gt; <span class="h-key">SIGNAL LOCKED</span> at 317&#176;</span><br>' +
+        '<span class="h-dim">&gt; audio feed active. listen carefully.</span>';
+
+      setTimeout(playClueAudio, 600);
+    }
+
+    // ── INPUT ─────────────────────────────────────────────────────────────────
+    var dragging = false, dragStartAngle = 0, dragStartDeg = 0;
+
+    function pointerAngle(e) {
+      var rect = canvas.getBoundingClientRect();
+      var src  = e.touches ? e.touches[0] : e;
+      return Math.atan2(src.clientY - rect.top - CY, src.clientX - rect.left - CX) * 180 / Math.PI + 90;
+    }
+
+    canvas.addEventListener('mousedown', function(e) {
+      if (isLocked) return;
+      startStatic(); dragging = true;
+      dragStartAngle = pointerAngle(e); dragStartDeg = currentDeg;
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', function(e) {
+      if (!dragging || isLocked) return;
+      applyDeg(dragStartDeg + pointerAngle(e) - dragStartAngle);
+    });
+    window.addEventListener('mouseup', function() { dragging = false; });
+
+    canvas.addEventListener('wheel', function(e) {
+      if (isLocked) return;
+      startStatic(); applyDeg(currentDeg + (e.deltaY > 0 ? 1 : -1));
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('keydown', function(e) {
+      if (isLocked) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp')   { startStatic(); applyDeg(currentDeg + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowDown') { startStatic(); applyDeg(currentDeg - 1); e.preventDefault(); }
+    });
+
+    canvas.addEventListener('touchstart', function(e) {
+      if (isLocked) return;
+      startStatic(); dragging = true;
+      dragStartAngle = pointerAngle(e); dragStartDeg = currentDeg;
+      e.preventDefault();
+    }, { passive: false });
+    canvas.addEventListener('touchmove', function(e) {
+      if (!dragging || isLocked) return;
+      applyDeg(dragStartDeg + pointerAngle(e) - dragStartAngle);
+      e.preventDefault();
+    }, { passive: false });
+    canvas.addEventListener('touchend', function() { dragging = false; });
+
+    function nudgeDeg(d) { if (isLocked) return; startStatic(); applyDeg(currentDeg + d); }
+    function setDeg(d)   { if (isLocked) return; startStatic(); applyDeg(d); }
+
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    if (GAME.puzzlesSolved.indexOf('puzzle_02') >= 0) {
+      // Already solved — restore locked state without playing audio
+      currentDeg = TARGET_DEG;
+      isLocked = true;
+      drawDial(currentDeg);
+      document.getElementById('degDisplay').textContent = '317';
+      document.getElementById('degDisplay').classList.add('locked');
+      canvas.classList.add('locked-state');
+      updateSignalBars(0);
+      document.getElementById('navStatus').textContent = 'LOCKED :: 317°';
+      document.getElementById('successPanel').style.display = 'block';
+      document.getElementById('successBody').innerHTML =
+        'frequency <b>317&deg;</b> confirmed. feed E02 already unlocked.';
+      document.getElementById('hintBox').innerHTML =
+        '<span style="color:#3a6a3a">&gt; <span class="h-key">SIGNAL LOCKED</span> at 317&#176;</span><br>' +
+        '<span class="h-dim">&gt; puzzle already solved.</span>';
+    } else {
+      applyDeg(0);
+    }
+  </script>
+
+</body>
+</html>

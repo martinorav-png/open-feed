@@ -3,7 +3,10 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using UnityEngine.Networking;
 
 public class PhoneInteraction : MonoBehaviour
 {
@@ -615,8 +618,13 @@ public class PhoneInteraction : MonoBehaviour
 
         if (buttonName == "CallButton")
         {
-            callingMode = true;
-            RefreshPhoneUi();
+            if (!string.IsNullOrEmpty(dialedNumber))
+                StartCoroutine(DoCall(dialedNumber));
+            else
+            {
+                callingMode = true;
+                RefreshPhoneUi();
+            }
             return;
         }
 
@@ -718,6 +726,81 @@ public class PhoneInteraction : MonoBehaviour
     {
         if (timeText != null)
             timeText.text = System.DateTime.Now.ToString("HH:mm");
+    }
+
+    // Numbers that trigger in-world narrative via the webview JS engine
+    static readonly System.Collections.Generic.Dictionary<string, string> NarrativeNumbers
+        = new System.Collections.Generic.Dictionary<string, string>
+    {
+        { "5550199", "puzzle_01" }
+    };
+
+    System.Collections.IEnumerator DoCall(string rawNumber)
+    {
+        string digits = Regex.Replace(rawNumber, @"\D", "");
+
+        callingMode = true;
+        RefreshPhoneUi();
+
+        // Brief ringing delay
+        yield return new WaitForSeconds(1.4f);
+
+        if (NarrativeNumbers.ContainsKey(digits))
+        {
+            if (numberDisplayText != null) numberDisplayText.text = "CONNECTED";
+            if (dialLabelText != null)     dialLabelText.text = "listening...";
+            if (backgroundImage != null)   backgroundImage.color = callingBackgroundColor;
+
+            // Load and play the message audio
+            string audioPath = System.IO.Path.Combine(Application.streamingAssetsPath, "MonitorSite/message1.mp3");
+            string url = audioPath.Contains("://") ? audioPath : "file://" + audioPath;
+
+            using (var req = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.MPEG))
+            {
+                yield return req.SendWebRequest();
+
+                if (req.result == UnityWebRequest.Result.Success)
+                {
+                    AudioClip clip = DownloadHandlerAudioClip.GetContent(req);
+                    AudioSource src = GetComponent<AudioSource>();
+                    if (src == null) src = gameObject.AddComponent<AudioSource>();
+                    src.clip = clip;
+                    src.volume = 1f;
+                    src.Play();
+
+                    // Also sync with webview to trigger narrative unlocks (address bar etc.)
+                    MonitorWebViewHost webHost = FindAnyObjectByType<MonitorWebViewHost>();
+                    if (webHost != null)
+                        webHost.EvaluateJS(
+                            "(function(){" +
+                            "  if (typeof phonePowerOn === 'function') phonePowerOn();" +
+                            "  setTimeout(function(){" +
+                            "    if (typeof showAddressBar === 'function') showAddressBar();" +
+                            "    if (typeof gameSolvePuzzle === 'function') gameSolvePuzzle('puzzle_01');" +
+                            "  }, " + (int)(clip.length * 1000f - 3000) + ");" +
+                            "})();"
+                        );
+
+                    // Wait for clip to finish
+                    yield return new WaitWhile(() => src.isPlaying);
+                }
+                else
+                {
+                    Debug.LogWarning($"[PhoneInteraction] Could not load message1.mp3: {req.error}");
+                    yield return new WaitForSeconds(3f);
+                }
+            }
+        }
+        else
+        {
+            if (numberDisplayText != null) numberDisplayText.text = "NO ANSWER";
+            if (dialLabelText != null)     dialLabelText.text = dialedNumber;
+            yield return new WaitForSeconds(2.5f);
+        }
+
+        callingMode = false;
+        dialedNumber = "";
+        RefreshPhoneUi();
     }
 
     public bool IsActive()

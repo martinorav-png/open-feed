@@ -312,10 +312,485 @@
       font-size: 10px;
       color: #aaa;
     }
+
+    /* ===== ADDRESS BAR ===== */
+    #addressBar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      background: #0d0d0d;
+      border-bottom: 1px solid #1e3a1e;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: translateY(-100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #addressBar.addr-visible { transform: translateY(0); }
+
+    .addr-prompt {
+      font-family: monospace;
+      font-size: 11px;
+      color: #2e4e2e;
+      flex-shrink: 0;
+    }
+
+    #addressInput {
+      flex: 1;
+      background: #050505;
+      border: 1px solid #182818;
+      color: #6a9a6a;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 3px 7px;
+      outline: none;
+      letter-spacing: 0.5px;
+    }
+
+    #addressInput:focus { border-color: #284828; }
+    #addressInput::placeholder { color: #1a2a1a; font-size: 10px; }
+
+    #addressGo {
+      font-family: monospace;
+      font-size: 10px;
+      background: #0c1e0c;
+      border: 1px outset #1a3a1a;
+      color: #3a6a3a;
+      padding: 3px 9px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #addressGo:hover  { background: #0e240e; }
+    #addressGo:active { border-style: inset; }
+
+    /* ===== SITE INTRO ===== */
+    #siteIntro {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #080808;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.9s ease;
+    }
+
+    #siteIntro.intro-fade {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #introInner {
+      width: 500px;
+      max-width: 90vw;
+      padding: 32px 24px;
+    }
+
+    #introLog {
+      font-family: monospace;
+      font-size: 12px;
+      color: #5a8a4a;
+      line-height: 1.85;
+      margin: 0;
+      min-height: 210px;
+    }
+
+    #introBarWrap {
+      background: #111;
+      height: 5px;
+      margin-top: 16px;
+      border: 1px solid #1e1e1e;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    #introBarWrap.bar-visible { opacity: 1; }
+
+    #introBar {
+      height: 100%;
+      width: 0%;
+      background: #3a6a3a;
+      transition: width 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #introSkip {
+      font-family: monospace;
+      font-size: 9px;
+      color: #1a1a1a;
+      margin-top: 18px;
+      text-align: center;
+      transition: color 0.6s;
+      letter-spacing: 0.5px;
+    }
+
+    #introSkip.skip-visible { color: #2e3e2e; }
+
+    /* ===== CALL INFO PANEL ===== */
+    #callInfo {
+      opacity: 0;
+      transition: opacity 1.8s ease;
+      pointer-events: none;
+      background: #080808;
+      border: 1px solid #1a2a1a;
+      border-bottom: none;
+      padding: 7px 10px;
+      font-family: monospace;
+      font-size: 9px;
+      margin-bottom: 3px;
+      line-height: 1.9;
+    }
+
+    #callInfo.ci-visible { opacity: 1; }
+    .ci-header { color: #182818; font-size: 8px; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .ci-addr   { color: #3a6a3a; }
+    .ci-bullet { color: #1e3a1e; }
+
+    /* ===== PHONE WIDGET ===== */
+    #phoneWidget {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 900;
+      user-select: none;
+    }
+
+    #phoneToggleBtn {
+      font-family: monospace;
+      font-size: 10px;
+      background: #c0c0c0;
+      border: 2px outset #ddd;
+      padding: 2px 6px;
+      cursor: pointer;
+      display: block;
+      margin-left: auto;
+      margin-bottom: 4px;
+    }
+
+    #phoneToggleBtn:active { border-style: inset; }
+
+    .phone-body {
+      width: 164px;
+      background: #232323;
+      border-radius: 16px 16px 22px 22px;
+      padding: 10px 10px 14px;
+      box-shadow:
+        3px 3px 0 #0d0d0d,
+        -1px -1px 0 #363636,
+        inset 1px 1px 0 rgba(255,255,255,0.06),
+        inset -1px -1px 0 rgba(0,0,0,0.4);
+      position: relative;
+    }
+
+    .phone-body.phone-off {
+      opacity: 0.5;
+      filter: saturate(0);
+    }
+
+    @keyframes phoneShake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-4px) rotate(-0.4deg); }
+      40%       { transform: translateX(4px) rotate(0.4deg); }
+      60%       { transform: translateX(-3px); }
+      80%       { transform: translateX(2px); }
+    }
+
+    .phone-body.phone-ringing {
+      animation: phoneShake 0.36s ease-in-out infinite;
+    }
+
+    .phone-antenna {
+      position: absolute;
+      top: -20px;
+      right: 20px;
+      width: 7px;
+      height: 22px;
+      background: linear-gradient(to right, #2a2a2a, #1a1a1a);
+      border-radius: 4px 4px 0 0;
+      border: 1px solid #0d0d0d;
+    }
+
+    .phone-earpiece {
+      width: 44px;
+      height: 5px;
+      background: #111;
+      border-radius: 3px;
+      margin: 0 auto 6px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .phone-brand {
+      text-align: center;
+      font-family: monospace;
+      font-size: 7px;
+      color: #404040;
+      letter-spacing: 3px;
+      margin-bottom: 5px;
+    }
+
+    .phone-screen-outer {
+      background: #0d0d0d;
+      border-radius: 4px 4px 2px 2px;
+      padding: 3px;
+      margin-bottom: 7px;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.95);
+    }
+
+    .phone-screen {
+      background: #1c2c1c;
+      border-radius: 2px;
+      height: 62px;
+      padding: 5px 6px 4px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+
+    .phone-screen.screen-off { background: #080808; }
+
+    @keyframes screenRing {
+      0%, 100% { background: #1c2c1c; }
+      50%       { background: #1e3e1e; }
+    }
+
+    .phone-screen.screen-ringing {
+      animation: screenRing 0.4s ease-in-out infinite;
+    }
+
+    .phone-screen::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.1) 2px,
+        rgba(0,0,0,0.1) 3px
+      );
+      pointer-events: none;
+    }
+
+    .phone-screen-time {
+      font-family: monospace;
+      font-size: 8px;
+      color: #5a8a5a;
+      text-align: right;
+      line-height: 1;
+    }
+
+    .phone-screen-number {
+      font-family: monospace;
+      font-size: 18px;
+      color: #8aba7a;
+      text-align: center;
+      letter-spacing: 1px;
+      line-height: 1.3;
+      min-height: 24px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .phone-screen-label {
+      font-family: monospace;
+      font-size: 8px;
+      color: #4a7a4a;
+      text-align: center;
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      right: 0;
+      letter-spacing: 0.5px;
+    }
+
+    .phone-softkeys {
+      display: flex;
+      gap: 3px;
+      margin-bottom: 4px;
+    }
+
+    .phone-softkey {
+      flex: 1;
+      height: 20px;
+      background: #2c2c2c;
+      border: none;
+      border-bottom: 2px solid #111;
+      border-radius: 3px;
+      color: #585858;
+      font-family: monospace;
+      font-size: 8px;
+      cursor: pointer;
+      padding: 0 2px;
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .phone-softkey:active {
+      border-bottom-width: 1px;
+      transform: translateY(1px);
+      background: #222;
+    }
+
+    .phone-callrow {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 5px;
+    }
+
+    .phone-call-btn {
+      flex: 1;
+      height: 24px;
+      border: none;
+      border-radius: 12px;
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      border-bottom: 2px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .phone-call-btn.call {
+      background: #1e3a1e;
+      color: #5a9a5a;
+      border-bottom-color: #0e1e0e;
+    }
+
+    .phone-call-btn.call:active {
+      background: #162e16;
+      border-bottom-width: 1px;
+      transform: translateY(1px);
+    }
+
+    .phone-call-btn.end {
+      background: #3a1e1e;
+      color: #9a5a5a;
+      border-bottom-color: #1e0e0e;
+    }
+
+    .phone-call-btn.end:active {
+      background: #2e1616;
+      border-bottom-width: 1px;
+      transform: translateY(1px);
+    }
+
+    .phone-nav-btn {
+      width: 28px;
+      height: 28px;
+      background: #323232;
+      border: none;
+      border-radius: 50%;
+      border-bottom: 2px solid #111;
+      color: #585858;
+      font-family: monospace;
+      font-size: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .phone-nav-btn:active {
+      border-bottom-width: 1px;
+      transform: translateY(1px);
+    }
+
+    .phone-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+    }
+
+    .phone-key {
+      height: 28px;
+      background: #2e2e2e;
+      border: none;
+      border-bottom: 2px solid #111;
+      border-radius: 4px;
+      color: #b0b0b0;
+      font-family: monospace;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      gap: 1px;
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .phone-key .key-sub {
+      font-size: 6px;
+      color: #525252;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .phone-key:active {
+      background: #222;
+      border-bottom-width: 1px;
+      transform: translateY(1px);
+    }
+
+    .phone-key.key-sym {
+      font-size: 15px;
+      color: #686868;
+    }
+
+    /* Dev controls bar */
+    #phoneDevBar {
+      position: fixed;
+      top: 50px;
+      right: 10px;
+      z-index: 950;
+      background: #ffffe8;
+      border: 1px solid #aaa;
+      padding: 4px 6px;
+      font-family: monospace;
+      font-size: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    #phoneDevBar b { color: #555; }
+
+    #phoneDevBar button {
+      font-family: monospace;
+      font-size: 10px;
+      background: #c0c0c0;
+      border: 2px outset #ddd;
+      cursor: pointer;
+      padding: 2px 4px;
+      text-align: left;
+    }
+
+    #phoneDevBar button:active { border-style: inset; }
   </style>
 </head>
 
 <body>
+
+  <!-- FAKE BROWSER ADDRESS BAR -->
+  <div id="addressBar">
+    <span class="addr-prompt">&#9658;&nbsp;</span>
+    <input id="addressInput" type="text" placeholder="enter address..." autocomplete="off" spellcheck="false">
+    <button id="addressGo" onclick="tryNavigate()">go</button>
+  </div>
+
+  <!-- SITE INTRO OVERLAY -->
+  <div id="siteIntro">
+    <div id="introInner">
+      <div id="introLog"></div>
+      <div id="introBarWrap"><div id="introBar"></div></div>
+      <div id="introSkip">[ click or press any key to skip ]</div>
+    </div>
+  </div>
 
   <div class="header-bar">
     <div>
@@ -331,6 +806,8 @@
     <div>
       <a href="index.html" class="active">[feeds]</a>
       <a href="map.html">[map]</a>
+      <a href="tools.html">[tools]</a>
+      <a href="radio.html" id="navRadioLink" style="display:none">[radio]</a>
       <a href="#">[submit]</a>
       <a href="#faqSection">[faq]</a>
       <a href="about.html">[about]</a>
@@ -417,7 +894,6 @@
       { id: "004", label: "Back Alley - Unknown", country: "??", tz: "---", status: "offline", quality: "---", viewers: 7 },
       { id: "005", label: "Snow Field - Unmarked Relay", country: "??", tz: "---", status: "live", quality: "320p", viewers: 18, thumb: "bigcams/005.png" },
       { id: "006", label: "Laundromat", country: "US", tz: "EST", status: "live", quality: "240p", viewers: 9, thumb: "bigcams/006.png" },
-      { id: "007", label: "Warehouse Loading Dock", country: "PL", tz: "CET", status: "live", quality: "144p", viewers: 34, thumb: "bigcams/007.png" },
       { id: "008", label: "Hotel Lobby", country: "TH", tz: "ICT", status: "live", quality: "480p", viewers: 56, thumb: "bigcams/008.png" },
       { id: "009", label: "Underpass Cam", country: "BR", tz: "BRT", status: "offline", quality: "---", viewers: 3 },
       { id: "010", label: "Rooftop - Building 14", country: "JP", tz: "JST", status: "live", quality: "240p", viewers: 71, thumb: "bigcams/010.png" },
@@ -522,6 +998,157 @@
       for (var i = 0; i < CULT_FLOW_FRAMES.length; i++) {
         ensureImageLoaded(CULT_FLOW_FRAMES[i], null);
       }
+    }
+
+    // ===== STAIRWELL FLOW (E02) =====
+    var STAIR_FLOW_CAM_ID = "E02";
+    var STAIR_FLOW_FRAMES = [
+      "flows/stairwell/stairwell01.png",
+      "flows/stairwell/stairwell02.png",
+      "flows/stairwell/stairwell03.png"
+    ];
+    // Figure visible → walking away → door open with light (held long)
+    var STAIR_FRAME_DURATIONS_MS = [1200, 8500];
+    var STAIR_FLOW_MIN_IDLE_MS = 22000;
+    var STAIR_FLOW_MAX_IDLE_MS = 55000;
+
+    var stairFlow = {
+      initialized: false,
+      phase: "idle",
+      frameIndex: 0,
+      nextSwitch: 0
+    };
+
+    function updateStairFlowState() {
+      if (GAME.extraFeeds.indexOf(STAIR_FLOW_CAM_ID) < 0) return; // feed not unlocked yet
+      var now = Date.now();
+      if (!stairFlow.initialized) {
+        stairFlow.initialized = true;
+        stairFlow.phase = "idle";
+        stairFlow.nextSwitch = now + randomRange(STAIR_FLOW_MIN_IDLE_MS, STAIR_FLOW_MAX_IDLE_MS);
+        stairFlow.frameIndex = 0;
+        return;
+      }
+      if (stairFlow.phase === "idle") {
+        if (now >= stairFlow.nextSwitch) {
+          stairFlow.phase = "play";
+          stairFlow.frameIndex = 0;
+          stairFlow.nextSwitch = now + STAIR_FRAME_DURATIONS_MS[0];
+        }
+      } else if (stairFlow.phase === "play") {
+        if (now >= stairFlow.nextSwitch) {
+          stairFlow.frameIndex++;
+          if (stairFlow.frameIndex >= STAIR_FLOW_FRAMES.length) {
+            stairFlow.phase = "idle";
+            stairFlow.frameIndex = 0;
+            stairFlow.nextSwitch = now + randomRange(STAIR_FLOW_MIN_IDLE_MS, STAIR_FLOW_MAX_IDLE_MS);
+          } else {
+            stairFlow.nextSwitch = now + STAIR_FRAME_DURATIONS_MS[stairFlow.frameIndex];
+          }
+        }
+      }
+    }
+
+    function getStairAwareImagePath(cam) {
+      if (cam.id !== STAIR_FLOW_CAM_ID || !cam.thumb) {
+        return getCamImagePath(cam);
+      }
+      if (stairFlow.phase !== "play") {
+        return cam.thumb;
+      }
+      return STAIR_FLOW_FRAMES[stairFlow.frameIndex] || cam.thumb;
+    }
+
+    function preloadStairFlowFrames() {
+      for (var i = 0; i < STAIR_FLOW_FRAMES.length; i++) {
+        ensureImageLoaded(STAIR_FLOW_FRAMES[i], null);
+      }
+    }
+
+    function stairGlitchSeverity() {
+      if (stairFlow.phase !== "play") return 0;
+      // Figure walking: mild; door open: very subtle
+      if (stairFlow.frameIndex === 1) return 0.14 + Math.random() * 0.10;
+      if (stairFlow.frameIndex === 2) return 0.04 + Math.random() * 0.05;
+      return 0;
+    }
+
+    // ===== ELEVATOR FLOW (CAM_011) =====
+    var ELEV_FLOW_CAM_ID = "007";
+    var ELEV_FLOW_FRAMES = [
+      "flows/elevator/elevator01.png",
+      "flows/elevator/elevator02.png",
+      "flows/elevator/elevator03.png"
+    ];
+    // Doors closed → ajar (quick) → wide open with 317 (held long)
+    var ELEV_FRAME_DURATIONS_MS = [520, 340, 6800];
+    var ELEV_FLOW_MIN_IDLE_MS = 18000;
+    var ELEV_FLOW_MAX_IDLE_MS = 45000;
+
+    var elevFlow = {
+      initialized: false,
+      phase: "idle",
+      frameIndex: 0,
+      nextSwitch: 0
+    };
+
+    function updateElevFlowState() {
+      var now = Date.now();
+      if (!elevFlow.initialized) {
+        elevFlow.initialized = true;
+        elevFlow.phase = "idle";
+        elevFlow.nextSwitch = now + randomRange(ELEV_FLOW_MIN_IDLE_MS, ELEV_FLOW_MAX_IDLE_MS);
+        elevFlow.frameIndex = 0;
+        return;
+      }
+      if (elevFlow.phase === "idle") {
+        if (now >= elevFlow.nextSwitch) {
+          elevFlow.phase = "play";
+          elevFlow.frameIndex = 0;
+          elevFlow.nextSwitch = now + ELEV_FRAME_DURATIONS_MS[0];
+        }
+      } else if (elevFlow.phase === "play") {
+        if (now >= elevFlow.nextSwitch) {
+          elevFlow.frameIndex++;
+          if (elevFlow.frameIndex >= ELEV_FLOW_FRAMES.length) {
+            elevFlow.phase = "idle";
+            elevFlow.frameIndex = 0;
+            elevFlow.nextSwitch = now + randomRange(ELEV_FLOW_MIN_IDLE_MS, ELEV_FLOW_MAX_IDLE_MS);
+          } else {
+            elevFlow.nextSwitch = now + ELEV_FRAME_DURATIONS_MS[elevFlow.frameIndex];
+            // 317 frame just appeared — unlock the radio tool
+            if (elevFlow.frameIndex === 2 && !GAME.elevatorClue) {
+              GAME.elevatorClue = true;
+              gameSave();
+              showNavRadioLink();
+            }
+          }
+        }
+      }
+    }
+
+    function getElevAwareImagePath(cam) {
+      if (cam.id !== ELEV_FLOW_CAM_ID || !cam.thumb) {
+        return getCamImagePath(cam);
+      }
+      if (elevFlow.phase !== "play") {
+        return cam.thumb;
+      }
+      return ELEV_FLOW_FRAMES[elevFlow.frameIndex] || cam.thumb;
+    }
+
+    function preloadElevFlowFrames() {
+      for (var i = 0; i < ELEV_FLOW_FRAMES.length; i++) {
+        ensureImageLoaded(ELEV_FLOW_FRAMES[i], null);
+      }
+    }
+
+    function elevGlitchSeverity() {
+      if (elevFlow.phase !== "play") return 0;
+      // Frame 1 (doors ajar): mild flicker; frame 2 (317 reveal): very subtle
+      if (elevFlow.frameIndex === 1) return 0.18 + Math.random() * 0.12;
+      if (elevFlow.frameIndex === 2) return 0.06 + Math.random() * 0.06;
+      return 0;
     }
 
     function drawGlitchPost(ctx, w, h, severity) {
@@ -763,14 +1390,28 @@
 
     function drawLiveThumb(ctx, cam, idx, noiseCanvas) {
       var pal = PALETTES[idx % PALETTES.length];
-      var path = getCultAwareImagePath(cam);
-      var feedImg = path ? imageCache[path] : null;
       var w = THUMB_W;
       var h = THUMB_H;
-      if (cam.id === CULT_FLOW_CAM_ID && cultFlow.phase === "play" && (!feedImg || !feedImg.complete || !feedImg.naturalWidth)) {
-        path = cam.thumb;
-        feedImg = imageCache[path];
+      var path;
+      if (cam.id === CULT_FLOW_CAM_ID) {
+        path = getCultAwareImagePath(cam);
+        if (cultFlow.phase === "play" && (!imageCache[path] || !imageCache[path].complete || !imageCache[path].naturalWidth)) {
+          path = cam.thumb;
+        }
+      } else if (cam.id === ELEV_FLOW_CAM_ID) {
+        path = getElevAwareImagePath(cam);
+        if (elevFlow.phase === "play" && (!imageCache[path] || !imageCache[path].complete || !imageCache[path].naturalWidth)) {
+          path = cam.thumb;
+        }
+      } else if (cam.id === STAIR_FLOW_CAM_ID) {
+        path = getStairAwareImagePath(cam);
+        if (stairFlow.phase === "play" && (!imageCache[path] || !imageCache[path].complete || !imageCache[path].naturalWidth)) {
+          path = cam.thumb;
+        }
+      } else {
+        path = getCamImagePath(cam);
       }
+      var feedImg = path ? imageCache[path] : null;
       if (feedImg && feedImg.complete && feedImg.naturalWidth && drawImageCover(ctx, feedImg, w, h)) {
         var nctx = noiseCanvas.getContext("2d");
         drawNoiseFrame(nctx, pal, false, w, h, idx);
@@ -783,6 +1424,10 @@
       }
       if (cam.id === CULT_FLOW_CAM_ID) {
         drawGlitchPost(ctx, w, h, cultGlitchSeverity(cam));
+      } else if (cam.id === ELEV_FLOW_CAM_ID) {
+        drawGlitchPost(ctx, w, h, elevGlitchSeverity());
+      } else if (cam.id === STAIR_FLOW_CAM_ID) {
+        drawGlitchPost(ctx, w, h, stairGlitchSeverity());
       }
     }
 
@@ -793,12 +1438,26 @@
       var isOff = cam.status === "offline";
       var w = canvas.width;
       var h = canvas.height;
-      var imgPath = getCultAwareImagePath(cam);
-      var feedImg = imgPath ? imageCache[imgPath] : null;
-      if (cam.id === CULT_FLOW_CAM_ID && cultFlow.phase === "play" && (!feedImg || !feedImg.complete || !feedImg.naturalWidth)) {
-        imgPath = cam.thumb;
-        feedImg = imageCache[imgPath];
+      var imgPath;
+      if (cam.id === CULT_FLOW_CAM_ID) {
+        imgPath = getCultAwareImagePath(cam);
+        if (cultFlow.phase === "play" && (!imageCache[imgPath] || !imageCache[imgPath].complete || !imageCache[imgPath].naturalWidth)) {
+          imgPath = cam.thumb;
+        }
+      } else if (cam.id === ELEV_FLOW_CAM_ID) {
+        imgPath = getElevAwareImagePath(cam);
+        if (elevFlow.phase === "play" && (!imageCache[imgPath] || !imageCache[imgPath].complete || !imageCache[imgPath].naturalWidth)) {
+          imgPath = cam.thumb;
+        }
+      } else if (cam.id === STAIR_FLOW_CAM_ID) {
+        imgPath = getStairAwareImagePath(cam);
+        if (stairFlow.phase === "play" && (!imageCache[imgPath] || !imageCache[imgPath].complete || !imageCache[imgPath].naturalWidth)) {
+          imgPath = cam.thumb;
+        }
+      } else {
+        imgPath = getCamImagePath(cam);
       }
+      var feedImg = imgPath ? imageCache[imgPath] : null;
       var hasPicture = !isOff && feedImg && feedImg.complete && feedImg.naturalWidth && drawImageCover(ctx, feedImg, w, h);
 
       if (!hasPicture) {
@@ -815,6 +1474,10 @@
 
       if (cam.id === CULT_FLOW_CAM_ID) {
         drawGlitchPost(ctx, w, h, cultGlitchSeverity(cam));
+      } else if (cam.id === ELEV_FLOW_CAM_ID) {
+        drawGlitchPost(ctx, w, h, elevGlitchSeverity());
+      } else if (cam.id === STAIR_FLOW_CAM_ID) {
+        drawGlitchPost(ctx, w, h, stairGlitchSeverity());
       }
 
       ctx.shadowColor = "#000";
@@ -866,13 +1529,14 @@
       hideFeedList(true);
 
       preloadCultFlowFrames();
+      preloadElevFlowFrames();
       var imgPath = getCamImagePath(cam);
       drawViewer(cam, index);
       ensureImageLoaded(imgPath, function () {
         drawViewer(cam, index);
       });
 
-      var viewerMs = cam.status === "offline" ? 300 : (cam.id === CULT_FLOW_CAM_ID ? 200 : 130);
+      var viewerMs = cam.status === "offline" ? 300 : (cam.id === CULT_FLOW_CAM_ID || cam.id === ELEV_FLOW_CAM_ID || cam.id === STAIR_FLOW_CAM_ID ? 200 : 130);
       viewerInterval = setInterval(function () {
         drawViewer(cam, index);
       }, viewerMs);
@@ -1038,13 +1702,642 @@
       document.getElementById("visitorCount").textContent = String(visitors).padStart(5, "0");
     }, 7000);
 
+    // ===== GAME STATE =====
+    var GAME_KEY = 'openfeed_game';
+    var INTRO_KEY = 'openfeed_intro';
+
+    var GAME = {
+      chapter: 1,
+      extraFeeds: [],
+      choices: {},
+      puzzlesSolved: [],
+      path: null,
+      elevatorClue: false
+    };
+
+    function gameSave() {
+      try { localStorage.setItem(GAME_KEY, JSON.stringify(GAME)); } catch (e) {}
+    }
+
+    function gameLoad() {
+      try {
+        var raw = localStorage.getItem(GAME_KEY);
+        if (raw) { var s = JSON.parse(raw); for (var k in s) { GAME[k] = s[k]; } }
+      } catch (e) {}
+    }
+
+    function gameReset() {
+      try {
+        localStorage.removeItem(GAME_KEY);
+        sessionStorage.removeItem(INTRO_KEY);
+      } catch (e) {}
+      location.reload();
+    }
+
+    function gameChoice(eventId, choice) {
+      GAME.choices[eventId] = choice;
+      gameSave();
+    }
+
+    function showNavRadioLink() {
+      if (!GAME.elevatorClue) return;
+      if (GAME.puzzlesSolved.indexOf('puzzle_01') < 0) return;
+      var el = document.getElementById('navRadioLink');
+      if (el) el.style.display = '';
+    }
+
+    function gameSolvePuzzle(puzzleId) {
+      if (GAME.puzzlesSolved.indexOf(puzzleId) < 0) {
+        GAME.puzzlesSolved.push(puzzleId);
+      }
+      gameSave();
+    }
+
+    // Extra camera definition bank — images TBD
+    var EXTRA_CAMS = {
+      '007': { id: '007', label: 'Warehouse Loading Dock', country: 'PL', tz: 'CET', status: 'live', quality: '144p', viewers: 34, isNew: true, thumb: 'bigcams/007.png' },
+      'E02': { id: 'E02', label: 'Stairwell - Floor 3',    country: 'EE', tz: 'EET', status: 'live', quality: '144p', viewers: 2,  isNew: true, thumb: 'flows/stairwell/stairwell01.png' },
+      'E03': { id: 'E03', label: 'Parking Structure - B2', country: '??', tz: '---', status: 'live', quality: '240p', viewers: 1,  isNew: true, thumb: null },
+      'E04': { id: 'E04', label: '[LOCAL] Interior - Cam 1', country: '??', tz: '---', status: 'live', quality: '480p', viewers: 0, isNew: true, thumb: null }
+    };
+
+    function unlockExtraFeed(camId) {
+      if (GAME.extraFeeds.indexOf(camId) >= 0) return;
+      var cam = EXTRA_CAMS[camId];
+      if (!cam) return;
+      GAME.extraFeeds.push(camId);
+      gameSave();
+      CAMERAS.push(cam);
+      if (camId === STAIR_FLOW_CAM_ID) preloadStairFlowFrames();
+      appendCameraCell(cam, CAMERAS.length - 1);
+      setTimeout(function () {
+        var cells = document.querySelectorAll('.cam-cell');
+        var last = cells[cells.length - 1];
+        if (last) last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 250);
+    }
+
+    function appendCameraCell(cam, idx) {
+      var grid = document.getElementById('camGrid');
+      (function (c, i) {
+        var cell = document.createElement('div');
+        cell.className = 'cam-cell';
+        cell.setAttribute('data-cam-id', c.id);
+        cell.onclick = function () { openViewer(c, i); };
+
+        var canvas = document.createElement('canvas');
+        canvas.width = THUMB_W;
+        canvas.height = THUMB_H;
+        canvas.style.cssText = 'display:block;width:' + THUMB_W + 'px;height:' + THUMB_H + 'px;image-rendering:crisp-edges;';
+        cell.appendChild(canvas);
+
+        var crt = document.createElement('div');
+        crt.className = 'cam-crt';
+        crt.setAttribute('aria-hidden', 'true');
+        cell.appendChild(crt);
+
+        var overlay = document.createElement('div');
+        overlay.className = 'cam-overlay';
+        overlay.innerHTML =
+          '<span class="cam-id">CAM_' + c.id + '</span>' +
+          '<span class="cam-live" style="color:rgba(200,70,70,0.9);">\u25CF LIVE</span>' +
+          '<span class="cam-new">NEW!</span>';
+        cell.appendChild(overlay);
+
+        var info = document.createElement('div');
+        info.className = 'cam-info';
+        info.innerHTML = '<b>[' + c.country + ']</b> ' + c.label +
+          '<br><span class="meta">' + c.quality + ' \u2014 ' + c.viewers + ' watching</span>';
+        cell.appendChild(info);
+
+        grid.appendChild(cell);
+
+        var ctx = canvas.getContext('2d');
+        var nb = document.createElement('canvas');
+        nb.width = THUMB_W; nb.height = THUMB_H;
+        if (c.thumb && c.status === 'live') {
+          ensureImageLoaded(c.thumb, function () { drawLiveThumb(ctx, c, i, nb); });
+          drawLiveThumb(ctx, c, i, nb);
+          thumbIntervals.push(setInterval(function () { drawLiveThumb(ctx, c, i, nb); }, 130));
+        } else {
+          drawThumb(ctx, c, i);
+          thumbIntervals.push(setInterval(function () { drawThumb(ctx, c, i); }, 250));
+        }
+        updateNavCounts();
+      })(cam, idx);
+    }
+
+    // ===== AUDIO ENGINE =====
+    var _ac = null;
+    function getAC() {
+      if (!_ac) {
+        try { _ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+      }
+      if (_ac && _ac.state === 'suspended') { try { _ac.resume(); } catch(e) {} }
+      return _ac;
+    }
+
+    var DTMF = {
+      '1':[697,1209],'2':[697,1336],'3':[697,1477],
+      '4':[770,1209],'5':[770,1336],'6':[770,1477],
+      '7':[852,1209],'8':[852,1336],'9':[852,1477],
+      '*':[941,1209],'0':[941,1336],'#':[941,1477]
+    };
+
+    function sfxDTMF(key) {
+      var ctx = getAC(); if (!ctx) return;
+      var freqs = DTMF[key]; if (!freqs) return;
+      var now = ctx.currentTime;
+      freqs.forEach(function(f) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f; o.type = 'sine';
+        g.gain.setValueAtTime(0.09, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+        o.start(now); o.stop(now + 0.12);
+      });
+    }
+
+    function sfxClick() {
+      var ctx = getAC(); if (!ctx) return;
+      var len = Math.floor(ctx.sampleRate * 0.016);
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) {
+        d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 6) * 0.12;
+      }
+      var s = ctx.createBufferSource();
+      s.buffer = buf; s.connect(ctx.destination); s.start();
+    }
+
+    function sfxTick() {
+      var ctx = getAC(); if (!ctx) return;
+      var now = ctx.currentTime;
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 900; o.type = 'sine';
+      g.gain.setValueAtTime(0.06, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+      o.start(now); o.stop(now + 0.035);
+    }
+
+    var _ringActive = false;
+    function sfxRingStart() {
+      if (_ringActive) return;
+      _ringActive = true;
+      var ctx = getAC(); if (!ctx) return;
+      function beat() {
+        if (!_ringActive) return;
+        var now = ctx.currentTime;
+        [440, 480].forEach(function(f) {
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.frequency.value = f; o.type = 'sine';
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(0.08, now + 0.02);
+          g.gain.setValueAtTime(0.08, now + 0.36);
+          g.gain.linearRampToValueAtTime(0, now + 0.42);
+          o.start(now); o.stop(now + 0.45);
+        });
+        setTimeout(beat, 900);
+      }
+      beat();
+    }
+
+    function sfxRingStop() { _ringActive = false; }
+
+    // Wire sounds into viewer open/close
+    var _origOpenViewer = openViewer;
+    openViewer = function(cam, index) { sfxClick(); _origOpenViewer(cam, index); };
+    var _origCloseViewer = closeViewer;
+    closeViewer = function() { sfxTick(); _origCloseViewer(); };
+
+    // ===== NARRATIVE HOOKS =====
+    var NARRATIVE_NUMBERS = {
+      '5550199': 'puzzle_01'
+    };
+
+    var _narrativeCallActive = false;
+    var _narrativeOnComplete = null;
+
+    function playNarrativeCall(onComplete) {
+      _narrativeCallActive = true;
+      _narrativeOnComplete = onComplete;
+
+      var audio = document.getElementById('callAudio');
+      if (!audio) return;
+
+      audio.currentTime = 0;
+      audio.loop = false;
+
+      var _firstPlayDone = false;
+
+      function onAudioEnded() {
+        if (!_narrativeCallActive) return;
+
+        if (!_firstPlayDone) {
+          _firstPlayDone = true;
+          // Show first address on phone screen + slide down the URL bar
+          phoneSetStatus('signalwatch.net', '/signal_theory');
+          showAddressBar();
+          // After a beat, flip to the second address as a reminder
+          setTimeout(function () {
+            if (_narrativeCallActive) phoneSetStatus('forum.html', 'type in bar above');
+          }, 3500);
+        }
+
+        // Loop manually so we can track first-play
+        audio.currentTime = 0;
+        audio.play().catch(function () {});
+      }
+
+      audio.removeEventListener('ended', audio._narrativeEndedHandler);
+      audio._narrativeEndedHandler = onAudioEnded;
+      audio.addEventListener('ended', onAudioEnded);
+
+      audio.play().catch(function () {});
+
+      // Safety fallback — auto-end after 10 minutes if player never hangs up
+      window._callFallback = setTimeout(function () {
+        if (_narrativeCallActive) endNarrativeCall();
+      }, 600000);
+    }
+
+    function endNarrativeCall() {
+      if (!_narrativeCallActive) return;
+      _narrativeCallActive = false;
+      clearTimeout(window._callFallback);
+      var audio = document.getElementById('callAudio');
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+        if (audio._narrativeEndedHandler) {
+          audio.removeEventListener('ended', audio._narrativeEndedHandler);
+          audio._narrativeEndedHandler = null;
+        }
+      }
+      var cb = _narrativeOnComplete;
+      _narrativeOnComplete = null;
+      if (cb) cb();
+    }
+
+    function showAddressBar() {
+      var bar = document.getElementById('addressBar');
+      if (!bar || bar.classList.contains('addr-visible')) return;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          bar.classList.add('addr-visible');
+          setTimeout(function () {
+            var inp = document.getElementById('addressInput');
+            if (inp) inp.focus();
+          }, 400);
+        });
+      });
+    }
+
+    function tryNavigate() {
+      var raw = document.getElementById('addressInput').value.trim().toLowerCase();
+      var val = raw.replace(/^https?:\/\//, '').replace(/^www\./, '');
+      if (val.includes('forum') || val.includes('signalwatch') || val.includes('signal')) {
+        if (window.sfxClick) sfxClick();
+        window.location.href = 'forum.html';
+      } else if (val.includes('tool')) {
+        if (window.sfxClick) sfxClick();
+        window.location.href = 'tools.html';
+      }
+    }
+
+    window.onPhoneDial = function (number) {
+      var event = NARRATIVE_NUMBERS[number.replace(/\D/g, '')];
+      if (!event) return;
+
+      phoneSetStatus('CONNECTED', 'relay svc.');
+
+      playNarrativeCall(function () {
+        // Called if the 2-min fallback fires — normally player hangs up manually
+        phone.state = 'idle';
+        phone.number = '';
+        if (window.sfxClick) sfxClick();
+        phoneSetStatus('call ended', '');
+        document.getElementById('phoneSoftL').textContent = 'menu';
+        setTimeout(function () { phoneSetStatus('', 'ready'); }, 1600);
+        showAddressBar();
+      });
+    };
+
+    window.onPhoneAnswer  = function () {};
+    window.onPhoneDecline = function () {};
+    window.onPhoneHangUp  = function () {
+      if (_narrativeCallActive) {
+        endNarrativeCall();
+        showAddressBar();
+      }
+    };
+
+    // ===== SITE INTRO =====
+    var introLines = [
+      { html: '<span style="font-size:18px;color:#8aba7a;font-weight:bold;letter-spacing:2px">OPEN:FEED</span>', delay: 120 },
+      { html: '<span style="color:#3a5a3a;font-size:10px">public surveillance camera index</span>', delay: 280 },
+      { html: '<span style="color:#1e2e1e">\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500</span>', delay: 460 },
+      { html: '&nbsp;', delay: 560 },
+      { html: '&gt; connecting to openfeed.icu<span style="color:#2e5a2e">&nbsp;&nbsp;[ OK ]</span>', delay: 780 },
+      { html: '&gt; resolving feed manifest...<span style="color:#2e5a2e">&nbsp;&nbsp;&nbsp;[ OK ]</span>', delay: 1140 },
+      { html: '&gt; loading stream headers...<span style="color:#2e5a2e">&nbsp;&nbsp;&nbsp;&nbsp;[ OK ]</span>', delay: 1540 },
+      { html: '&nbsp;', delay: 1780 },
+      { html: '&gt; <span style="color:#6a9a5a">15 feeds indexed. 11 active.</span>', delay: 1980 },
+      { html: '&gt; <span style="color:#6a9a5a">session: anonymous</span>', delay: 2280 },
+      { html: '&nbsp;', delay: 2440 },
+      { html: '&gt; initializing interface...', delay: 2620 }
+    ];
+
+    var introDone = false;
+
+    function introFinish() {
+      if (introDone) return;
+      introDone = true;
+      document.removeEventListener('click', introFinish);
+      document.removeEventListener('keydown', introFinish);
+      var el = document.getElementById('siteIntro');
+      el.classList.add('intro-fade');
+      setTimeout(function () { el.style.display = 'none'; }, 900);
+    }
+
+    function introRun() {
+      var el = document.getElementById('siteIntro');
+      if (!el) return;
+      try {
+        if (sessionStorage.getItem(INTRO_KEY)) { el.style.display = 'none'; return; }
+        sessionStorage.setItem(INTRO_KEY, '1');
+      } catch (e) { el.style.display = 'none'; return; }
+
+      var log = document.getElementById('introLog');
+      var barWrap = document.getElementById('introBarWrap');
+      var bar = document.getElementById('introBar');
+      var skip = document.getElementById('introSkip');
+
+      document.addEventListener('click', introFinish);
+      document.addEventListener('keydown', introFinish);
+
+      introLines.forEach(function (step) {
+        setTimeout(function () {
+          if (introDone) return;
+          var div = document.createElement('div');
+          div.innerHTML = step.html;
+          log.appendChild(div);
+        }, step.delay);
+      });
+
+      setTimeout(function () {
+        if (introDone) return;
+        barWrap.classList.add('bar-visible');
+        setTimeout(function () { bar.style.width = '100%'; }, 60);
+      }, 2820);
+
+      setTimeout(function () {
+        if (introDone) return;
+        skip.classList.add('skip-visible');
+      }, 700);
+
+      setTimeout(introFinish, 4400);
+    }
+
+    gameLoad();
+
+    // Restore any extra feeds unlocked in previous sessions (e.g. after returning from decrypt.html)
+    function gameRestore() {
+      for (var i = 0; i < GAME.extraFeeds.length; i++) {
+        var cam = EXTRA_CAMS[GAME.extraFeeds[i]];
+        if (cam) CAMERAS.push(cam);
+      }
+    }
+
+    gameRestore();
+    if (GAME.elevatorClue) showNavRadioLink();
+    introRun();
+
     preloadCultFlowFrames();
-    setInterval(updateCultFlowState, 100);
+    preloadElevFlowFrames();
+    if (GAME.extraFeeds.indexOf(STAIR_FLOW_CAM_ID) >= 0) preloadStairFlowFrames();
+    setInterval(function () { updateCultFlowState(); updateElevFlowState(); updateStairFlowState(); }, 100);
+
+    document.getElementById('addressInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') tryNavigate();
+    });
 
     installWheelScrollFallback();
     preventDeadLinks();
     buildGrid();
     openViewerFromQuery();
+  </script>
+
+  <!-- DEV CONTROLS — remove before ship -->
+  <div id="phoneDevBar">
+    <b>// dev</b>
+    <button onclick="phonePowerOn()">phone on</button>
+    <button onclick="phonePowerOff()">phone off</button>
+    <button onclick="phoneIncomingCall('??????????', 'unknown caller')">simulate ring</button>
+    <button onclick="phoneSetStatus('new voicemail', '1 message')">voicemail msg</button>
+    <b style="margin-top:3px">// game</b>
+    <button onclick="unlockExtraFeed('E01')">unlock feed E01</button>
+    <button onclick="unlockExtraFeed('E02')">unlock feed E02</button>
+    <button onclick="unlockExtraFeed('E03')">unlock feed E03</button>
+    <button onclick="unlockExtraFeed('E04')">unlock feed E04</button>
+    <button onclick="gameReset()">reset &amp; reload</button>
+  </div>
+
+  <!-- NARRATIVE AUDIO -->
+  <audio id="callAudio" src="message1.mp3" preload="auto"></audio>
+
+  <!-- PHONE WIDGET -->
+  <div id="phoneWidget">
+    <button id="phoneToggleBtn" onclick="phoneToggleMinimize()">[phone &#9660;]</button>
+    <div id="phoneBodyEl" class="phone-body phone-off">
+      <div class="phone-antenna"></div>
+      <div class="phone-earpiece"></div>
+      <div class="phone-brand">NOKIA</div>
+      <div class="phone-screen-outer">
+        <div class="phone-screen screen-off" id="phoneScreen">
+          <div class="phone-screen-time" id="phoneTime"></div>
+          <div class="phone-screen-number" id="phoneDisplay"></div>
+          <div class="phone-screen-label" id="phoneLabel"></div>
+        </div>
+      </div>
+      <div class="phone-softkeys">
+        <button class="phone-softkey" id="phoneSoftL" onclick="phoneSoftLeft()">menu</button>
+        <button class="phone-softkey">&middot;</button>
+        <button class="phone-softkey" id="phoneSoftR" onclick="phoneSoftRight()">names</button>
+      </div>
+      <div class="phone-callrow">
+        <button class="phone-call-btn call" onclick="phoneCall()">&#9990;</button>
+        <button class="phone-nav-btn" onclick="phoneNavOk()">ok</button>
+        <button class="phone-call-btn end" onclick="phoneEndCall()">&#10005;</button>
+      </div>
+      <div class="phone-keypad">
+        <button class="phone-key" onclick="phonePressKey('1')">1</button>
+        <button class="phone-key" onclick="phonePressKey('2')">2<span class="key-sub">abc</span></button>
+        <button class="phone-key" onclick="phonePressKey('3')">3<span class="key-sub">def</span></button>
+        <button class="phone-key" onclick="phonePressKey('4')">4<span class="key-sub">ghi</span></button>
+        <button class="phone-key" onclick="phonePressKey('5')">5<span class="key-sub">jkl</span></button>
+        <button class="phone-key" onclick="phonePressKey('6')">6<span class="key-sub">mno</span></button>
+        <button class="phone-key" onclick="phonePressKey('7')">7<span class="key-sub">pqrs</span></button>
+        <button class="phone-key" onclick="phonePressKey('8')">8<span class="key-sub">tuv</span></button>
+        <button class="phone-key" onclick="phonePressKey('9')">9<span class="key-sub">wxyz</span></button>
+        <button class="phone-key key-sym" onclick="phonePressKey('*')">*</button>
+        <button class="phone-key" onclick="phonePressKey('0')">0</button>
+        <button class="phone-key key-sym" onclick="phonePressKey('#')">#</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== PHONE WIDGET =====
+    var phone = {
+      power: false,
+      minimized: false,
+      state: 'idle', // idle | dialing | ringing | call-active
+      number: '',
+      incomingFrom: null,
+      timeInterval: null
+    };
+
+    function phoneToggleMinimize() {
+      phone.minimized = !phone.minimized;
+      document.getElementById('phoneBodyEl').style.display = phone.minimized ? 'none' : 'block';
+      document.getElementById('phoneToggleBtn').innerHTML = phone.minimized
+        ? '[phone &#9650;]' : '[phone &#9660;]';
+    }
+
+    function phoneUpdateTime() {
+      if (!phone.power) return;
+      var now = new Date();
+      document.getElementById('phoneTime').textContent =
+        String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    }
+
+    function phonePowerOn() {
+      if (phone.power) return;
+      phone.power = true;
+      var body = document.getElementById('phoneBodyEl');
+      var screen = document.getElementById('phoneScreen');
+      body.classList.remove('phone-off');
+      screen.classList.remove('screen-off');
+      document.getElementById('phoneDisplay').textContent = 'NOKIA';
+      document.getElementById('phoneLabel').textContent = '';
+      phoneUpdateTime();
+      phone.timeInterval = setInterval(phoneUpdateTime, 30000);
+      setTimeout(function () {
+        document.getElementById('phoneDisplay').textContent = '';
+        document.getElementById('phoneLabel').textContent = 'ready';
+      }, 1600);
+    }
+
+    function phonePowerOff() {
+      if (!phone.power) return;
+      phone.power = false;
+      phone.state = 'idle';
+      phone.number = '';
+      phone.incomingFrom = null;
+      clearInterval(phone.timeInterval);
+      var body = document.getElementById('phoneBodyEl');
+      var screen = document.getElementById('phoneScreen');
+      body.classList.add('phone-off');
+      body.classList.remove('phone-ringing');
+      screen.classList.add('screen-off');
+      screen.classList.remove('screen-ringing');
+      document.getElementById('phoneDisplay').textContent = '';
+      document.getElementById('phoneLabel').textContent = '';
+      document.getElementById('phoneTime').textContent = '';
+    }
+
+    function phonePressKey(k) {
+      if (!phone.power || phone.state === 'ringing' || phone.state === 'call-active') return;
+      if (phone.number.length >= 14) return;
+      if (window.sfxDTMF) sfxDTMF(k);
+      phone.number += k;
+      phone.state = 'dialing';
+      document.getElementById('phoneDisplay').textContent = phone.number;
+      document.getElementById('phoneLabel').textContent = 'dial';
+      document.getElementById('phoneSoftL').textContent = 'clear';
+    }
+
+    function phoneSoftLeft() {
+      if (!phone.power) return;
+      if (window.sfxTick) sfxTick();
+      if (phone.state === 'dialing') {
+        phone.number = phone.number.slice(0, -1);
+        document.getElementById('phoneDisplay').textContent = phone.number;
+        if (!phone.number) {
+          phone.state = 'idle';
+          document.getElementById('phoneLabel').textContent = 'ready';
+          document.getElementById('phoneSoftL').textContent = 'menu';
+        }
+      }
+    }
+
+    function phoneSoftRight() {}
+    function phoneNavOk() {}
+
+    function phoneCall() {
+      if (!phone.power) return;
+      if (phone.state === 'ringing') { phoneAnswerCall(); return; }
+      if (!phone.number || phone.state === 'call-active') return;
+      if (window.sfxClick) sfxClick();
+      phone.state = 'call-active';
+      document.getElementById('phoneLabel').textContent = 'calling\u2026';
+      if (window.onPhoneDial) window.onPhoneDial(phone.number);
+    }
+
+    function phoneEndCall() {
+      if (!phone.power) return;
+      if (phone.state === 'ringing') { phoneDeclineCall(); return; }
+      if (window.sfxClick) sfxClick();
+      phone.state = 'idle';
+      phone.number = '';
+      document.getElementById('phoneDisplay').textContent = '';
+      document.getElementById('phoneLabel').textContent = 'ready';
+      document.getElementById('phoneSoftL').textContent = 'menu';
+      if (window.onPhoneHangUp) window.onPhoneHangUp();
+    }
+
+    function phoneIncomingCall(fromNumber, label) {
+      if (!phone.power) return;
+      if (window.sfxRingStart) sfxRingStart();
+      phone.state = 'ringing';
+      phone.incomingFrom = fromNumber;
+      document.getElementById('phoneDisplay').textContent = fromNumber || '??????????';
+      document.getElementById('phoneLabel').textContent = label || 'incoming call';
+      document.getElementById('phoneBodyEl').classList.add('phone-ringing');
+      document.getElementById('phoneScreen').classList.add('screen-ringing');
+      if (phone.minimized) phoneToggleMinimize();
+    }
+
+    function phoneAnswerCall() {
+      if (window.sfxRingStop) sfxRingStop();
+      if (window.sfxClick) sfxClick();
+      phone.state = 'call-active';
+      document.getElementById('phoneBodyEl').classList.remove('phone-ringing');
+      document.getElementById('phoneScreen').classList.remove('screen-ringing');
+      document.getElementById('phoneLabel').textContent = 'connected';
+      if (window.onPhoneAnswer) window.onPhoneAnswer(phone.incomingFrom);
+    }
+
+    function phoneDeclineCall() {
+      if (window.sfxRingStop) sfxRingStop();
+      if (window.sfxClick) sfxClick();
+      phone.state = 'idle';
+      phone.incomingFrom = null;
+      document.getElementById('phoneBodyEl').classList.remove('phone-ringing');
+      document.getElementById('phoneScreen').classList.remove('screen-ringing');
+      document.getElementById('phoneDisplay').textContent = '';
+      document.getElementById('phoneLabel').textContent = 'ready';
+      if (window.onPhoneDecline) window.onPhoneDecline();
+    }
+
+    function phoneSetStatus(line1, line2) {
+      if (!phone.power) return;
+      document.getElementById('phoneDisplay').textContent = line1 || '';
+      document.getElementById('phoneLabel').textContent = line2 || '';
+    }
   </script>
 </body>
 

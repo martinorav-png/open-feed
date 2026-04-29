@@ -52,3 +52,21 @@ external/unity-webview/plugins/Windows/nuget.exe
 # Sample scene exceeds GitHub 100 MB file limit
 Assets/SquareTileTerrain/Scenes/ExampleScene.unity
 Assets/SquareTileTerrain/Scenes/ExampleScene.unity.meta
+
+# Large audio files — kept local only
+Assets/Audio/marketambience.wav
+Assets/Audio/marketambience.wav.meta
+Assets/Audio/marketmusic.wav
+Assets/Audio/marketmusic.wav.meta
+Assets/Audio/ESM_Explainer_Video_One_Shot_Foley_Footstep_Concrete_Walking_Walk_1.wav
+Assets/Audio/ESM_Explainer_Video_One_Shot_Foley_Footstep_Concrete_Walking_Walk_1.wav.meta
+
+# Temp preview exports
+cashier_preview.png
+cashier2_preview.png
+orig_tex_preview.png
+tex_preview.png
+
+# Agent tool config
+.agents/
+.codex/

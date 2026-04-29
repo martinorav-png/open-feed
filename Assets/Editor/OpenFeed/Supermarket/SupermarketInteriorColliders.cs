@@ -26,6 +26,9 @@ public static class SupermarketInteriorColliders
                 continue;
 
             GameObject go = mf.gameObject;
+            if (IsUnderLuminaireOrCart(go.transform))
+                continue;
+
             MeshCollider mc = go.GetComponent<MeshCollider>();
             if (mc == null)
             {
@@ -42,6 +45,20 @@ public static class SupermarketInteriorColliders
         }
 
         return count;
+    }
+
+    static bool IsUnderLuminaireOrCart(Transform t)
+    {
+        for (Transform p = t; p != null; p = p.parent)
+        {
+            string n = p.name;
+            if (n.IndexOf("SupermarketLuminaireRig", System.StringComparison.Ordinal) >= 0)
+                return true;
+            if (p.GetComponent<StoreShoppingCart>() != null)
+                return true;
+        }
+
+        return false;
     }
 
     static string SupermarketFbxAssetPath =>

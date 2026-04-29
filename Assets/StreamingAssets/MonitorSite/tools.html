@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>openfeed.icu :: tools</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: #e8e8e0;
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 12px;
+      color: #222;
+    }
+
+    a { color: #0000cc; }
+
+    .header-bar {
+      background: #fff;
+      border-bottom: 2px solid #888;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo { font-family: monospace; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+    .logo .colon { color: #c00; }
+    .header-sub { font-family: Verdana, sans-serif; font-size: 10px; color: #777; margin-left: 10px; }
+    .header-right { font-family: monospace; font-size: 11px; color: #555; }
+
+    .nav-bar {
+      background: #d4d4cc;
+      border-bottom: 1px solid #aaa;
+      padding: 4px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-bar a { font-family: monospace; font-size: 11px; margin-right: 14px; color: #0000cc; text-decoration: none; }
+    .nav-bar a:hover { text-decoration: underline; }
+    .nav-bar a.active { color: #000; font-weight: bold; text-decoration: none; }
+    .nav-status { font-family: monospace; font-size: 10px; color: #888; }
+
+    .content { padding: 14px 16px 32px; }
+
+    .notice {
+      border: 1px solid #bbb;
+      background: #fffff0;
+      padding: 6px 8px;
+      margin-bottom: 14px;
+      font-size: 10px;
+      color: #555;
+      max-width: 520px;
+    }
+
+    /* ── APP WINDOW ── */
+    .app-wrap {
+      max-width: 520px;
+    }
+
+    .app-window {
+      background: #fff;
+      border: 2px outset #ccc;
+      box-shadow: 3px 3px 0 #888;
+    }
+
+    .win-titlebar {
+      background: linear-gradient(to bottom, #000080, #000060);
+      padding: 4px 7px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .win-title { font-family: monospace; font-size: 11px; color: #fff; letter-spacing: 0.3px; }
+    .win-title .crk { color: #ffcc66; font-size: 9px; margin-left: 6px; }
+
+    .win-ctrls { display: flex; gap: 3px; }
+    .win-btn-ctrl {
+      width: 16px; height: 14px; border: 2px outset #ccc;
+      background: #c0c0c0; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; line-height: 1; font-family: monospace; color: #000;
+      font-weight: bold;
+    }
+    .win-btn-ctrl:active { border-style: inset; }
+
+    .win-nfo {
+      background: #f0f0e8;
+      border-bottom: 1px solid #ccc;
+      padding: 5px 10px;
+      font-family: monospace;
+      font-size: 9px;
+      color: #555;
+      line-height: 1.7;
+    }
+    .win-nfo .acc { color: #006000; }
+
+    .win-body { padding: 14px; background: #fff; }
+
+    .win-field { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+
+    .win-label {
+      font-family: Verdana, sans-serif; font-size: 10px; color: #333;
+      width: 88px; flex-shrink: 0; text-align: right;
+    }
+
+    .win-input {
+      flex: 1; background: #fff; border: 2px inset #ccc;
+      color: #000; font-family: monospace; font-size: 12px;
+      padding: 3px 6px; outline: none;
+    }
+    .win-input:focus { border-color: #000080; outline: 1px solid #000080; }
+    .win-input::placeholder { color: #aaa; font-size: 10px; }
+
+    .win-serial {
+      font-family: monospace; text-align: center;
+      font-size: 14px; color: #333; letter-spacing: 3px;
+      background: #f0f0e8; border: 1px inset #ccc;
+      padding: 5px 0; margin: 4px 0 8px;
+    }
+
+    .win-bar-wrap {
+      background: #f0f0f0; border: 2px inset #ccc;
+      height: 16px; position: relative; margin-bottom: 10px; overflow: hidden;
+    }
+    .win-bar {
+      height: 100%; width: 0%;
+      background: #000080;
+      transition: width 0.08s linear;
+    }
+    .win-bar-label {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: monospace; font-size: 8px; color: #fff;
+      letter-spacing: 1px; mix-blend-mode: difference;
+    }
+
+    .win-btns { display: flex; gap: 6px; margin-top: 10px; }
+
+    .win-btn-action {
+      font-family: Verdana, sans-serif; font-size: 11px;
+      padding: 4px 14px; cursor: pointer; border: 2px outset #ccc;
+      background: #c0c0c0; color: #000;
+    }
+    .win-btn-action:hover  { background: #d0d0d0; }
+    .win-btn-action:active { border-style: inset; }
+    .win-btn-action:disabled { opacity: 0.5; cursor: default; }
+
+    .win-output {
+      margin-top: 10px;
+      background: #f8f8f0;
+      border: 2px inset #ccc;
+      border-left: 3px solid #888;
+      padding: 8px 10px; font-family: monospace;
+      font-size: 10px; color: #333; line-height: 1.9; display: none;
+    }
+    .win-output.show { display: block; }
+    .win-output.err  { border-left-color: #c00; background: #fff8f8; }
+    .win-output .ok  { color: #006000; font-weight: bold; }
+    .win-output .key { color: #000080; font-weight: bold; }
+    .win-output .dim { color: #666; }
+
+    #returnBtn {
+      display: none; margin-top: 8px; font-family: Verdana, sans-serif; font-size: 11px;
+      background: #c0c0c0; border: 2px outset #ccc; color: #000;
+      padding: 4px 14px; cursor: pointer; width: 100%; text-align: center;
+    }
+    #returnBtn:hover  { background: #d0d0d0; }
+    #returnBtn:active { border-style: inset; }
+    #returnBtn.show   { display: block; }
+
+    .win-statusbar {
+      background: #d4d4cc; border-top: 1px solid #aaa;
+      padding: 3px 8px; font-family: monospace; font-size: 9px; color: #555;
+      display: flex; justify-content: space-between;
+    }
+    .win-statusbar a { color: #0000cc; text-decoration: none; }
+    .win-statusbar a:hover { text-decoration: underline; }
+
+    /* ── SUCCESS NOTICE ── */
+    #successNotice {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid #bbb;
+      background: #fffff0;
+      padding: 8px 10px;
+      font-size: 10px;
+      color: #333;
+      max-width: 520px;
+    }
+    #successNotice b { color: #060; }
+    #successNotice.show { display: block; }
+
+    .footer-area {
+      font-size: 9px; color: #999; margin-top: 16px;
+      font-family: monospace; max-width: 520px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <div>
+      <span class="logo">OPEN<span class="colon">:</span>FEED</span>
+      <span class="header-sub">tools &amp; utilities</span>
+    </div>
+    <div class="header-right">StreamDecrypt v2.1</div>
+  </div>
+
+  <div class="nav-bar">
+    <div>
+      <a href="index.html">[feeds]</a>
+      <a href="tools.html" class="active">[tools]</a>
+      <a href="#">[submit]</a>
+      <a href="#faqSection">[faq]</a>
+    </div>
+    <div class="nav-status" id="navStatus">ready</div>
+  </div>
+
+  <div class="content">
+
+    <div class="notice">
+      <b>StreamDecrypt v2.1</b> &mdash; ECHO cipher / relay stream decoder.
+      enter a stream ID and cipher key to attempt authentication against an openfeed relay stream.
+    </div>
+
+    <div class="app-wrap">
+
+      <div class="app-window">
+
+        <div class="win-titlebar">
+          <div class="win-title">
+            StreamDecrypt v2.1.0
+            <span class="crk">[UNLICENSED]</span>
+          </div>
+          <div class="win-ctrls">
+            <div class="win-btn-ctrl">&#8211;</div>
+            <div class="win-btn-ctrl" id="winClose">&#215;</div>
+          </div>
+        </div>
+
+        <div class="win-nfo">
+          <span class="acc">// StreamDecrypt</span> &mdash; ECHO cipher / relay stream decoder<br>
+          // cracked by <span class="acc">TeaM-STATIC</span> | private build | do not redistribute
+        </div>
+
+        <div class="win-body">
+
+          <div class="win-field">
+            <div class="win-label">STREAM ID:</div>
+            <input class="win-input" id="streamId" type="text"
+              placeholder="e.g. openfeed" maxlength="32"
+              autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="win-field">
+            <div class="win-label">CIPHER KEY:</div>
+            <input class="win-input" id="cipherKey" type="text"
+              placeholder="TYPE-0000" maxlength="20"
+              autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="win-serial" id="serialDisplay">---- ---- ---- ----</div>
+
+          <div class="win-bar-wrap">
+            <div class="win-bar" id="progressBar"></div>
+            <div class="win-bar-label" id="progressLabel">STANDBY</div>
+          </div>
+
+          <div class="win-btns">
+            <button class="win-btn-action primary" id="decryptBtn" onclick="runDecrypt()">EXECUTE DECRYPT</button>
+            <button class="win-btn-action secondary" onclick="clearAll()">CLEAR</button>
+          </div>
+
+          <div class="win-output" id="appOutput"></div>
+          <button id="returnBtn" onclick="returnToFeed()">&rsaquo;&rsaquo; return to feed index</button>
+
+        </div>
+
+        <div class="win-statusbar">
+          <span id="statusLeft">ready</span>
+          <span><a href="index.html">[feeds]</a> &nbsp;|&nbsp; ECHO cipher engine v2.1.0</span>
+        </div>
+
+      </div>
+
+      <div id="successNotice">
+        <b>&#9632; Feed unlocked</b> &mdash; <span id="successBody"></span>
+      </div>
+
+      <div class="footer-area">
+        openfeed.icu &nbsp;&middot;&nbsp; tools &nbsp;&middot;&nbsp; <a href="index.html">back to feeds</a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // ===== AUDIO =====
+    var _ac = null;
+    function getAC() {
+      if (!_ac) try { _ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+      if (_ac && _ac.state === 'suspended') try { _ac.resume(); } catch(e) {}
+      return _ac;
+    }
+
+    function sfxClick() {
+      var ctx = getAC(); if (!ctx) return;
+      var len = Math.floor(ctx.sampleRate * 0.016);
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len,6) * 0.3;
+      var s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start();
+    }
+
+    function sfxTone(freq, dur, vol) {
+      var ctx = getAC(); if (!ctx) return;
+      var now = ctx.currentTime;
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq; o.type = 'sine';
+      g.gain.setValueAtTime(vol || 0.08, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      o.start(now); o.stop(now + dur + 0.01);
+    }
+
+    function sfxSuccess() {
+      [523, 659, 784].forEach(function(f, i) {
+        setTimeout(function() { sfxTone(f, 0.3, 0.09); }, i * 110);
+      });
+    }
+
+    function sfxError() {
+      sfxTone(220, 0.18, 0.1);
+      setTimeout(function() { sfxTone(196, 0.22, 0.08); }, 180);
+    }
+
+    // ===== SERIAL SPINNER =====
+    var HEX = '0123456789ABCDEF';
+    var serialEl = document.getElementById('serialDisplay');
+    var serialTimer = null;
+
+    function rndSerial() {
+      var out = [];
+      for (var i = 0; i < 4; i++) {
+        var s = '';
+        for (var j = 0; j < 4; j++) s += HEX[Math.floor(Math.random() * 16)];
+        out.push(s);
+      }
+      return out.join('-');
+    }
+
+    function startSerial() {
+      if (serialTimer) return;
+      serialTimer = setInterval(function() { serialEl.textContent = rndSerial(); }, 75);
+    }
+
+    function stopSerial(txt) {
+      clearInterval(serialTimer); serialTimer = null;
+      serialEl.textContent = txt || '---- ---- ---- ----';
+    }
+
+    startSerial();
+
+    // ===== DECRYPT LOGIC =====
+    var VALID = ['ECHO-7734', 'ECHO7734'];
+    var busy = false;
+
+    function norm(s) { return s.trim().toUpperCase().replace(/[\s\-]+/g, ''); }
+
+    function runDecrypt() {
+      if (busy) return;
+      sfxClick();
+      var rawKey = document.getElementById('cipherKey').value;
+      var out = document.getElementById('appOutput');
+      var ret = document.getElementById('returnBtn');
+
+      out.className = 'win-output';
+      ret.className = '';
+
+      if (!rawKey.trim()) { showOut('err', '&gt; ERROR: no cipher key provided.'); return; }
+
+      busy = true;
+      var btn = document.getElementById('decryptBtn');
+      btn.disabled = true; btn.textContent = 'PROCESSING...';
+      document.getElementById('statusLeft').textContent = 'decrypting...';
+      document.getElementById('navStatus').textContent = 'decrypting...';
+
+      var bar   = document.getElementById('progressBar');
+      var label = document.getElementById('progressLabel');
+
+      var steps = [
+        { p: 18,  t: 'READING STREAM HEADER...',    ms: 280  },
+        { p: 44,  t: 'VERIFYING ECHO HANDSHAKE...', ms: 680  },
+        { p: 69,  t: 'APPLYING CIPHER...',          ms: 1080 },
+        { p: 88,  t: 'DECODING PAYLOAD...',         ms: 1480 },
+        { p: 100, t: 'COMPLETE',                    ms: 1860 }
+      ];
+
+      steps.forEach(function(s) {
+        setTimeout(function() {
+          bar.style.width = s.p + '%';
+          label.textContent = s.t;
+        }, s.ms);
+      });
+
+      setTimeout(function() {
+        busy = false;
+        btn.disabled = false; btn.textContent = 'EXECUTE DECRYPT';
+
+        if (VALID.indexOf(norm(rawKey)) >= 0) {
+          stopSerial('ECHO-7734');
+          document.getElementById('statusLeft').textContent = 'auth accepted';
+          document.getElementById('navStatus').textContent = 'feed unlocked';
+          sfxSuccess();
+          showOut('ok',
+            '&gt; AUTH HANDSHAKE: <span class="ok">ACCEPTED</span>\n' +
+            '&gt; <span class="dim">&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>\n' +
+            '&gt; STREAM REF : <span class="key">007</span>\n' +
+            '&gt; LABEL &nbsp;&nbsp;&nbsp;&nbsp; : <span class="dim">WAREHOUSE LOADING DOCK &#9472; PL</span>\n' +
+            '&gt; REGION &nbsp;&nbsp;&nbsp; : <span class="dim">PL / CET</span>\n' +
+            '&gt; STATUS &nbsp;&nbsp;&nbsp; : <span class="ok">LIVE</span>\n' +
+            '&gt; <span class="dim">&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>\n' +
+            '&gt; feed access granted.'
+          );
+          ret.className = 'show';
+          saveSolved('puzzle_01', '007');
+
+          var notice = document.getElementById('successNotice');
+          document.getElementById('successBody').innerHTML =
+            'CAM_007 &mdash; <b>Warehouse Loading Dock [PL]</b> has been added to your feed index. ' +
+            '<a href="index.html">return to feeds &rarr;</a>';
+          notice.className = 'show';
+
+        } else {
+          stopSerial('AUTH  FAIL');
+          setTimeout(startSerial, 1600);
+          document.getElementById('statusLeft').textContent = 'auth rejected';
+          document.getElementById('navStatus').textContent = 'ready';
+          sfxError();
+          bar.style.background = 'linear-gradient(to right,#2e0808,#4a1212)';
+          label.textContent = 'REJECTED';
+          showOut('err',
+            '&gt; AUTH HANDSHAKE: <span style="color:#6a3030">REJECTED</span>\n' +
+            '&gt; invalid cipher key.\n' +
+            '&gt; expected ECHO-type sequence.'
+          );
+          setTimeout(function() {
+            bar.style.width = '0%'; bar.style.background = '';
+            label.textContent = 'STANDBY';
+          }, 1800);
+        }
+      }, 2050);
+    }
+
+    function showOut(type, html) {
+      var el = document.getElementById('appOutput');
+      el.innerHTML = html.replace(/\n/g, '<br>');
+      el.className = 'win-output show' + (type === 'err' ? ' err' : '');
+    }
+
+    function clearAll() {
+      if (busy) return;
+      sfxClick();
+      document.getElementById('streamId').value = '';
+      document.getElementById('cipherKey').value = '';
+      document.getElementById('appOutput').className = 'win-output';
+      document.getElementById('returnBtn').className = '';
+      document.getElementById('successNotice').className = '';
+      document.getElementById('progressBar').style.cssText = 'width:0%';
+      document.getElementById('progressLabel').textContent = 'STANDBY';
+      document.getElementById('statusLeft').textContent = 'ready';
+      document.getElementById('navStatus').textContent = 'ready';
+    }
+
+    function saveSolved(puzzleId, feedId) {
+      try {
+        var raw = localStorage.getItem('openfeed_game');
+        var s = raw ? JSON.parse(raw) : {};
+        s.puzzlesSolved = s.puzzlesSolved || [];
+        s.extraFeeds    = s.extraFeeds    || [];
+        if (s.puzzlesSolved.indexOf(puzzleId) < 0) s.puzzlesSolved.push(puzzleId);
+        if (s.extraFeeds.indexOf(feedId) < 0)      s.extraFeeds.push(feedId);
+        localStorage.setItem('openfeed_game', JSON.stringify(s));
+      } catch(e) {}
+    }
+
+    function returnToFeed() { sfxClick(); window.location.href = 'index.html'; }
+
+    document.getElementById('winClose').addEventListener('click', function() {
+      sfxClick(); window.location.href = 'index.html';
+    });
+
+    document.getElementById('cipherKey').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') runDecrypt();
+    });
+  </script>
+
+</body>
+</html>
