@@ -34,6 +34,8 @@ public static class InteractableHoverQuery
                 return true;
             if (SpeakerStillAudio.IsSpeakerTransform(t))
                 return true;
+            if (WorldspaceEasTvWebViewHost.IsAnyTvHitTransform(t))
+                return true;
         }
 
         if (monitor != null && monitor.HitsAllowMonitorZoom(hits))

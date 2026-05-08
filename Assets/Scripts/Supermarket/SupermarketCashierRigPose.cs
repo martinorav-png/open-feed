@@ -5,6 +5,13 @@ using UnityEngine;
 [DefaultExecutionOrder(120)]
 public class SupermarketCashierRigPose : MonoBehaviour
 {
+    public enum ArmIkMode
+    {
+        Off = 0,
+        Counter = 1,
+        RelaxedBesideBody = 2
+    }
+
     [Header("Scene References")]
     public Transform target;
     public Transform tableSurface;
@@ -16,13 +23,27 @@ public class SupermarketCashierRigPose : MonoBehaviour
     [Range(0f, 45f)] public float maxChestYawDegrees = 12f;
     public float lookSpeed = 7f;
 
-    [Header("Counter Pose")]
+    [Header("Arm IK")]
+    public ArmIkMode armIkMode = ArmIkMode.RelaxedBesideBody;
+
+    [Header("Counter pose (armIkMode = Counter)")]
     public float handSpread = 0.62f;
     public float handForwardDistance = 0.56f;
     public float handSurfaceOffset = 0.045f;
     public float elbowForwardBias = 0.42f;
     public float elbowSideBias = 0.16f;
-    public bool poseArms = true;
+
+    [Header("Relaxed beside body (armIkMode = RelaxedBesideBody)")]
+    [Tooltip("World Y offset from character root (feet) for hand hang height.")]
+    public float relaxedHandHeight = 0.80f;
+    [Tooltip("How far each hand is from the torso midline (meters). Lower = closer to body.")]
+    public float relaxedSideOffset = 0.25f;
+    [Tooltip("Along character -forward: positive pulls hands back; negative moves them forward.")]
+    public float relaxedBackOffset = -0.07f;
+    public float relaxedElbowForwardBias = 0.06f;
+    public float relaxedElbowSideBias = 0.28f;
+    [Tooltip("How strongly relaxed mode snaps wrist palm aim toward the torso.")]
+    [Range(0f, 1f)] public float relaxedHandOrientBlend = 0.074f;
 
     Transform _spine02;
     Transform _spine01;
@@ -40,6 +61,7 @@ public class SupermarketCashierRigPose : MonoBehaviour
     readonly Dictionary<Transform, Quaternion> _rest = new Dictionary<Transform, Quaternion>();
     Vector3 _headLocalForward = Vector3.forward;
     bool _captured;
+    CashierGestureController _gestures;
 
     void Awake()
     {
@@ -50,6 +72,29 @@ public class SupermarketCashierRigPose : MonoBehaviour
 
     void LateUpdate()
     {
+        if (_gestures == null)
+            _gestures = GetComponent<CashierGestureController>();
+
+        if (_gestures != null && _gestures.UseRelaxedArmIkOverlay && armIkMode == ArmIkMode.RelaxedBesideBody)
+        {
+            ResolveReferences();
+            ResolveBones();
+            CaptureRestPose();
+            Restore(_leftUpper);
+            Restore(_leftLower);
+            Restore(_leftHand);
+            Restore(_rightUpper);
+            Restore(_rightLower);
+            Restore(_rightHand);
+            GetRelaxedHandTargets(out Vector3 leftRel, out Vector3 rightRel);
+            SolveArm(_leftUpper, _leftLower, _leftHand, leftRel, true, relaxedElbowForwardBias, relaxedElbowSideBias, ApplyPalmsTowardTorso);
+            SolveArm(_rightUpper, _rightLower, _rightHand, rightRel, false, relaxedElbowForwardBias, relaxedElbowSideBias, ApplyPalmsTowardTorso);
+            return;
+        }
+
+        if (_gestures != null && _gestures.IsPlaying)
+            return;
+
         ResolveReferences();
         ResolveBones();
         CaptureRestPose();
@@ -69,13 +114,17 @@ public class SupermarketCashierRigPose : MonoBehaviour
         ApplyChestLook();
         ApplyHeadLook();
 
-        if (poseArms)
+        if (armIkMode == ArmIkMode.Counter)
         {
-            Vector3 leftTarget;
-            Vector3 rightTarget;
-            GetHandTargets(out leftTarget, out rightTarget);
-            SolveArm(_leftUpper, _leftLower, _leftHand, leftTarget, true);
-            SolveArm(_rightUpper, _rightLower, _rightHand, rightTarget, false);
+            GetHandTargets(out Vector3 leftTarget, out Vector3 rightTarget);
+            SolveArm(_leftUpper, _leftLower, _leftHand, leftTarget, true, elbowForwardBias, elbowSideBias, ApplyPalmOnCounter);
+            SolveArm(_rightUpper, _rightLower, _rightHand, rightTarget, false, elbowForwardBias, elbowSideBias, ApplyPalmOnCounter);
+        }
+        else if (armIkMode == ArmIkMode.RelaxedBesideBody)
+        {
+            GetRelaxedHandTargets(out Vector3 leftRel, out Vector3 rightRel);
+            SolveArm(_leftUpper, _leftLower, _leftHand, leftRel, true, relaxedElbowForwardBias, relaxedElbowSideBias, ApplyPalmsTowardTorso);
+            SolveArm(_rightUpper, _rightLower, _rightHand, rightRel, false, relaxedElbowForwardBias, relaxedElbowSideBias, ApplyPalmsTowardTorso);
         }
     }
 
@@ -226,9 +275,54 @@ public class SupermarketCashierRigPose : MonoBehaviour
         rightTarget.y = y;
     }
 
-    void SolveArm(Transform upper, Transform lower, Transform hand, Vector3 targetPos, bool left)
+    void GetRelaxedHandTargets(out Vector3 leftTarget, out Vector3 rightTarget)
     {
-        if (upper == null || lower == null || hand == null) return;
+        Vector3 root = transform.position;
+        float y = root.y + relaxedHandHeight;
+        Vector3 mid = new Vector3(root.x, y, root.z);
+        Vector3 lat = transform.right;
+        float w = Mathf.Max(0.02f, relaxedSideOffset);
+        leftTarget = mid - lat * w;
+        rightTarget = mid + lat * w;
+        Vector3 back = -transform.forward * relaxedBackOffset;
+        leftTarget += back;
+        rightTarget += back;
+    }
+
+    void ApplyPalmOnCounter(Transform lower, Transform hand, Vector3 wristTarget, bool left)
+    {
+        Quaternion palmDown = Quaternion.LookRotation(transform.forward, Vector3.down);
+        hand.rotation = Quaternion.Slerp(hand.rotation, palmDown, 0.9f);
+    }
+
+    void ApplyPalmsTowardTorso(Transform lower, Transform hand, Vector3 wristTarget, bool left)
+    {
+        Vector3 fromElbow = wristTarget - lower.position;
+        Vector3 fingerFwd = fromElbow.sqrMagnitude > 1e-6f ? fromElbow.normalized : Vector3.down;
+        fingerFwd = Vector3.Slerp(fingerFwd, Vector3.down, 0.22f).normalized;
+
+        // Inner palm faces the body midline (+right from the character's left hand, -right from the right).
+        Vector3 towardTorso = left ? transform.right : -transform.right;
+        Vector3 handUp = Vector3.ProjectOnPlane(towardTorso, fingerFwd);
+        if (handUp.sqrMagnitude < 1e-5f)
+            handUp = Vector3.ProjectOnPlane(-transform.forward, fingerFwd);
+        handUp.Normalize();
+
+        Quaternion desired = Quaternion.LookRotation(fingerFwd, handUp);
+        hand.rotation = Quaternion.Slerp(hand.rotation, desired, relaxedHandOrientBlend);
+    }
+
+    void SolveArm(
+        Transform upper,
+        Transform lower,
+        Transform hand,
+        Vector3 targetPos,
+        bool left,
+        float poleForward,
+        float poleSide,
+        System.Action<Transform, Transform, Vector3, bool> applyHand)
+    {
+        if (upper == null || lower == null || hand == null || applyHand == null) return;
 
         Vector3 root = upper.position;
         float upperLen = Vector3.Distance(upper.position, lower.position);
@@ -238,7 +332,7 @@ public class SupermarketCashierRigPose : MonoBehaviour
         Vector3 dir = toTarget.normalized;
 
         Vector3 side = left ? -transform.right : transform.right;
-        Vector3 pole = Vector3.ProjectOnPlane(transform.forward * elbowForwardBias + side * elbowSideBias + Vector3.down * 0.1f, dir);
+        Vector3 pole = Vector3.ProjectOnPlane(transform.forward * poleForward + side * poleSide + Vector3.down * 0.18f, dir);
         if (pole.sqrMagnitude < 0.0001f)
             pole = Vector3.ProjectOnPlane(Vector3.down, dir);
         pole.Normalize();
@@ -250,8 +344,7 @@ public class SupermarketCashierRigPose : MonoBehaviour
         RotateBoneToward(upper, lower.position - upper.position, elbowTarget - upper.position);
         RotateBoneToward(lower, hand.position - lower.position, targetPos - lower.position);
 
-        Quaternion palmDown = Quaternion.LookRotation(transform.forward, Vector3.down);
-        hand.rotation = Quaternion.Slerp(hand.rotation, palmDown, 0.9f);
+        applyHand(lower, hand, targetPos, left);
     }
 
     static void RotateBoneToward(Transform bone, Vector3 current, Vector3 desired)

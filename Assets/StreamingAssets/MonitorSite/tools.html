@@ -216,6 +216,8 @@
     <div>
       <a href="index.html">[feeds]</a>
       <a href="tools.html" class="active">[tools]</a>
+      <a href="radio.html" id="navRadioLink" style="display:none">[radio]</a>
+      <a href="forum.html" id="navForumLink" style="display:none">[community]</a>
       <a href="#">[submit]</a>
       <a href="#faqSection">[faq]</a>
     </div>
@@ -291,6 +293,87 @@
 
       <div id="successNotice">
         <b>&#9632; Feed unlocked</b> &mdash; <span id="successBody"></span>
+      </div>
+
+      <!-- ── MORSE DECODER ── -->
+      <div class="app-window" id="morseDecoder" style="margin-top:14px;">
+
+        <div class="win-titlebar">
+          <div class="win-title">
+            CW / Morse Decoder v1.0
+            <span class="crk">[SIGNAL TOOL]</span>
+          </div>
+          <div class="win-ctrls">
+            <div class="win-btn-ctrl">&#8211;</div>
+            <div class="win-btn-ctrl">&#215;</div>
+          </div>
+        </div>
+
+        <div class="win-nfo">
+          // decode CW morse input to plain text<br>
+          // use <span class="acc">SPACE</span> between letters &nbsp;&middot;&nbsp; use <span class="acc">/</span> between words
+        </div>
+
+        <div class="win-body">
+
+          <div style="margin-bottom:10px;">
+            <div onclick="toggleMorseRef()" id="morseRefBtn"
+              style="font-family:monospace;font-size:9px;color:#000080;cursor:pointer;user-select:none;padding:3px 0;">
+              &#9654; show morse alphabet reference
+            </div>
+            <div id="morseRef" style="display:none;margin-top:6px;background:#f0f0e8;border:1px inset #ccc;padding:8px 10px;">
+              <div style="font-family:monospace;font-size:9px;color:#333;line-height:2;display:grid;grid-template-columns:repeat(4,1fr);gap:0 6px;">
+                <span>A &nbsp;<b>.-</b></span>
+                <span>B &nbsp;<b>-...</b></span>
+                <span>C &nbsp;<b>-.-.</b></span>
+                <span>D &nbsp;<b>-..</b></span>
+                <span>E &nbsp;<b>.</b></span>
+                <span>F &nbsp;<b>..-.</b></span>
+                <span>G &nbsp;<b>--.</b></span>
+                <span>H &nbsp;<b>....</b></span>
+                <span>I &nbsp;<b>..</b></span>
+                <span>J &nbsp;<b>.---</b></span>
+                <span>K &nbsp;<b>-.-</b></span>
+                <span>L &nbsp;<b>.-..</b></span>
+                <span>M &nbsp;<b>--</b></span>
+                <span>N &nbsp;<b>-.</b></span>
+                <span>O &nbsp;<b>---</b></span>
+                <span>P &nbsp;<b>.--.</b></span>
+                <span>Q &nbsp;<b>--.-</b></span>
+                <span>R &nbsp;<b>.-.</b></span>
+                <span>S &nbsp;<b>...</b></span>
+                <span>T &nbsp;<b>-</b></span>
+                <span>U &nbsp;<b>..-</b></span>
+                <span>V &nbsp;<b>...-</b></span>
+                <span>W &nbsp;<b>.--</b></span>
+                <span>X &nbsp;<b>-..-</b></span>
+                <span>Y &nbsp;<b>-.--</b></span>
+                <span>Z &nbsp;<b>--..</b></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="win-field">
+            <div class="win-label">MORSE IN:</div>
+            <input class="win-input" id="morseInput" type="text"
+              placeholder=".. -. .--. ..- -  (/ between words)"
+              autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="win-btns">
+            <button class="win-btn-action" onclick="runMorseDecode()">DECODE</button>
+            <button class="win-btn-action" onclick="clearMorseDecoder()">CLEAR</button>
+          </div>
+
+          <div class="win-output" id="morseOutput"></div>
+
+        </div>
+
+        <div class="win-statusbar">
+          <span id="morseStatus">ready</span>
+          <span>CW signal tool v1.0</span>
+        </div>
+
       </div>
 
       <div class="footer-area">
@@ -497,8 +580,110 @@
       sfxClick(); window.location.href = 'index.html';
     });
 
+    // Show nav links based on game state
+    (function() {
+      try {
+        var raw = localStorage.getItem('openfeed_game');
+        if (!raw) return;
+        var s = JSON.parse(raw);
+        if (s.forumVisited) {
+          var fl = document.getElementById('navForumLink');
+          if (fl) fl.style.display = '';
+        }
+        if (s.elevatorClue && s.puzzlesSolved && s.puzzlesSolved.indexOf('puzzle_01') >= 0) {
+          var rl = document.getElementById('navRadioLink');
+          if (rl) rl.style.display = '';
+        }
+      } catch(e) {}
+    })();
+
     document.getElementById('cipherKey').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') runDecrypt();
+    });
+
+    // ===== MORSE DECODER =====
+    var MORSE_TABLE = {
+      '.-':'A', '-...':'B', '-.-.':'C', '-..':'D', '.':'E',
+      '..-.':'F', '--.':'G', '....':'H', '..':'I', '.---':'J',
+      '-.-':'K', '.-..':'L', '--':'M', '-.':'N', '---':'O',
+      '.--.':'P', '--.-':'Q', '.-.':'R', '...':'S', '-':'T',
+      '..-':'U', '...-':'V', '.--':'W', '-..-':'X', '-.--':'Y',
+      '--..':'Z',
+      '.----':'1', '..---':'2', '...--':'3', '....-':'4', '.....':'5',
+      '-....':'6', '--...':'7', '---..':'8', '----.':'9', '-----':'0'
+    };
+
+    function runMorseDecode() {
+      sfxClick();
+      var raw = document.getElementById('morseInput').value.trim();
+      var outEl = document.getElementById('morseOutput');
+      var status = document.getElementById('morseStatus');
+
+      if (!raw) {
+        outEl.innerHTML = '&gt; ERROR: no input provided.';
+        outEl.className = 'win-output show err';
+        return;
+      }
+
+      var words = raw.split('/');
+      var decoded = '';
+      var hasError = false;
+
+      for (var wi = 0; wi < words.length; wi++) {
+        if (wi > 0) decoded += ' ';
+        var letters = words[wi].trim().split(/\s+/);
+        for (var li = 0; li < letters.length; li++) {
+          var tok = letters[li].trim();
+          if (!tok) continue;
+          var ch = MORSE_TABLE[tok];
+          if (ch) {
+            decoded += ch;
+          } else {
+            decoded += '?';
+            hasError = true;
+          }
+        }
+      }
+
+      if (decoded) {
+        status.textContent = hasError ? 'decoded (partial)' : 'decoded ok';
+        outEl.innerHTML =
+          '&gt; INPUT  : <span class="dim">' + escHtml(raw) + '</span><br>' +
+          '&gt; OUTPUT : <span class="key">' + escHtml(decoded) + '</span>' +
+          (hasError ? '<br><span class="dim">&gt; note: ? denotes unrecognized sequence</span>' : '');
+        outEl.className = 'win-output show' + (hasError ? '' : '');
+      } else {
+        outEl.innerHTML = '&gt; ERROR: could not decode input.';
+        outEl.className = 'win-output show err';
+        status.textContent = 'error';
+      }
+    }
+
+    function clearMorseDecoder() {
+      sfxClick();
+      document.getElementById('morseInput').value = '';
+      document.getElementById('morseOutput').className = 'win-output';
+      document.getElementById('morseStatus').textContent = 'ready';
+    }
+
+    function toggleMorseRef() {
+      var ref = document.getElementById('morseRef');
+      var btn = document.getElementById('morseRefBtn');
+      if (ref.style.display === 'none') {
+        ref.style.display = '';
+        btn.textContent = '▼ hide morse alphabet reference';
+      } else {
+        ref.style.display = 'none';
+        btn.textContent = '► show morse alphabet reference';
+      }
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    document.getElementById('morseInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') runMorseDecode();
     });
   </script>
 

@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public class DrivingCarInteriorInteraction : MonoBehaviour
 {
-    const string RadioClipResourcePath = "radiothing";
+    const string RadioClipResourcePath = "radiothing2";
     const string DriveHomeWord = "home";
 
     static readonly Color CrosshairIdle = new Color(0.65f, 0.65f, 0.68f, 0.92f);
@@ -554,7 +554,7 @@ public class DrivingCarInteriorInteraction : MonoBehaviour
             _radioClip = Resources.Load<AudioClip>(RadioClipResourcePath);
         if (_radioClip == null)
         {
-            Debug.LogWarning("OPENFEED: Missing AudioClip at Resources/" + RadioClipResourcePath + " (expected Assets/Audio/Resources/radiothing.mp3).");
+            Debug.LogWarning("OPENFEED: Missing AudioClip at Resources/" + RadioClipResourcePath + " (expected Assets/Audio/Resources/radiothing2.mp3).");
             return;
         }
 

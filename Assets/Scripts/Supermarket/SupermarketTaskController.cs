@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -93,8 +94,6 @@ public class SupermarketTaskController : MonoBehaviour
                 playerCamera = fpc.cameraPivot.GetComponentInChildren<Camera>(true);
             if (playerCamera == null) playerCamera = Camera.main;
         }
-        if (clerkHeadLook != null && playerCamera != null)
-            clerkHeadLook.target = playerCamera.transform;
 
         if (!string.IsNullOrEmpty(counterName))
         {
@@ -103,6 +102,36 @@ public class SupermarketTaskController : MonoBehaviour
         }
 
         EnsureCartSlots();
+        AutoWireClerkIfNeeded();
+
+        if (clerkHeadLook == null && clerkRoot != null)
+            clerkHeadLook = clerkRoot.GetComponent<ClerkHeadLook>();
+        if (clerkHeadLook != null && playerCamera != null)
+            clerkHeadLook.target = playerCamera.transform;
+    }
+
+    void AutoWireClerkIfNeeded()
+    {
+        if (clerkRoot == null)
+        {
+            var found = GameObject.Find("ProperCashier_NPC");
+            if (found != null)
+                clerkRoot = found.transform;
+        }
+
+        if (clerkRoot == null)
+            return;
+
+        if (clerkGestures == null)
+            clerkGestures = clerkRoot.GetComponent<CashierGestureController>();
+
+        if (clerkHeadAnchor == null)
+        {
+            Transform head = clerkRoot.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(t => t != null && t.name == "Head");
+            if (head != null)
+                clerkHeadAnchor = head;
+        }
     }
 
     public void EnsureCartSlots()
@@ -142,6 +171,17 @@ public class SupermarketTaskController : MonoBehaviour
         return null;
     }
 
+    public void EnsureMarketAudioPlaying()
+    {
+        if (marketAmbience == null)
+            marketAmbience = GameObject.Find("MarketAmbience")?.GetComponent<MarketAmbience>();
+        if (marketMusic == null)
+            marketMusic = GameObject.Find("MarketMusic")?.GetComponent<MarketAmbience>();
+
+        if (marketAmbience != null) marketAmbience.Play();
+        if (marketMusic != null) marketMusic.Play();
+    }
+
     public void NotifyItemPicked(ShelfPickupItem item)
     {
         if (_phase == Phase.Done) return;
@@ -168,7 +208,7 @@ public class SupermarketTaskController : MonoBehaviour
             StartCoroutine(IntroSequence());
         }
 
-        if ((_phase == Phase.IntroShown || _phase == Phase.Shopping) && !_runningDialogue)
+        if ((_phase == Phase.Idle || _phase == Phase.IntroShown || _phase == Phase.Shopping) && !_runningDialogue)
         {
             var mouse = Mouse.current;
             if (mouse != null && mouse.leftButton.wasPressedThisFrame && playerCamera != null && clerkRoot != null)
@@ -242,8 +282,7 @@ public class SupermarketTaskController : MonoBehaviour
         if (_introPlayed) yield break;
         _introPlayed = true;
         if (entryChimeClip != null) _sfx.PlayOneShot(entryChimeClip, 0.22f);
-        if (marketAmbience != null) marketAmbience.Play();
-        if (marketMusic != null) marketMusic.Play();
+        EnsureMarketAudioPlaying();
         yield return new WaitForSeconds(0.35f);
         yield return SupermarketSubtitleOverlay.Instance.RunLineCo("take 3 items from the store and head to the cashier", 3.2f, 0.45f, Color.white);
         _phase = Phase.Shopping;

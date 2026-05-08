@@ -700,6 +700,12 @@ public class SupermarketDriveInIntro : MonoBehaviour
         if (entranceLock != null)
             entranceLock.LockEntrance();
 
+        SupermarketTaskController taskController = SupermarketTaskController.Instance;
+        if (taskController == null)
+            taskController = FindAnyObjectByType<SupermarketTaskController>();
+        if (taskController != null)
+            taskController.EnsureMarketAudioPlaying();
+
         yield return FadeOverlay(1f, 0f, fadeFromBlackDuration);
     }
 

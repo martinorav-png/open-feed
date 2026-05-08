@@ -25,10 +25,16 @@ public class CashierGestureController : MonoBehaviour
     public float crossFadeOut = 0.6f;
     public float minHold = 2.5f;
     public float postHold = 0.4f;
+    [Tooltip("Seconds after a click gesture begins where relaxed arm IK stays applied so arms don't snap to the animator's wider idle pose during the cross-fade.")]
+    public float relaxedArmIkOverlapSeconds = 0.28f;
 
     int _lastIndex = -1;
     Coroutine _co;
+    float _gestureElapsed;
+
     public bool IsPlaying => _co != null;
+    public bool UseRelaxedArmIkOverlay =>
+        _co != null && relaxedArmIkOverlapSeconds > 0f && _gestureElapsed < relaxedArmIkOverlapSeconds;
 
     void Reset()
     {
@@ -81,6 +87,7 @@ public class CashierGestureController : MonoBehaviour
 
     IEnumerator PlayCo(string stateName)
     {
+        _gestureElapsed = 0f;
         animator.CrossFadeInFixedTime(stateName, crossFadeIn, 0);
 
         int targetHash = Animator.StringToHash(stateName);
@@ -88,6 +95,7 @@ public class CashierGestureController : MonoBehaviour
         while (animator.GetCurrentAnimatorStateInfo(0).shortNameHash != targetHash && guard < 0.5f)
         {
             guard += Time.unscaledDeltaTime;
+            _gestureElapsed += Time.deltaTime;
             yield return null;
         }
 
@@ -98,6 +106,7 @@ public class CashierGestureController : MonoBehaviour
         while (t < hold)
         {
             t += Time.deltaTime;
+            _gestureElapsed += Time.deltaTime;
             yield return null;
         }
 

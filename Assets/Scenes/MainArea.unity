@@ -21584,7 +21584,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MonitorWebViewHost
   httpUrl: 
-  streamingRelativePath: MonitorSite/index.html
+  streamingRelativePath: MonitorSite/shell.html
   fullscreenWhileBrowsing: 1
   webViewport: {fileID: 0}
 --- !u!114 &1930082902

@@ -16,7 +16,7 @@ public class PhoneInteraction : MonoBehaviour
     public FirstPersonCamera cameraController;
 
     [Header("Inspect Position")]
-    public Vector3 inspectLocalPos = new Vector3(0f, 0.20f, 0.80f);
+    public Vector3 inspectLocalPos = new Vector3(0f, 0.02f, 0.34f);
     public Vector3 inspectLocalRot = new Vector3(0f, 180f, 0f);
     public float rotateSpeed = 2.5f;
 
@@ -92,6 +92,7 @@ public class PhoneInteraction : MonoBehaviour
             originalLocalRot = phoneObject.transform.localRotation;
             originalParent = phoneObject.transform.parent;
             EnsurePhoneCollider();
+            EnsurePhysicalPhoneButtons();
             phoneRootCollider = phoneObject.GetComponent<Collider>();
             CachePhoneUiReferences();
         }
@@ -176,6 +177,7 @@ public class PhoneInteraction : MonoBehaviour
         originalLocalRot = phoneObject.transform.localRotation;
         originalParent = phoneObject.transform.parent;
         EnsurePhoneCollider();
+        EnsurePhysicalPhoneButtons();
         phoneRootCollider = phoneObject.GetComponent<Collider>();
         CachePhoneUiReferences();
         StartPickup();
@@ -436,6 +438,36 @@ public class PhoneInteraction : MonoBehaviour
         BoxCollider rootBox = phoneObject.AddComponent<BoxCollider>();
         rootBox.size = new Vector3(0.065f, 0.015f, 0.13f);
         rootBox.center = new Vector3(0f, 0.008f, 0f);
+    }
+
+    void EnsurePhysicalPhoneButtons()
+    {
+        if (phoneObject == null)
+            return;
+
+        Transform buttonRoot = FindNamedChild(phoneObject.transform, "PhoneButtons3D");
+        if (buttonRoot == null)
+            return;
+
+        for (int i = 0; i < buttonRoot.childCount; i++)
+        {
+            Transform key = buttonRoot.GetChild(i);
+            if (!IsPhoneButtonName(key.name))
+                continue;
+
+            PhoneButton phoneButton = key.GetComponent<PhoneButton>();
+            if (phoneButton == null)
+                phoneButton = key.gameObject.AddComponent<PhoneButton>();
+            if (string.IsNullOrEmpty(phoneButton.buttonValue))
+                phoneButton.buttonValue = key.name;
+
+            if (key.GetComponent<Collider>() == null)
+            {
+                BoxCollider box = key.gameObject.AddComponent<BoxCollider>();
+                box.size = new Vector3(0.014f, 0.006f, 0.014f);
+                box.center = Vector3.zero;
+            }
+        }
     }
 
     void CachePhoneUiReferences()

@@ -194,7 +194,7 @@
     <div>
       <a href="index.html">[feeds]</a>
       <a href="tools.html">[tools]</a>
-      <a href="#">[community]</a>
+      <a href="forum.html" style="font-weight:bold;color:#000">[community]</a>
       <a href="#">[submit]</a>
     </div>
     <div class="nav-status">logged in as: guest</div>
@@ -207,7 +207,7 @@
     </div>
 
     <div class="thread-title">
-      [THREAD] CAM_005 interference pattern &mdash; anyone else tracking this?
+      [THREAD] CAM_005 interference pattern - anyone else tracking this?
     </div>
 
     <!-- POST 1: OP -->
@@ -224,40 +224,59 @@
       <div class="post-body">
         <div class="post-meta">#1 &nbsp;&nbsp; 2019-11-14 &nbsp; 03:22:41 &nbsp;|&nbsp; edited: 04:09:17</div>
         <div class="post-text">
-          been watching the <span class="hl">005 feed</span> on openfeed.icu for about three weeks. the snow field one. most people dismiss it as dead signal or a busted relay.<br><br>
+          been staring at cam 005 for about three weeks now. the snow field one. most people skip it, looks completely dead.<br><br>
 
-          it's not.<br><br>
+          it's not dead.<br><br>
 
-          roughly every 25&ndash;35 seconds there's a burst. seven frames. irregular interval, not a glitch. i started capturing stills and finally ran analysis on the sequence.<br><br>
+          there's a burst that happens every 25 to 30 seconds or so. only lasts a few seconds but the timing is way too consistent to be a glitch. started screenshotting everything and running it through my capture setup - yeah, something is cycling deliberately. this isn't random noise.<br><br>
 
-          the burst is <em>structured</em>. not interference from a nearby transmitter, not compression artifact. the timing is deliberate.<br><br>
+          and there's something else in the frames. i'm not going to say what because i don't want to colour what other people are seeing. just watch the burst closely and tell me if you notice anything.<br><br>
 
-          fed the frame sequence through my capture setup and got a partial header decode:<br><br>
+          rough numbers from my captures:<br><br>
 
           <div class="code-block">&gt; FRAME ANALYSIS :: CAM_005<br>
 &gt; capture: 2019-11-13 / frames: 847<br>
-&gt; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+&gt; ---------------------------------<br>
 &gt; burst avg interval &nbsp;: 28.4s<br>
-&gt; burst length &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 7 frames / 380&#8211;640ms ea.<br>
-&gt; final frame hold &nbsp;&nbsp;&nbsp;: 4.8&#8211;7.2s<br>
-&gt; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+&gt; burst length &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 7 frames / 380-640ms ea.<br>
+&gt; final frame hold &nbsp;&nbsp;&nbsp;: 4.8-7.2s<br>
+&gt; ---------------------------------<br>
 &gt; HEADER DECODE (partial):<br>
 &gt; &nbsp;&nbsp;TYPE &nbsp;&nbsp;: <span class="key">ECHO</span><br>
 &gt; &nbsp;&nbsp;SEQ &nbsp;&nbsp;&nbsp;: <span class="key">7734</span><br>
 &gt; &nbsp;&nbsp;ORIGIN : <span class="redacted">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</span><br>
-&gt; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+&gt; ---------------------------------<br>
 &gt; classification: possible auth handshake.<br>
 &gt; target: unknown.</div>
 
-          <span class="hl">ECHO</span> + <span class="hl">7734</span> means something. if you have a stream decoder, try running it through &mdash; might be an access key. post results below.<br><br>
-
-          posting this before the feed changes again. it's already shifted twice since i started watching.
+          <span class="hl">ECHO</span> + <span class="hl">7734</span> means something. posting this before the feed changes again - it's already shifted twice since i started watching.
         </div>
         <div class="post-sig">-- anon_lurk0r &nbsp;|&nbsp; "the camera doesn't lie. the framing does."</div>
       </div>
     </div>
 
     <!-- POST 2 -->
+    <div class="post">
+      <div class="post-sidebar">
+        <div class="post-username">kv_37</div>
+        <div class="post-rank">lurker</div>
+        <div class="post-avatar"> ______
+|      |
+| .  . |
+|______|</div>
+        <div class="post-count">posts: 3<br>since: 2019</div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">#2 &nbsp;&nbsp; 2019-11-14 &nbsp; 05:11:49</div>
+        <div class="post-text">
+          yeah i see it. been watching for a couple days now.<br><br>
+          are those people out there? like actual people?<br><br>
+          i don't know what i'm looking at. i don't think i want to.
+        </div>
+      </div>
+    </div>
+
+    <!-- POST 3: vx_static -->
     <div class="post">
       <div class="post-sidebar">
         <div class="post-username">vx_static</div>
@@ -269,15 +288,15 @@
         <div class="post-count">posts: 17<br>since: 2019</div>
       </div>
       <div class="post-body">
-        <div class="post-meta">#2 &nbsp;&nbsp; 2019-11-14 &nbsp; 06:47:03</div>
+        <div class="post-meta">#3 &nbsp;&nbsp; 2019-11-14 &nbsp; 06:47:03</div>
         <div class="post-text">
-          interesting. ECHO prefix shows up in some older private relay protocols circa 2014&ndash;2017. SEQ 7734 looks like a stream reference ID rather than a random seed.<br><br>
-          if anyone has a recent StreamDecrypt build the ECHO cipher table should handle it. try openfeed as the stream ID.
+          burst pattern is real. been catching it in my own capture software, not a compression artifact.<br><br>
+          ECHO prefix shows up in some older private relay protocols from around 2014-2017. SEQ 7734 reads more like a stream reference ID than a random seed. if anyone has a StreamDecrypt build the ECHO cipher table should handle it - try openfeed as the stream ID.
         </div>
       </div>
     </div>
 
-    <!-- POST 3: OP reply -->
+    <!-- POST 4: OP reply -->
     <div class="post">
       <div class="post-sidebar">
         <div class="post-username">anon_lurk0r</div>
@@ -289,17 +308,38 @@
         <div class="post-count">posts: 312<br>since: 2017</div>
       </div>
       <div class="post-body">
-        <div class="post-meta">#3 &nbsp;&nbsp; 2019-11-14 &nbsp; 09:15:22</div>
+        <div class="post-meta">#4 &nbsp;&nbsp; 2019-11-14 &nbsp; 09:15:22</div>
         <div class="post-text">
-          confirmed. ran <span class="hl">ECHO-7734</span> through my decoder against the openfeed stream. got a live reference back. stream is real.<br><br>
-          not going to post what came through. check it yourself if you have the tool.<br><br>
-          i'll be offline for a bit. getting unusual traffic since posting this.
+          @vx_static ran it. got a live reference back from <span class="hl">ECHO-7734</span>. stream is real.<br><br>
+          not posting what came through. go find out yourself if you've got the tool.<br><br>
+          going offline for a bit. been getting weird traffic since i put this up and it's starting to bother me.
         </div>
         <div class="post-sig">-- anon_lurk0r &nbsp;|&nbsp; "the camera doesn't lie. the framing does."</div>
       </div>
     </div>
 
-    <!-- POST 4: deleted -->
+    <!-- POST 5: kv_37 warning -->
+    <div class="post">
+      <div class="post-sidebar">
+        <div class="post-username">kv_37</div>
+        <div class="post-rank">lurker</div>
+        <div class="post-avatar"> ______
+|      |
+| .  . |
+|______|</div>
+        <div class="post-count">posts: 3<br>since: 2019</div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">#5 &nbsp;&nbsp; 2019-11-14 &nbsp; 10:38:17</div>
+        <div class="post-text">
+          do NOT do what i did. i caught something in one of the frames last night - some of you probably know what i mean - and i was stupid enough to follow up on it.<br><br>
+          that was four days ago and i am genuinely scared right now. i don't want to post details. i don't think it's safe to. just please do not follow up on anything you see in that feed. watch it if you want but do not go looking for more. i'm serious. i really fucking wish someone had told me that before i did.<br><br>
+          staying off here for a while.
+        </div>
+      </div>
+    </div>
+
+    <!-- POST 6: deleted -->
     <div class="post">
       <div class="post-sidebar">
         <div class="post-username" style="color:#bbb">[deleted]</div>
@@ -307,16 +347,16 @@
         <div class="post-avatar" style="color:#ccc">  [    ]
  [    ]
  [    ]</div>
-        <div class="post-count" style="color:#ccc">posts: &mdash;</div>
+        <div class="post-count" style="color:#ccc">posts: -</div>
       </div>
       <div class="post-body">
-        <div class="post-meta">#4 &nbsp;&nbsp; 2019-11-14 &nbsp; 11:02:57 &nbsp;|&nbsp; <span class="mod-action">removed by moderator</span></div>
+        <div class="post-meta">#6 &nbsp;&nbsp; 2019-11-14 &nbsp; 11:02:57 &nbsp;|&nbsp; <span class="mod-action">removed by moderator</span></div>
         <div class="post-text" style="color:#bbb; font-style:italic;">[this post has been removed]</div>
       </div>
     </div>
 
     <div class="thread-footer">
-      4 posts &nbsp;|&nbsp; last activity: 2019-11-14 &nbsp;|&nbsp; views: 1,203 &nbsp;|&nbsp;
+      6 posts &nbsp;|&nbsp; last activity: 2019-11-14 &nbsp;|&nbsp; views: 1,203 &nbsp;|&nbsp;
       <span style="color:#900">thread locked by moderator</span>
     </div>
 
@@ -325,11 +365,123 @@
       if you don't have one: <a href="tools.html">[tools]</a> &mdash; StreamDecrypt v2.1 is available from the feed index.
     </div>
 
+    <!-- SECOND THREAD: CW / morse reference -->
+    <div style="margin-top:22px;border-top:2px solid #aaa;padding-top:12px;">
+
+      <div class="breadcrumb">
+        <a href="index.html">home</a> &rsaquo; <a href="#">community</a> &rsaquo; <a href="#">signal_theory</a> &rsaquo; hearing tone bursts from relay receiver - CW?
+      </div>
+
+      <div class="thread-title">
+        [THREAD] hearing tone bursts from relay receiver - is this CW?
+      </div>
+
+      <!-- POST 1 -->
+      <div class="post">
+        <div class="post-sidebar">
+          <div class="post-username">rf_curious</div>
+          <div class="post-rank">lurker</div>
+          <div class="post-avatar">  [  |  ]
+ [  |  ]
+ [_____]</div>
+          <div class="post-count">posts: 4<br>since: 2019</div>
+        </div>
+        <div class="post-body">
+          <div class="post-meta">#1 &nbsp;&nbsp; 2019-11-09 &nbsp; 21:14:08</div>
+          <div class="post-text">
+            okay so this might be a dumb question but bear with me.<br><br>
+            got my old SR unit out of storage last week and had it running near a field area, low band range. started picking up this repeating tone pattern - short blips and long blips in bursts. it's not static, it's not random, it's got like a rhythm to it. same sequence cycling over and over.<br><br>
+            is this morse code? it genuinely sounds like what i imagine morse code sounds like but i have no idea how to actually read it. haven't been able to find my old radio handbook anywhere. does anyone have a reference or know what i'm dealing with here
+          </div>
+        </div>
+      </div>
+
+      <!-- POST 2 -->
+      <div class="post">
+        <div class="post-sidebar">
+          <div class="post-username">signal_archivist</div>
+          <div class="post-rank">senior member</div>
+          <div class="post-avatar">  /===\
+ | &gt;-&lt; |
+  \===/ </div>
+          <div class="post-count">posts: 1,847<br>since: 2011</div>
+        </div>
+        <div class="post-body">
+          <div class="post-meta">#2 &nbsp;&nbsp; 2019-11-09 &nbsp; 22:03:51</div>
+          <div class="post-text">
+            yeah that's CW - continuous wave, basically morse code over a single carrier tone. pretty standard for relay devices in the 300-400 band. short burst = dot, long burst = dash, pretty simple once you know what you're listening for.<br><br>
+            alphabet for reference:
+
+            <div class="code-block">A &nbsp;.-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  N &nbsp;-.<br>
+B &nbsp;-...&nbsp;&nbsp;&nbsp;&nbsp;  O &nbsp;---<br>
+C &nbsp;-.-.&nbsp;&nbsp;&nbsp;&nbsp;  P &nbsp;.--.<br>
+D &nbsp;-..&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Q &nbsp;--.-<br>
+E &nbsp;.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  R &nbsp;.-.<br>
+F &nbsp;..-.&nbsp;&nbsp;&nbsp;&nbsp;  S &nbsp;...<br>
+G &nbsp;--.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  T &nbsp;-<br>
+H &nbsp;....&nbsp;&nbsp;&nbsp;&nbsp;  U &nbsp;..-<br>
+I &nbsp;..&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  V &nbsp;...-<br>
+J &nbsp;.---&nbsp;&nbsp;&nbsp;&nbsp;  W &nbsp;.--<br>
+K &nbsp;-.-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  X &nbsp;-..-<br>
+L &nbsp;.-..&nbsp;&nbsp;&nbsp;&nbsp;  Y &nbsp;-.--<br>
+M &nbsp;--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Z &nbsp;--..<br>
+<br>
+dot &nbsp;&nbsp; = short tone<br>
+dash &nbsp; = long tone &nbsp;(3x dot)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ gap between elements &nbsp;= 1x dot ]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ gap between letters &nbsp;&nbsp;= 3x dot ]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ gap between words &nbsp;&nbsp;&nbsp;&nbsp;= 7x dot ]</div>
+
+            could be a test beacon, could be an auth handshake, could be something weirder. if it's coming from the same direction consistently it's probably not drift. worth logging what you hear and mapping it against the table.
+          </div>
+          <div class="post-sig">-- signal_archivist &nbsp;|&nbsp; <span style="color:#bbb">rx/tx since '98</span></div>
+        </div>
+      </div>
+
+      <!-- POST 3 -->
+      <div class="post">
+        <div class="post-sidebar">
+          <div class="post-username">rf_curious</div>
+          <div class="post-rank">lurker</div>
+          <div class="post-avatar">  [  |  ]
+ [  |  ]
+ [_____]</div>
+          <div class="post-count">posts: 4<br>since: 2019</div>
+        </div>
+        <div class="post-body">
+          <div class="post-meta">#3 &nbsp;&nbsp; 2019-11-09 &nbsp; 22:41:17</div>
+          <div class="post-text">
+            oh shit okay that actually helps a lot. gonna sit with this tonight and try to work it out. signal's been consistent so yeah definitely not interference.<br><br>
+            cheers
+          </div>
+        </div>
+      </div>
+
+      <div class="thread-footer">
+        3 posts &nbsp;|&nbsp; last activity: 2019-11-09 &nbsp;|&nbsp; views: 88
+      </div>
+
+    </div>
+
     <div class="footer-area">
       openfeed.icu community &nbsp;&middot;&nbsp; not moderated &nbsp;&middot;&nbsp; post at your own risk
     </div>
 
   </div>
+
+  <script>
+    // Mark forum as visited so other pages can reveal the [community] nav link
+    (function() {
+      try {
+        var raw = localStorage.getItem('openfeed_game');
+        var g = raw ? JSON.parse(raw) : {};
+        if (!g.forumVisited) {
+          g.forumVisited = true;
+          localStorage.setItem('openfeed_game', JSON.stringify(g));
+        }
+      } catch(e) {}
+    })();
+  </script>
 
 </body>
 </html>

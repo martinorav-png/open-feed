@@ -14,7 +14,7 @@ public class GameFlowManager : MonoBehaviour
 
     [Header("Scene Names (must match Build Settings)")]
     public string mainMenuScene = "MainMenu";
-    public string storeScene = "supermarket";
+    public string storeScene = "supermarket2";
     public string drivingScene = "ForestDrive";
     public string mainAreaScene = "MainArea";
     public string deskScene = "Desk";
@@ -720,10 +720,9 @@ public class GameFlowManager : MonoBehaviour
 
     static bool IsActiveSceneSupermarket()
     {
-        return string.Equals(
-            SceneManager.GetActiveScene().name,
-            "supermarket",
-            System.StringComparison.OrdinalIgnoreCase);
+        string n = SceneManager.GetActiveScene().name;
+        return string.Equals(n, "supermarket", System.StringComparison.OrdinalIgnoreCase)
+            || string.Equals(n, "supermarket2", System.StringComparison.OrdinalIgnoreCase);
     }
 
     IEnumerator SupermarketToForestDriveAfterIntro()

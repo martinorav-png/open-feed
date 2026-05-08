@@ -413,7 +413,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Idle
-  m_Speed: 0.6
+  m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
   m_StateMachineBehaviours: []
@@ -425,7 +425,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: 7f09a65eb22a0ae4c9d337cc86440361, type: 3}
+  m_Motion: {fileID: 4462440687661492304, guid: 57a1afe3d1a05684ca9e4b49bbd757d3, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 

@@ -53,6 +53,10 @@ external/unity-webview/plugins/Windows/nuget.exe
 Assets/SquareTileTerrain/Scenes/ExampleScene.unity
 Assets/SquareTileTerrain/Scenes/ExampleScene.unity.meta
 
+# Large video — exceeds GitHub 100 MB file limit
+Assets/OPEN FEED eas message/finalvideo1.mp4
+Assets/OPEN FEED eas message/finalvideo1.mp4.meta
+
 # Large audio files — kept local only
 Assets/Audio/marketambience.wav
 Assets/Audio/marketambience.wav.meta

@@ -19,7 +19,7 @@ public class MonitorWebViewHost : MonoBehaviour
     [SerializeField] string httpUrl = "";
 
     [Tooltip("HTML entry under StreamingAssets when httpUrl is empty.")]
-    [SerializeField] string streamingRelativePath = "MonitorSite/index.html";
+    [SerializeField] string streamingRelativePath = "MonitorSite/shell.html";
 
     [Header("Screen mapping (browsing)")]
     [Tooltip("When on, native webview fills the display while browsing. When off, matches ScrollView on screen.")]
@@ -127,7 +127,7 @@ public class MonitorWebViewHost : MonoBehaviour
             "(function(){" +
             "var s = document.getElementById('__unityGammaFix');" +
             "if (!s) { s = document.createElement('style'); s.id = '__unityGammaFix'; document.head.appendChild(s); }" +
-            "s.textContent = 'html { filter: brightness(1.35) contrast(0.95) !important; }';" +
+            "s.textContent = 'html { filter: brightness(0.96) contrast(1.04) saturate(0.92) !important; background:#dcdcd5 !important; } body { background:#dcdcd5 !important; color:#111 !important; } .cam-thumb, .viewer-canvas { filter: brightness(1.16) contrast(1.06) saturate(1.05) !important; }';" +
             "})();"
         );
     }

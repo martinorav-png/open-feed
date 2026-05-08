@@ -146,7 +146,7 @@ public static class StoreInteriorLightMood
     public static void ApplyStoreAccentLightColors()
     {
         string sn = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        if (sn != "supermarket" && sn != "GroceryStore")
+        if (sn != "supermarket" && sn != "supermarket2" && sn != "GroceryStore")
             return;
 
         foreach (Light l in Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None))

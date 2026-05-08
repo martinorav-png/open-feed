@@ -105,6 +105,7 @@ public class DeskObjectInteraction : MonoBehaviour
                 break;
 
             case InteractableObject.InteractionType.PlayNudge:
+                HouseWindowPeekScare.TriggerFromIdog(obj);
                 yield return StartCoroutine(AnimatePlayNudge(obj));
                 break;
         }

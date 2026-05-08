@@ -328,6 +328,8 @@ public class MainMenuUI : MonoBehaviour
             return true;
         if (string.Equals(n, "supermarket", System.StringComparison.OrdinalIgnoreCase))
             return true;
+        if (string.Equals(n, "supermarket2", System.StringComparison.OrdinalIgnoreCase))
+            return true;
         if (GameFlowManager.Instance != null)
         {
             if (string.Equals(n, GameFlowManager.Instance.mainMenuScene, System.StringComparison.OrdinalIgnoreCase))

@@ -18,9 +18,14 @@ function StationIdent() {
         <ColorBars />
       </Sprite>
 
-      {/* Station ident card (6-25s) */}
-      <Sprite start={5} end={18}>
+      {/* Station ident card (5-11.5s) */}
+      <Sprite start={5} end={11.5}>
         <IdentCard />
+      </Sprite>
+
+      {/* Repeat warning fills the second half of the ident beat */}
+      <Sprite start={11.5} end={18}>
+        <RepeatMessageCard />
       </Sprite>
 
       <BroadcastChrome
@@ -49,14 +54,6 @@ function ColorBars() {
         <div style={{ flex: 1, background: '#8a1a8a' }} />
         <div style={{ flex: 1, background: '#0a0a0a' }} />
         <div style={{ flex: 1, background: '#bdbdbd' }} />
-      </div>
-      <div style={{
-        position: 'absolute', bottom: 90, left: 30,
-        fontFamily: 'VT323, monospace', fontSize: 22,
-        color: '#0a0a0a', background: '#bdbdbd',
-        padding: '2px 8px',
-      }}>
-        SMPTE BARS — 1KHZ TONE
       </div>
     </div>
   );
@@ -101,18 +98,46 @@ function IdentCard() {
         CIVIL RELAY · CHANNEL 6
       </div>
       <div style={{
-        fontSize: 14, letterSpacing: '0.22em',
-        marginTop: 36, opacity: 0.45,
-        maxWidth: '70%', textAlign: 'center', lineHeight: 1.5,
+        position: 'absolute', bottom: 40,
+        fontSize: 12, letterSpacing: '0.32em', opacity: 0.35,
+      }}>
+        — STAND BY —
+      </div>
+    </div>
+  );
+}
+
+function RepeatMessageCard() {
+  const { localTime } = useSprite();
+  const flicker = 0.82 + 0.18 * Math.sin(localTime * 9.4);
+  return (
+    <div style={{
+      position: 'absolute', inset: 0,
+      background: 'radial-gradient(ellipse at center, #10160f 0%, #030503 82%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column',
+      color: '#d4d8c8',
+      fontFamily: 'VT323, "Courier New", monospace',
+      opacity: flicker,
+      padding: '0 72px',
+      textAlign: 'center',
+      textShadow: CHROMA,
+    }}>
+      <div style={{
+        fontSize: 54, letterSpacing: '0.1em',
+        lineHeight: 1.12,
+        maxWidth: 980,
       }}>
         THIS MESSAGE WILL REPEAT
         <br />
-        UNTIL THERE ARE NONE TO SEE IT
+        UNTIL THERE ARE NONE
+        <br />
+        TO SEE IT
       </div>
-
       <div style={{
         position: 'absolute', bottom: 40,
         fontSize: 12, letterSpacing: '0.32em', opacity: 0.35,
+        textShadow: 'none',
       }}>
         — STAND BY —
       </div>

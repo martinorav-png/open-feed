@@ -15,7 +15,7 @@ public static class StoreFlowExteriorNightSetup
         if (sceneRoot == null)
             return;
         string sn = sceneRoot.gameObject.scene.name;
-        if (sn != "GroceryStore" && sn != "supermarket")
+        if (sn != "GroceryStore" && sn != "supermarket" && sn != "supermarket2")
             return;
 
         ApplyNightRenderSettingsShared();
@@ -32,7 +32,7 @@ public static class StoreFlowExteriorNightSetup
         if (!s.IsValid() || !s.isLoaded)
             return;
         string n = s.name;
-        if (n != "GroceryStore" && n != "supermarket")
+        if (n != "GroceryStore" && n != "supermarket" && n != "supermarket2")
             return;
 
         ApplyNightRenderSettingsShared();
