@@ -76,12 +76,12 @@
     .chassis-label {
       font-family: monospace;
       font-size: 8px;
-      color: #3a3a3a;
+      color: #666;
       letter-spacing: 3px;
       text-transform: uppercase;
       margin-bottom: 16px;
     }
-    .chassis-label span { color: #5a8a5a; }
+    .chassis-label span { color: #7aaa7a; }
 
     /* ── LCD DISPLAY ROW ── */
     .display-row {
@@ -100,7 +100,7 @@
     .display-title {
       font-family: monospace;
       font-size: 7px;
-      color: #1e2e1e;
+      color: #4a6a4a;
       letter-spacing: 2px;
       margin-bottom: 5px;
     }
@@ -108,10 +108,10 @@
     .display-value {
       font-family: monospace;
       font-size: 34px;
-      color: #4a8a4a;
+      color: #6aaa6a;
       letter-spacing: 4px;
       line-height: 1;
-      text-shadow: 0 0 8px rgba(60,120,60,0.4);
+      text-shadow: 0 0 8px rgba(80,160,80,0.5);
       transition: color 0.3s, text-shadow 0.3s;
     }
 
@@ -126,10 +126,29 @@
       50%       { opacity: 0.7; }
     }
 
+    @keyframes morseCursorBlink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    .morse-cursor {
+      display: inline-block;
+      color: #8ae08a;
+      animation: morseCursorBlink 0.6s step-end infinite;
+      margin-left: 1px;
+    }
+
+    .morse-line {
+      color: #8ae08a;
+      letter-spacing: 3px;
+      font-size: 10px;
+      word-spacing: 4px;
+    }
+
     .display-unit {
       font-family: monospace;
       font-size: 8px;
-      color: #1e3a1e;
+      color: #4a6a4a;
       margin-top: 4px;
     }
 
@@ -147,7 +166,7 @@
     .signal-title {
       font-family: monospace;
       font-size: 7px;
-      color: #1e2e1e;
+      color: #4a6a4a;
       letter-spacing: 2px;
       margin-bottom: 5px;
     }
@@ -165,13 +184,13 @@
     .signal-label {
       font-family: monospace;
       font-size: 7px;
-      color: #1e2e1e;
+      color: #4a6a4a;
       letter-spacing: 1px;
       text-align: center;
       margin-top: 5px;
       transition: color 0.3s;
     }
-    .signal-label.locked { color: #5a9a5a; }
+    .signal-label.locked { color: #6aaa6a; }
 
     /* ── DIAL + CONTROLS ── */
     .dial-row {
@@ -204,7 +223,7 @@
     .ctrl-group-label {
       font-family: monospace;
       font-size: 7px;
-      color: #2a3a2a;
+      color: #5a7a5a;
       letter-spacing: 2px;
       margin-bottom: 6px;
     }
@@ -216,7 +235,7 @@
       background: #222;
       border: 1px solid #333;
       border-bottom: 2px solid #111;
-      color: #555;
+      color: #888;
       font-family: monospace;
       font-size: 10px;
       padding: 5px 3px;
@@ -224,7 +243,7 @@
       text-align: center;
       transition: color 0.1s;
     }
-    .ctrl-btn:hover  { color: #888; border-color: #444; }
+    .ctrl-btn:hover  { color: #aaa; border-color: #444; }
     .ctrl-btn:active { border-bottom-width: 1px; transform: translateY(1px); }
 
     .hint-box {
@@ -233,12 +252,12 @@
       padding: 8px 10px;
       font-family: monospace;
       font-size: 9px;
-      color: #2a4a2a;
+      color: #4a7a4a;
       line-height: 1.85;
       min-height: 70px;
     }
-    .hint-box .h-dim  { color: #1e2e1e; }
-    .hint-box .h-key  { color: #6aaa6a; font-weight: bold; }
+    .hint-box .h-dim  { color: #4a6a4a; }
+    .hint-box .h-key  { color: #7aca7a; font-weight: bold; }
 
     /* ── SUCCESS ── */
     #successPanel {
@@ -278,6 +297,7 @@
       <a href="index.html">[feeds]</a>
       <a href="tools.html">[tools]</a>
       <a href="radio.html" style="font-weight:bold;color:#000">[radio]</a>
+      <a href="forum.html" id="navForumLink" style="display:none">[community]</a>
       <a href="#">[submit]</a>
     </div>
     <div class="nav-status" id="navStatus">receiver ready</div>
@@ -288,6 +308,7 @@
     <div class="notice">
       <b>Signal Receiver SR-7</b> &mdash; short-range relay tool. tune the dial to acquire a locked frequency.
       use the fine-adjust buttons or drag the dial directly.
+      <span style="color:#999;font-size:9px">picking up an unknown signal? the <a href="forum.html">community board</a> may have useful reference material.</span>
     </div>
 
     <!-- CHASSIS -->
@@ -358,7 +379,7 @@
   </div>
 
   <script>
-    // ── GATE: redirect if player hasn't seen the 317 clue ───────────────────
+    // ── GATE ──────────────────────────────────────────────────────────────────
     var GAME_KEY = 'openfeed_game';
     var GAME = { chapter:1, extraFeeds:[], choices:{}, puzzlesSolved:[], path:null, elevatorClue:false };
 
@@ -370,23 +391,20 @@
       if (!GAME.elevatorClue || GAME.puzzlesSolved.indexOf('puzzle_01') < 0) {
         window.location.replace('index.html');
       }
+      if (GAME.forumVisited) {
+        var fl = document.getElementById('navForumLink');
+        if (fl) fl.style.display = '';
+      }
     })();
 
     function gameSave() {
       try { localStorage.setItem(GAME_KEY, JSON.stringify(GAME)); } catch(e) {}
     }
-
     function gameSolvePuzzle(id) {
       if (GAME.puzzlesSolved.indexOf(id) < 0) GAME.puzzlesSolved.push(id);
       gameSave();
     }
-
-    function unlockExtraFeed(id) {
-      if (GAME.extraFeeds.indexOf(id) < 0) GAME.extraFeeds.push(id);
-      gameSave();
-    }
-
-    // ── AUDIO ────────────────────────────────────────────────────────────────
+    // ── AUDIO: STATIC ─────────────────────────────────────────────────────────
     var _ac = null;
     function getAC() {
       if (!_ac) try { _ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
@@ -444,14 +462,102 @@
       });
     }
 
-    function playClueAudio() {
-      var a = new Audio('message2.mp3');
-      a.play().catch(function() {});
+    // ── AUDIO: MORSE ──────────────────────────────────────────────────────────
+    var MORSE_UNIT = 120; // ms per dot-length
+
+    function buildMorseSeq(text) {
+      var CODE = {
+        A:'.-',  B:'-...', C:'-.-.', D:'-..', E:'.', F:'..-.',
+        G:'--.', H:'....', I:'..', J:'.---', K:'-.-', L:'.-..',
+        M:'--',  N:'-.',   O:'---', P:'.--.', Q:'--.-', R:'.-.',
+        S:'...', T:'-',    U:'..-', V:'...-', W:'.--', X:'-..-',
+        Y:'-.--',Z:'--..'
+      };
+      var seq = [];
+      var needGap = false;
+      var pendingWordGap = false;
+      for (var i = 0; i < text.length; i++) {
+        var ch = text[i].toUpperCase();
+        if (ch === ' ') { pendingWordGap = true; continue; }
+        var code = CODE[ch];
+        if (!code) continue;
+        if (needGap) {
+          seq.push(pendingWordGap ? [MORSE_UNIT * 7, false] : [MORSE_UNIT * 3, false]);
+          pendingWordGap = false;
+        }
+        needGap = true;
+        for (var j = 0; j < code.length; j++) {
+          if (j > 0) seq.push([MORSE_UNIT, false]); // element gap
+          seq.push([code[j] === '-' ? MORSE_UNIT * 3 : MORSE_UNIT, true]);
+        }
+      }
+      seq.push([MORSE_UNIT * 7, false]); // end gap before loop
+      return seq;
     }
 
-    // ── DIAL ─────────────────────────────────────────────────────────────────
+    var morseSeq = buildMorseSeq('LIMA PERU');
+    var _morseOsc = null, _morseGain = null, _morseActive = false, _morseLoopTimeout = null;
+
+    function ensureMorseNodes() {
+      var ctx = getAC(); if (!ctx) return false;
+      if (!_morseOsc) {
+        _morseGain = ctx.createGain();
+        _morseGain.gain.value = 0;
+        _morseGain.connect(ctx.destination);
+        _morseOsc = ctx.createOscillator();
+        _morseOsc.frequency.value = 750;
+        _morseOsc.type = 'sine';
+        _morseOsc.connect(_morseGain);
+        _morseOsc.start();
+      }
+      return true;
+    }
+
+    function scheduleMorseLoop() {
+      if (!_morseActive) return;
+      var ctx = getAC(); if (!ctx) return;
+      if (!ensureMorseNodes()) return;
+      var t = ctx.currentTime + 0.02;
+      var totalMs = 0;
+      for (var mi = 0; mi < morseSeq.length; mi++) {
+        var durS = morseSeq[mi][0] / 1000;
+        var isOn = morseSeq[mi][1];
+        if (isOn) {
+          _morseGain.gain.setValueAtTime(0.13, t);
+          t += durS;
+          _morseGain.gain.setValueAtTime(0, t);
+        } else {
+          t += durS;
+        }
+        totalMs += morseSeq[mi][0];
+      }
+      _morseLoopTimeout = setTimeout(scheduleMorseLoop, totalMs + 300);
+    }
+
+    function startMorse() {
+      if (_morseActive) return;
+      _morseActive = true;
+      if (!ensureMorseNodes()) { _morseActive = false; return; }
+      scheduleMorseLoop();
+    }
+
+    function stopMorse() {
+      if (!_morseActive) return;
+      _morseActive = false;
+      clearTimeout(_morseLoopTimeout);
+      _morseLoopTimeout = null;
+      if (_morseGain && _ac) {
+        try {
+          _morseGain.gain.cancelScheduledValues(_ac.currentTime);
+          _morseGain.gain.setValueAtTime(0, _ac.currentTime);
+        } catch(e) {}
+      }
+    }
+
+    // ── DIAL STATE ────────────────────────────────────────────────────────────
     var TARGET_DEG = 317;
-    var LOCK_RANGE = 2;
+    var LOCK_RANGE = 8;   // degrees — enter this range to instantly lock
+
     var currentDeg = 0;
     var isLocked   = false;
 
@@ -470,36 +576,33 @@
     }
 
     function updateSignalBars(dist) {
-      var strength = Math.max(0, 1 - Math.pow(dist / 40, 0.7));
-      if (dist <= LOCK_RANGE) strength = 1;
+      var strength = isLocked ? 1 : Math.max(0, 1 - Math.pow(dist / 40, 0.7));
       var active = Math.round(strength * BAR_COUNT);
       var bars = barsEl.children;
       for (var i = 0; i < BAR_COUNT; i++) {
         bars[i].classList.remove('active', 'peak');
-        if (i < active) bars[i].classList.add(dist <= LOCK_RANGE ? 'peak' : 'active');
+        if (i < active) bars[i].classList.add(isLocked ? 'peak' : 'active');
       }
       var lbl = document.getElementById('signalLabel');
-      lbl.classList.toggle('locked', dist <= LOCK_RANGE);
-      lbl.textContent = dist <= LOCK_RANGE ? 'LOCKED' : 'no lock';
+      lbl.classList.toggle('locked', isLocked);
+      lbl.textContent = isLocked ? 'LOCKED' : 'no lock';
     }
 
     function drawDial(deg) {
       var c = ctx2d;
       c.clearRect(0, 0, 200, 200);
 
-      // Outer ring
       c.beginPath();
       c.arc(CX, CY, RADIUS + 8, 0, Math.PI * 2);
       c.strokeStyle = '#333';
       c.lineWidth = 2;
       c.stroke();
 
-      // Tick marks + labels
-      for (var t = 0; t < 360; t += 5) {
-        var isMajor = t % 45 === 0;
-        var isMed   = t % 15 === 0;
+      for (var tk = 0; tk < 360; tk += 5) {
+        var isMajor = tk % 45 === 0;
+        var isMed   = tk % 15 === 0;
         var len     = isMajor ? 12 : isMed ? 7 : 4;
-        var rad     = (t - 90) * Math.PI / 180;
+        var rad     = (tk - 90) * Math.PI / 180;
         var r0 = RADIUS + 7;
         c.beginPath();
         c.moveTo(CX + r0 * Math.cos(rad), CY + r0 * Math.sin(rad));
@@ -509,17 +612,16 @@
         c.stroke();
       }
 
-      [0, 45, 90, 135, 180, 225, 270, 315].forEach(function(t) {
-        var rad = (t - 90) * Math.PI / 180;
+      [0, 45, 90, 135, 180, 225, 270, 315].forEach(function(lv) {
+        var rad = (lv - 90) * Math.PI / 180;
         var lr  = RADIUS - 18;
         c.fillStyle = '#3a3a3a';
         c.font = '8px monospace';
         c.textAlign = 'center';
         c.textBaseline = 'middle';
-        c.fillText(t, CX + lr * Math.cos(rad), CY + lr * Math.sin(rad));
+        c.fillText(lv, CX + lr * Math.cos(rad), CY + lr * Math.sin(rad));
       });
 
-      // Knob body
       c.beginPath();
       c.arc(CX, CY, RADIUS - 4, 0, Math.PI * 2);
       c.fillStyle = '#181818';
@@ -528,9 +630,8 @@
       c.lineWidth = 1;
       c.stroke();
 
-      // Groove lines
-      for (var g = 0; g < 16; g++) {
-        var ga = ((deg + g * 22.5) - 90) * Math.PI / 180;
+      for (var gv = 0; gv < 16; gv++) {
+        var ga = ((deg + gv * 22.5) - 90) * Math.PI / 180;
         c.beginPath();
         c.moveTo(CX + 10 * Math.cos(ga), CY + 10 * Math.sin(ga));
         c.lineTo(CX + (RADIUS - 6) * Math.cos(ga), CY + (RADIUS - 6) * Math.sin(ga));
@@ -539,9 +640,8 @@
         c.stroke();
       }
 
-      // Pointer
-      var dist = Math.abs(angleDist(deg, TARGET_DEG));
-      var pColor = dist <= LOCK_RANGE ? '#6aaa4a' : dist < 15 ? '#4a7a3a' : '#3a5a2a';
+      var pdist = Math.abs(angleDist(deg, TARGET_DEG));
+      var pColor = isLocked ? '#6aaa4a' : pdist <= LOCK_RANGE ? '#4a7a3a' : pdist < 15 ? '#3a6a2a' : '#3a5a2a';
       var pRad = (deg - 90) * Math.PI / 180;
       c.beginPath();
       c.moveTo(CX, CY);
@@ -555,7 +655,6 @@
       c.fillStyle = pColor;
       c.fill();
 
-      // Center cap
       c.beginPath();
       c.arc(CX, CY, 10, 0, Math.PI * 2);
       c.fillStyle = '#111';
@@ -574,24 +673,58 @@
       currentDeg = ((deg % 360) + 360) % 360;
       drawDial(currentDeg);
       document.getElementById('degDisplay').textContent = String(Math.round(currentDeg)).padStart(3, '0');
-
       var dist = Math.abs(angleDist(currentDeg, TARGET_DEG));
       updateSignalBars(dist);
       setStaticVolume(dist <= LOCK_RANGE ? 0 : Math.min(0.22, 0.04 + (dist / 60) * 0.18));
-
-      if (!isLocked) updateHint(dist);
-      if (!isLocked && dist <= LOCK_RANGE) triggerLock();
+      if (!isLocked) {
+        if (dist <= LOCK_RANGE) { triggerLock(); } else { updateHint(dist); }
+      }
     }
 
     function updateHint(dist) {
       var box = document.getElementById('hintBox');
       if (dist <= 20) {
-        box.innerHTML = '<span class="h-dim">&gt; signal detected nearby.</span><br><span style="color:#2a5a2a">&gt; fine-tune the dial &mdash; almost there.</span><br><span class="h-dim">&gt; target: <span class="h-key">close</span></span>';
+        box.innerHTML =
+          '<span class="h-dim">&gt; signal detected on this band.</span><br>' +
+          '<span style="color:#2a5a2a">&gt; fine-tune the dial &mdash; almost there.</span><br>' +
+          '<span class="h-dim">&gt; target: <span class="h-key">close</span></span>';
       } else if (dist <= 60) {
-        box.innerHTML = '<span class="h-dim">&gt; weak signal trace on this band.</span><br><span class="h-dim">&gt; continue rotating.</span><br><span class="h-dim">&gt; target: <span class="h-key">unknown</span></span>';
+        box.innerHTML =
+          '<span class="h-dim">&gt; weak signal trace on this band.</span><br>' +
+          '<span class="h-dim">&gt; continue rotating.</span><br>' +
+          '<span class="h-dim">&gt; target: <span class="h-key">unknown</span></span>';
       } else {
-        box.innerHTML = '<span class="h-dim">&gt; receiver ready. awaiting input.</span><br><span class="h-dim">&gt; rotate dial to find target frequency.</span><br><span class="h-dim">&gt; target: <span class="h-key">unknown</span></span>';
+        box.innerHTML =
+          '<span class="h-dim">&gt; receiver ready. awaiting input.</span><br>' +
+          '<span class="h-dim">&gt; rotate dial to find target frequency.</span><br>' +
+          '<span class="h-dim">&gt; target: <span class="h-key">unknown</span></span>';
       }
+    }
+
+    // ── DRAG STATE ────────────────────────────────────────────────────────────
+    var dragging = false, dragStartAngle = 0, dragStartDeg = 0;
+
+    var MORSE_DISPLAY_TEXT = '.-.. .. -- .- / .--. . .-. ..-';
+
+    function typeMorseDisplay(instant) {
+      var el = document.getElementById('morseDisplay');
+      var cur = document.getElementById('morseCursor');
+      if (!el) return;
+      var text = MORSE_DISPLAY_TEXT;
+      if (instant) {
+        el.textContent = text;
+        if (cur) cur.style.display = 'none';
+        return;
+      }
+      var i = 0;
+      var iv = setInterval(function() {
+        el.textContent = text.substring(0, i);
+        i++;
+        if (i > text.length) {
+          clearInterval(iv);
+          if (cur) cur.style.display = 'none';
+        }
+      }, 140);
     }
 
     function triggerLock() {
@@ -602,25 +735,28 @@
       document.getElementById('degDisplay').classList.add('locked');
       document.getElementById('navStatus').textContent = 'LOCKED :: 317°';
 
+      updateSignalBars(0);
+
       gameSolvePuzzle('puzzle_02');
-      unlockExtraFeed('E02');
+      // NOTE: feed unlock is handled by map pin — not here
+
+      document.getElementById('hintBox').innerHTML =
+        '<span style="color:#3a6a3a">&gt; <span class="h-key">SIGNAL LOCKED</span> at 317&#176;</span><br>' +
+        '<span class="h-dim">&gt; transmission active. <span class="h-key">morse code detected.</span></span><br>' +
+        '<span class="h-dim">&gt; need a decoder? check <a href="tools.html" style="color:#5a9a5a;text-decoration:underline">[tools]</a>.</span><br>' +
+        '<span class="h-dim">&gt; </span><span class="morse-line" id="morseDisplay"></span><span class="morse-cursor" id="morseCursor">&#9646;</span>';
 
       var panel = document.getElementById('successPanel');
       panel.style.display = 'block';
       document.getElementById('successBody').innerHTML =
-        'frequency <b>317&deg;</b> confirmed. relay signal acquired. audio transmission decoding&hellip; ' +
-        '<span style="color:#555;font-size:9px">feed E02 has been added to your index.</span>';
+        'frequency <b>317&deg;</b> confirmed. morse transmission detected. ' +
+        '<span style="color:#555;font-size:9px">use the <a href="tools.html">[tools]</a> decoder to read the signal.</span>';
 
-      document.getElementById('hintBox').innerHTML =
-        '<span style="color:#3a6a3a">&gt; <span class="h-key">SIGNAL LOCKED</span> at 317&#176;</span><br>' +
-        '<span class="h-dim">&gt; audio feed active. listen carefully.</span>';
-
-      setTimeout(playClueAudio, 600);
+      setTimeout(startMorse, 500);
+      setTimeout(function() { typeMorseDisplay(false); }, 700);
     }
 
     // ── INPUT ─────────────────────────────────────────────────────────────────
-    var dragging = false, dragStartAngle = 0, dragStartDeg = 0;
-
     function pointerAngle(e) {
       var rect = canvas.getBoundingClientRect();
       var src  = e.touches ? e.touches[0] : e;
@@ -669,7 +805,6 @@
 
     // ── INIT ──────────────────────────────────────────────────────────────────
     if (GAME.puzzlesSolved.indexOf('puzzle_02') >= 0) {
-      // Already solved — restore locked state without playing audio
       currentDeg = TARGET_DEG;
       isLocked = true;
       drawDial(currentDeg);
@@ -680,10 +815,15 @@
       document.getElementById('navStatus').textContent = 'LOCKED :: 317°';
       document.getElementById('successPanel').style.display = 'block';
       document.getElementById('successBody').innerHTML =
-        'frequency <b>317&deg;</b> confirmed. feed E02 already unlocked.';
+        'frequency <b>317&deg;</b> confirmed. morse transmission detected. ' +
+        '<span style="color:#555;font-size:9px">use the <a href="tools.html">[tools]</a> decoder to read the signal.</span>';
       document.getElementById('hintBox').innerHTML =
         '<span style="color:#3a6a3a">&gt; <span class="h-key">SIGNAL LOCKED</span> at 317&#176;</span><br>' +
-        '<span class="h-dim">&gt; puzzle already solved.</span>';
+        '<span class="h-dim">&gt; transmission active. <span class="h-key">morse code detected.</span></span><br>' +
+        '<span class="h-dim">&gt; need a decoder? check <a href="tools.html" style="color:#5a9a5a;text-decoration:underline">[tools]</a>.</span><br>' +
+        '<span class="h-dim">&gt; </span><span class="morse-line" id="morseDisplay"></span><span class="morse-cursor" id="morseCursor">&#9646;</span>';
+      typeMorseDisplay(true);
+      setTimeout(startMorse, 300);
     } else {
       applyDeg(0);
     }

@@ -22,49 +22,85 @@ public class MarketAmbience : MonoBehaviour
     public AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic;
 
     [Header("Reverb")]
+    [Tooltip("Off by default because multiple realtime reverb filters are expensive in the supermarket scene.")]
+    public bool useReverbFilters = false;
     public AudioReverbPreset reverbPreset = AudioReverbPreset.Hallway;
     [Range(0f, 0.4f)] public float fadeInSeconds = 1.5f;
 
+    [Header("Performance")]
+    [Tooltip("Use one cheap 2D looping source instead of several 3D emitters.")]
+    public bool forceSingleSource = true;
+    [Tooltip("Only enable this when the sound needs to move around the store in 3D.")]
+    public bool useSpatialSources = false;
+
     AudioSource[] _sources;
     bool _built;
+    bool _playing;
 
     void Awake() { Build(); }
 
     void Build()
     {
         if (_built) return;
-        if (clip == null || sourcePositions == null || sourcePositions.Length == 0) return;
-        _sources = new AudioSource[sourcePositions.Length];
-        for (int i = 0; i < sourcePositions.Length; i++)
+        if (clip == null) return;
+
+        ClearGeneratedSources();
+
+        bool makeSpatial = useSpatialSources && !forceSingleSource && sourcePositions != null && sourcePositions.Length > 0;
+        int sourceCount = makeSpatial ? sourcePositions.Length : 1;
+        _sources = new AudioSource[sourceCount];
+
+        for (int i = 0; i < sourceCount; i++)
         {
-            var go = new GameObject("FridgeAmbience_" + i);
+            var go = new GameObject("MarketAudioSource_" + i);
             go.transform.SetParent(transform, false);
-            go.transform.position = sourcePositions[i];
+            if (makeSpatial)
+                go.transform.position = sourcePositions[i];
 
             var src = go.AddComponent<AudioSource>();
             src.clip = clip;
             src.loop = true;
-            src.spatialBlend = 1f;
+            src.spatialBlend = makeSpatial ? 1f : 0f;
             src.minDistance = minDistance;
             src.maxDistance = maxDistance;
             src.rolloffMode = rolloffMode;
             src.volume = 0f;
             src.playOnAwake = false;
             src.dopplerLevel = 0f;
-            src.reverbZoneMix = 1.1f;
+            src.reverbZoneMix = useReverbFilters ? 1.1f : 0f;
 
-            var rev = go.AddComponent<AudioReverbFilter>();
-            rev.reverbPreset = reverbPreset;
+            if (useReverbFilters)
+            {
+                var rev = go.AddComponent<AudioReverbFilter>();
+                rev.reverbPreset = reverbPreset;
+            }
 
             _sources[i] = src;
         }
         _built = true;
     }
 
+    void ClearGeneratedSources()
+    {
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var child = transform.GetChild(i);
+            if (child == null) continue;
+            if (!child.name.StartsWith("FridgeAmbience_") && !child.name.StartsWith("MarketAudioSource_")) continue;
+
+            if (Application.isPlaying)
+                Destroy(child.gameObject);
+            else
+                DestroyImmediate(child.gameObject);
+        }
+    }
+
     public void Play()
     {
         if (!_built) Build();
         if (_sources == null) return;
+        if (_playing) return;
+
         float clipLen = clip != null ? clip.length : 0f;
         float t = Mathf.Clamp(startTime, 0f, Mathf.Max(0f, clipLen - 0.5f));
         foreach (var s in _sources)
@@ -73,6 +109,7 @@ public class MarketAmbience : MonoBehaviour
             s.time = t;
             s.Play();
         }
+        _playing = true;
         StartCoroutine(FadeIn());
     }
 
@@ -97,5 +134,6 @@ public class MarketAmbience : MonoBehaviour
     {
         if (_sources == null) return;
         foreach (var s in _sources) if (s != null) s.Stop();
+        _playing = false;
     }
 }

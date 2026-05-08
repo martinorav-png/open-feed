@@ -250,6 +250,17 @@
       border-style: inset;
     }
 
+    .viewer-close-locked {
+      color: #800;
+      background: #d0c0c0;
+      cursor: not-allowed;
+      animation: lock-pulse 1.1s ease-in-out infinite;
+    }
+    @keyframes lock-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.6; }
+    }
+
     .viewer-stage {
       background: #111;
       border: 1px solid #666;
@@ -771,6 +782,41 @@
     }
 
     #phoneDevBar button:active { border-style: inset; }
+
+    /* browser chrome lives in shell.html */
+
+    /* ── SITE GLITCH SYSTEM ───────────────────────────────────────────────── */
+    @keyframes gsh-sm {
+      0%,100%{ transform:translate(0,0) }
+      20%{ transform:translate(-3px,1px) }
+      40%{ transform:translate(3px,-2px) }
+      60%{ transform:translate(-1px,3px) }
+      80%{ transform:translate(2px,-1px) }
+    }
+    @keyframes gsh-md {
+      0%,100%{ transform:translate(0,0) skewX(0deg) }
+      15%{ transform:translate(-5px,2px) skewX(-0.4deg) }
+      35%{ transform:translate(5px,-3px) skewX(0.5deg) }
+      55%{ transform:translate(-3px,5px) skewX(-0.2deg) }
+      75%{ transform:translate(4px,-2px) skewX(0.3deg) }
+    }
+    @keyframes gsh-lg {
+      0%,100%{ transform:translate(0,0) skewX(0deg) }
+      10%{ transform:translate(-8px,4px) skewX(-1deg) }
+      30%{ transform:translate(8px,-5px) skewX(1.2deg) }
+      50%{ transform:translate(-5px,8px) skewX(-0.8deg) }
+      70%{ transform:translate(7px,-4px) skewX(0.9deg) }
+      90%{ transform:translate(-4px,6px) skewX(-0.5deg) }
+    }
+    @keyframes gfl {
+      0%,100%{ opacity:1 }
+      50%{ opacity:0 }
+    }
+    .g-shake-sm  { animation: gsh-sm 0.12s steps(1) infinite; }
+    .g-shake-md  { animation: gsh-md 0.07s steps(1) infinite; }
+    .g-shake-lg  { animation: gsh-lg 0.04s steps(1) infinite; }
+    .g-flicker   { animation: gfl 0.06s steps(1) infinite; }
+
   </style>
 </head>
 
@@ -808,6 +854,7 @@
       <a href="map.html">[map]</a>
       <a href="tools.html">[tools]</a>
       <a href="radio.html" id="navRadioLink" style="display:none">[radio]</a>
+      <a href="forum.html" id="navForumLink" style="display:none">[community]</a>
       <a href="#">[submit]</a>
       <a href="#faqSection">[faq]</a>
       <a href="about.html">[about]</a>
@@ -916,29 +963,46 @@
     var imageCache = {};
     var viewerNoiseBuffer = null;
 
-    /** CAM_005 snow field: rare multi-frame “interference” burst, then back to normal (loops). */
+    /** CAM_005 snow field: rapid back-and-forth flicker between both image sets, locked on final frame. */
     var CULT_FLOW_CAM_ID = "005";
     var CULT_FLOW_FRAMES = [
-      "flows/cult/01.png",
-      "flows/cult/02.png",
-      "flows/cult/03.png",
-      "flows/cult/04.png",
-      "flows/cult/05.png",
-      "flows/cult/06.png",
-      "flows/cult/07.png"
+      "flows/cult/redo/01.png",  //  0: redo - group approaching
+      "flows/cult/02.png",       //  1: orig - group approaching (warmer, motion blur)
+      "flows/cult/redo/02.png",  //  2: redo - group at fire
+      "flows/cult/02.png",       //  3: orig - flash back
+      "flows/cult/03.png",       //  4: orig - group at fire (timestamp variant)
+      "flows/cult/redo/02.png",  //  5: redo - back again
+      "flows/cult/redo/03.png",  //  6: redo - fire alone
+      "flows/cult/04.png",       //  7: orig - fire alone (different exposure)
+      "flows/cult/redo/03.png",  //  8: redo - back
+      "flows/cult/04.png",       //  9: orig - back
+      "flows/cult/redo/04.png",  // 10: redo - lone figure distant
+      "flows/cult/05.png",       // 11: orig - lone figure distant
+      "flows/cult/redo/04.png",  // 12: redo - back
+      "flows/cult/05.png",       // 13: orig - back
+      "flows/cult/redo/05.png",  // 14: redo - figure closer
+      "flows/cult/06.png",       // 15: orig - figure closer (no sign)
+      "flows/cult/redo/05.png",  // 16: redo - back
+      "flows/cult/06.png",       // 17: orig - back
+      "flows/cult/redo/06.png",  // 18: redo - figure close, masked, holding sign
+      "flows/cult/redo/07.png"   // 19: LOCKED - sign in snow, figure gone
     ];
-    var CULT_FLOW_MIN_IDLE_MS = 10000;
-    var CULT_FLOW_MAX_IDLE_MS = 32000;
-    var CULT_FRAME_MIN_MS = 380;
-    var CULT_FRAME_MAX_MS = 640;
-    /** Final frame (phone number) stays up long enough to read and dial. */
-    var CULT_NUMBER_HOLD_MIN_MS = 4800;
-    var CULT_NUMBER_HOLD_MAX_MS = 7200;
+    // All frames rapid except final two which slow down for the reveal
+    var CULT_FRAME_DURATIONS_MS = [
+      220, 180, 260, 160, 200, 180,  // group scenes flickering
+      240, 190, 200, 170,            // fire-alone flickering
+      280, 210, 220, 180,            // lone figure flickering
+      260, 200, 220, 180,            // figure closer flickering
+      1800                           // sign with figure - pause before lock
+    ];
+    var CULT_FLOW_MIN_IDLE_MS = 8000;
+    var CULT_FLOW_MAX_IDLE_MS = 22000;
 
     var cultFlow = {
       initialized: false,
       phase: "idle",
       frameIndex: 0,
+      locked: false,  // true once sign frame reached — stays until reveal reset
       nextSwitch: 0
     };
 
@@ -949,13 +1013,14 @@
     }
 
     function getCultFrameDurationMs(frameIndex) {
-      if (frameIndex === CULT_FLOW_FRAMES.length - 1) {
-        return randomRange(CULT_NUMBER_HOLD_MIN_MS, CULT_NUMBER_HOLD_MAX_MS);
+      if (frameIndex >= CULT_FRAME_DURATIONS_MS.length) {
+        return 9999999; // shouldn't happen — last frame is locked
       }
-      return randomRange(CULT_FRAME_MIN_MS, CULT_FRAME_MAX_MS);
+      return CULT_FRAME_DURATIONS_MS[frameIndex] || 5000;
     }
 
     function updateCultFlowState() {
+      if (cultFlow.locked) return; // sign frame — hold until reveal reset
       var now = Date.now();
       if (!cultFlow.initialized) {
         cultFlow.initialized = true;
@@ -974,9 +1039,9 @@
         if (now >= cultFlow.nextSwitch) {
           cultFlow.frameIndex++;
           if (cultFlow.frameIndex >= CULT_FLOW_FRAMES.length) {
-            cultFlow.phase = "idle";
-            cultFlow.frameIndex = 0;
-            cultFlow.nextSwitch = now + randomRange(CULT_FLOW_MIN_IDLE_MS, CULT_FLOW_MAX_IDLE_MS);
+            // Lock on final frame (sign in snow) forever until reveal
+            cultFlow.frameIndex = CULT_FLOW_FRAMES.length - 1;
+            cultFlow.locked = true;
           } else {
             cultFlow.nextSwitch = now + getCultFrameDurationMs(cultFlow.frameIndex);
           }
@@ -1000,28 +1065,285 @@
       }
     }
 
-    // ===== STAIRWELL FLOW (E02) =====
-    var STAIR_FLOW_CAM_ID = "E02";
-    var STAIR_FLOW_FRAMES = [
-      "flows/stairwell/stairwell01.png",
-      "flows/stairwell/stairwell02.png",
-      "flows/stairwell/stairwell03.png"
+    // ===== BILLBOARD FLOW (E02) =====
+    // E02 stays locked behind the radio puzzle, but the feed itself is now the billboard sequence.
+    var BILLBOARD_FLOW_CAM_ID = "E02";
+    var BILLBOARD_MESSAGE_FLAG = "billboardMessageSeen";
+    var MAP_CAM005_STAIR_FLAG = "mapCam005Stair";
+    var BILLBOARD_EMPTY_FRAME = "flows/billboard/empty.png";
+    var BILLBOARD_MESSAGE_FRAME = "flows/billboard/billboardmessage.png";
+    var BILLBOARD_FLOW_FRAMES = [
+      "flows/billboard/billboard1.jpg",
+      "flows/billboard/billboard2.jpg",
+      BILLBOARD_EMPTY_FRAME,
+      "flows/billboard/billboard3.png",
+      BILLBOARD_EMPTY_FRAME,
+      "flows/billboard/billboard4.png",
+      BILLBOARD_EMPTY_FRAME,
+      "flows/billboard/billboard5.png",
+      BILLBOARD_EMPTY_FRAME,
+      "flows/billboard/billboard6.png",
+      BILLBOARD_EMPTY_FRAME,
+      BILLBOARD_MESSAGE_FRAME
     ];
-    // Figure visible → walking away → door open with light (held long)
-    var STAIR_FRAME_DURATIONS_MS = [1200, 8500];
-    var STAIR_FLOW_MIN_IDLE_MS = 22000;
-    var STAIR_FLOW_MAX_IDLE_MS = 55000;
+    var BILLBOARD_FRAME_DURATIONS_MS = [
+      3800, 3600, 420,
+      3700, 420,
+      3700, 420,
+      3700, 420,
+      3900, 520,
+      4200
+    ];
+    var BILLBOARD_FLOW_MIN_IDLE_MS = 6000;
+    var BILLBOARD_FLOW_MAX_IDLE_MS = 15000;
+    var billboardFlow = {
+      initialized: false,
+      phase: "idle",
+      frameIndex: 0,
+      nextSwitch: 0,
+      locked: false,
+      flickerEmpty: false
+    };
+
+    function gameFlag(name) {
+      return GAME && GAME.choices && GAME.choices[name];
+    }
+
+    function gameSetFlag(name, value) {
+      GAME.choices = GAME.choices || {};
+      GAME.choices[name] = value;
+      gameSave();
+    }
+
+    function updateBillboardFlowState() {
+      if (GAME.extraFeeds.indexOf(BILLBOARD_FLOW_CAM_ID) < 0) return;
+      var now = Date.now();
+      if (billboardFlow.locked) {
+        if (now >= billboardFlow.nextSwitch) {
+          billboardFlow.flickerEmpty = Math.random() < 0.28;
+          billboardFlow.nextSwitch = now + (billboardFlow.flickerEmpty ? 70 + Math.random() * 140 : 420 + Math.random() * 1100);
+        }
+        return;
+      }
+      if (!billboardFlow.initialized) {
+        billboardFlow.initialized = true;
+        billboardFlow.phase = "idle";
+        billboardFlow.frameIndex = 0;
+        billboardFlow.nextSwitch = now + randomRange(BILLBOARD_FLOW_MIN_IDLE_MS, BILLBOARD_FLOW_MAX_IDLE_MS);
+        return;
+      }
+      if (billboardFlow.phase === "idle") {
+        if (now >= billboardFlow.nextSwitch) {
+          billboardFlow.phase = "play";
+          billboardFlow.frameIndex = 0;
+          billboardFlow.nextSwitch = now + BILLBOARD_FRAME_DURATIONS_MS[0];
+        }
+      } else if (billboardFlow.phase === "play") {
+        if (now >= billboardFlow.nextSwitch) {
+          billboardFlow.frameIndex++;
+          if (billboardFlow.frameIndex >= BILLBOARD_FLOW_FRAMES.length) {
+            billboardFlow.frameIndex = BILLBOARD_FLOW_FRAMES.length - 1;
+            billboardFlow.locked = true;
+            billboardFlow.flickerEmpty = false;
+            billboardFlow.nextSwitch = now + 650;
+            if (!gameFlag(BILLBOARD_MESSAGE_FLAG)) {
+              gameSetFlag(BILLBOARD_MESSAGE_FLAG, true);
+            }
+          } else {
+            if (BILLBOARD_FLOW_FRAMES[billboardFlow.frameIndex] === BILLBOARD_MESSAGE_FRAME && !gameFlag(BILLBOARD_MESSAGE_FLAG)) {
+              gameSetFlag(BILLBOARD_MESSAGE_FLAG, true);
+            }
+            billboardFlow.nextSwitch = now + (BILLBOARD_FRAME_DURATIONS_MS[billboardFlow.frameIndex] || 1200);
+          }
+        }
+      }
+    }
+
+    function getBillboardAwareImagePath(cam) {
+      if (cam.id !== BILLBOARD_FLOW_CAM_ID || !cam.thumb) {
+        return getCamImagePath(cam);
+      }
+      if (billboardFlow.phase !== "play" && !billboardFlow.locked) {
+        return cam.thumb;
+      }
+      if (billboardFlow.locked && billboardFlow.flickerEmpty) {
+        return BILLBOARD_EMPTY_FRAME;
+      }
+      return BILLBOARD_FLOW_FRAMES[billboardFlow.frameIndex] || cam.thumb;
+    }
+
+    function preloadBillboardFlowFrames() {
+      for (var i = 0; i < BILLBOARD_FLOW_FRAMES.length; i++) {
+        ensureImageLoaded(BILLBOARD_FLOW_FRAMES[i], null);
+      }
+    }
+
+    function billboardGlitchSeverity() {
+      if (billboardFlow.phase !== "play" && !billboardFlow.locked) return 0.04 + Math.random() * 0.05;
+      if (billboardFlow.locked) return billboardFlow.flickerEmpty ? 0.35 + Math.random() * 0.3 : 0.12 + Math.random() * 0.1;
+      if (BILLBOARD_FLOW_FRAMES[billboardFlow.frameIndex] === BILLBOARD_EMPTY_FRAME) return 0.28 + Math.random() * 0.22;
+      return 0.10 + Math.random() * 0.16;
+    }
+
+    // ===== PRERECORDED HALLWAY FLOW (E03 after billboard/map handoff) =====
+    var STAIR_FLOW_CAM_ID = "E03";
+    var STAIR_FLOW_FRAMES = [
+      // Phase 1 — lights out, figure distant
+      "flows/hallway/hallway2.1.png",  //  0: dark
+      "flows/hallway/hallway2.png",    //  1: FLASH
+      "flows/hallway/hallway2.1.png",  //  2: dark (short)
+      "flows/hallway/hallway2.png",    //  3: FLASH again — stutter
+      "flows/hallway/hallway2.1.png",  //  4: dark
+      // Phase 2 — figure mid-corridor
+      "flows/hallway/hallway3.2.png",  //  5: dark
+      "flows/hallway/hallway3.1.png",  //  6: FLASH
+      "flows/hallway/hallway3.2.png",  //  7: dark
+      // Phase 3 — face close, double stutter
+      "flows/hallway/hallway4.1.png",  //  8: dark
+      "flows/hallway/hallway4.png",    //  9: FLASH
+      "flows/hallway/hallway4.1.png",  // 10: dark (very short)
+      "flows/hallway/hallway4.png",    // 11: FLASH again
+      "flows/hallway/hallway4.1.png",  // 12: dark
+      // Phase 4 — frenzy
+      "flows/hallway/hallway5.1.png",  // 13: FRENZY dark
+      "flows/hallway/hallway5.png"     // 14: FRENZY lit
+    ];
+    var STAIR_FRAME_DURATIONS_MS = [
+      1800, 65, 320, 95, 1100,   // phase 1: dark-flash-dark-stutter-dark
+      1300, 85, 850,              // phase 2
+      700,  70, 190, 80, 420     // phase 3: dark-flash-dark-flash-dark
+    ];
+    var STAIR_FLOW_MIN_IDLE_MS = 15000;
+    var STAIR_FLOW_MAX_IDLE_MS = 38000;
+    var STAIR_FRENZY_DARK = 13;
+    var STAIR_FRENZY_LIT  = 14;
+    var STAIR_FRENZY_HOLD_MS = 3000;
+    var STAIR_AUDIO_BASE = "audio/hallway/";
+    var STAIR_AMBIENCE_AUDIO = STAIR_AUDIO_BASE + "hallwaymax.wav";
+    var STAIR_EVENT_AUDIO = {
+      start: STAIR_AUDIO_BASE + "hallwayaudio1.wav",
+      firstFlash: STAIR_AUDIO_BASE + "hallwayaudio2.wav",
+      midFlash: STAIR_AUDIO_BASE + "hallwayaudio3.wav",
+      closeFlash: STAIR_AUDIO_BASE + "hallwayaudio4.wav",
+      frenzyStart: STAIR_AUDIO_BASE + "hallwayaudio5.wav",
+      scream: STAIR_AUDIO_BASE + "hallwayaudio6.wav"
+    };
+    var STAIR_AUDIO_VOLUME = {
+      ambience: 0.13,
+      start: 0.48,
+      firstFlash: 0.56,
+      midFlash: 0.62,
+      closeFlash: 0.72,
+      frenzyStart: 0.78,
+      scream: 1.0
+    };
 
     var stairFlow = {
       initialized: false,
       phase: "idle",
       frameIndex: 0,
-      nextSwitch: 0
+      nextSwitch: 0,
+      locked: false,
+      noSignal: false,
+      frenzyStartMs: 0,
+      viewerActive: false,
+      ambienceAudio: null,
+      audioCache: {},
+      playedAudio: {}
     };
 
+    function getStairAudio(path, loop, volume) {
+      if (!stairFlow.audioCache[path]) {
+        var audio = new Audio(path);
+        audio.preload = "auto";
+        audio.loop = !!loop;
+        stairFlow.audioCache[path] = audio;
+      }
+      var cached = stairFlow.audioCache[path];
+      cached.loop = !!loop;
+      cached.volume = volume;
+      return cached;
+    }
+
+    function tryPlayAudio(audio) {
+      if (!audio) return;
+      var p = audio.play();
+      if (p && typeof p.catch === "function") p.catch(function () {});
+    }
+
+    function ensureStairAmbience() {
+      if (!stairFlow.viewerActive || stairFlow.noSignal) return;
+      if (!stairFlow.ambienceAudio) {
+        stairFlow.ambienceAudio = getStairAudio(STAIR_AMBIENCE_AUDIO, true, STAIR_AUDIO_VOLUME.ambience);
+      }
+      stairFlow.ambienceAudio.volume = STAIR_AUDIO_VOLUME.ambience;
+      tryPlayAudio(stairFlow.ambienceAudio);
+    }
+
+    function stopStairAmbience() {
+      var audio = stairFlow.ambienceAudio;
+      if (!audio) return;
+      audio.pause();
+      audio.currentTime = 0;
+    }
+
+    function playStairEvent(key) {
+      var path = STAIR_EVENT_AUDIO[key];
+      if (!path || stairFlow.playedAudio[key] || !stairFlow.viewerActive) return;
+      stairFlow.playedAudio[key] = true;
+      var audio = getStairAudio(path, false, STAIR_AUDIO_VOLUME[key] || 0.7);
+      audio.pause();
+      audio.currentTime = 0;
+      tryPlayAudio(audio);
+    }
+
+    function handleStairAudioForFrame(frameIndex) {
+      if (frameIndex === 0) playStairEvent("start");
+      if (frameIndex === 1) playStairEvent("firstFlash");
+      if (frameIndex === 6) playStairEvent("midFlash");
+      if (frameIndex === 9) playStairEvent("closeFlash");
+      if (frameIndex === STAIR_FRENZY_DARK) playStairEvent("frenzyStart");
+      if (frameIndex === STAIR_FRENZY_LIT) playStairEvent("scream");
+    }
+
+    function resetStairAudio() {
+      stopStairAmbience();
+      stairFlow.playedAudio = {};
+      Object.keys(stairFlow.audioCache).forEach(function (key) {
+        var audio = stairFlow.audioCache[key];
+        if (!audio) return;
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    }
+
+    function stairFrenzyNextMs() {
+      var r = Math.random();
+      if (r < 0.30) return 35  + Math.random() * 65;   // fast burst (35-100ms)
+      if (r < 0.55) return 100 + Math.random() * 160;  // medium (100-260ms)
+      if (r < 0.78) return 280 + Math.random() * 420;  // held (280-700ms)
+      return 800 + Math.random() * 1200;                // long disturbing pause (800-2000ms)
+    }
+
     function updateStairFlowState() {
-      if (GAME.extraFeeds.indexOf(STAIR_FLOW_CAM_ID) < 0) return; // feed not unlocked yet
+      if (!gameFlag(MAP_CAM005_STAIR_FLAG)) return;
       var now = Date.now();
+      if (stairFlow.locked) {
+        if (stairFlow.noSignal) return;
+        if (now >= stairFlow.frenzyStartMs + STAIR_FRENZY_HOLD_MS) {
+          stairFlow.noSignal = true;
+          stopStairAmbience();
+          return;
+        }
+        ensureStairAmbience();
+        // Erratic frenzy — flip between dark and lit with random timing
+        if (now >= stairFlow.nextSwitch) {
+          stairFlow.frameIndex = (stairFlow.frameIndex === STAIR_FRENZY_DARK) ? STAIR_FRENZY_LIT : STAIR_FRENZY_DARK;
+          handleStairAudioForFrame(stairFlow.frameIndex);
+          stairFlow.nextSwitch = now + stairFrenzyNextMs();
+        }
+        return;
+      }
       if (!stairFlow.initialized) {
         stairFlow.initialized = true;
         stairFlow.phase = "idle";
@@ -1033,24 +1355,59 @@
         if (now >= stairFlow.nextSwitch) {
           stairFlow.phase = "play";
           stairFlow.frameIndex = 0;
+          stairFlow.playedAudio = {};
+          ensureStairAmbience();
+          handleStairAudioForFrame(stairFlow.frameIndex);
           stairFlow.nextSwitch = now + STAIR_FRAME_DURATIONS_MS[0];
         }
       } else if (stairFlow.phase === "play") {
+        ensureStairAmbience();
         if (now >= stairFlow.nextSwitch) {
           stairFlow.frameIndex++;
-          if (stairFlow.frameIndex >= STAIR_FLOW_FRAMES.length) {
-            stairFlow.phase = "idle";
-            stairFlow.frameIndex = 0;
-            stairFlow.nextSwitch = now + randomRange(STAIR_FLOW_MIN_IDLE_MS, STAIR_FLOW_MAX_IDLE_MS);
+          if (stairFlow.frameIndex >= STAIR_FRENZY_DARK) {
+            // Enter locked frenzy on the dark frame first
+            stairFlow.frameIndex = STAIR_FRENZY_DARK;
+            stairFlow.locked = true;
+            stairFlow.noSignal = false;
+            stairFlow.frenzyStartMs = now;
+            handleStairAudioForFrame(stairFlow.frameIndex);
+            stairFlow.nextSwitch = now + stairFrenzyNextMs();
           } else {
+            handleStairAudioForFrame(stairFlow.frameIndex);
             stairFlow.nextSwitch = now + STAIR_FRAME_DURATIONS_MS[stairFlow.frameIndex];
           }
         }
       }
     }
 
+    // Call this on the big reveal to snap all feeds back to empty
+    function resetAllFlows() {
+      resetStairAudio();
+      stairFlow.locked = false;
+      stairFlow.phase = "idle";
+      stairFlow.frameIndex = 0;
+      stairFlow.initialized = false;
+      stairFlow.nextSwitch = 0;
+      stairFlow.noSignal = false;
+      stairFlow.frenzyStartMs = 0;
+      stairFlow.viewerActive = false;
+      elevFlow.phase = "idle";
+      elevFlow.frameIndex = 0;
+      elevFlow.initialized = false;
+      cultFlow.locked = false;
+      cultFlow.phase = "idle";
+      cultFlow.frameIndex = 0;
+      cultFlow.initialized = false;
+      billboardFlow.locked = false;
+      billboardFlow.phase = "idle";
+      billboardFlow.frameIndex = 0;
+      billboardFlow.initialized = false;
+      billboardFlow.nextSwitch = 0;
+      billboardFlow.flickerEmpty = false;
+    }
+
     function getStairAwareImagePath(cam) {
-      if (cam.id !== STAIR_FLOW_CAM_ID || !cam.thumb) {
+      if (cam.id !== STAIR_FLOW_CAM_ID || !cam.thumb || !gameFlag(MAP_CAM005_STAIR_FLAG)) {
         return getCamImagePath(cam);
       }
       if (stairFlow.phase !== "play") {
@@ -1060,16 +1417,43 @@
     }
 
     function preloadStairFlowFrames() {
+      // Also preload the idle thumb
+      ensureImageLoaded('flows/hallway/hallway1.jpg', null);
       for (var i = 0; i < STAIR_FLOW_FRAMES.length; i++) {
         ensureImageLoaded(STAIR_FLOW_FRAMES[i], null);
       }
+      getStairAudio(STAIR_AMBIENCE_AUDIO, true, STAIR_AUDIO_VOLUME.ambience).load();
+      Object.keys(STAIR_EVENT_AUDIO).forEach(function (key) {
+        getStairAudio(STAIR_EVENT_AUDIO[key], false, STAIR_AUDIO_VOLUME[key] || 0.7).load();
+      });
+    }
+
+    function isMapTriggeredStairCam(cam) {
+      return cam && cam.id === STAIR_FLOW_CAM_ID && gameFlag(MAP_CAM005_STAIR_FLAG);
+    }
+
+    function isStairNoSignal(cam) {
+      return isMapTriggeredStairCam(cam) && stairFlow.noSignal;
     }
 
     function stairGlitchSeverity() {
-      if (stairFlow.phase !== "play") return 0;
-      // Figure walking: mild; door open: very subtle
-      if (stairFlow.frameIndex === 1) return 0.14 + Math.random() * 0.10;
-      if (stairFlow.frameIndex === 2) return 0.04 + Math.random() * 0.05;
+      if (stairFlow.noSignal) return 0;
+      if (stairFlow.phase !== "play" && !stairFlow.locked) return 0;
+      var i = stairFlow.frameIndex;
+      // Frenzy frames — severe and erratic, changes every call
+      if (stairFlow.locked) {
+        // Randomly spike between very heavy and almost nothing for maximum instability
+        var r = Math.random();
+        if (r < 0.15) return 0.02 + Math.random() * 0.04; // sudden near-clear
+        if (r < 0.50) return 0.35 + Math.random() * 0.25; // heavy corruption
+        return 0.55 + Math.random() * 0.35;                // extreme
+      }
+      // Lit flash frames (1, 3, 6, 9, 11) — spike hard on every flash
+      if (i === 1 || i === 3 || i === 6 || i === 9 || i === 11) return 0.30 + Math.random() * 0.20;
+      // Dark frames — subtle, building slightly as it gets closer
+      if (i === 0 || i === 2 || i === 4) return 0.05 + Math.random() * 0.05;
+      if (i === 5 || i === 7)            return 0.06 + Math.random() * 0.06;
+      if (i === 8 || i === 10 || i === 12) return 0.08 + Math.random() * 0.06;
       return 0;
     }
 
@@ -1191,7 +1575,7 @@
     }
 
     function cultGlitchSeverity(cam) {
-      if (cam.id !== CULT_FLOW_CAM_ID) {
+      if (cam.id !== CULT_FLOW_CAM_ID || isMapTriggeredStairCam(cam)) {
         return 0;
       }
       if (cultFlow.phase === "play") {
@@ -1392,8 +1776,22 @@
       var pal = PALETTES[idx % PALETTES.length];
       var w = THUMB_W;
       var h = THUMB_H;
+      if (isStairNoSignal(cam)) {
+        drawNoiseFrame(ctx, pal, true, w, h, idx);
+        ctx.fillStyle = "rgba(180,180,180,0.3)";
+        ctx.font = "bold 12px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("NO SIGNAL", w / 2, h / 2);
+        ctx.textAlign = "start";
+        return;
+      }
       var path;
-      if (cam.id === CULT_FLOW_CAM_ID) {
+      if (isMapTriggeredStairCam(cam)) {
+        path = getStairAwareImagePath(cam);
+        if (stairFlow.phase === "play" && (!imageCache[path] || !imageCache[path].complete || !imageCache[path].naturalWidth)) {
+          path = cam.thumb;
+        }
+      } else if (cam.id === CULT_FLOW_CAM_ID) {
         path = getCultAwareImagePath(cam);
         if (cultFlow.phase === "play" && (!imageCache[path] || !imageCache[path].complete || !imageCache[path].naturalWidth)) {
           path = cam.thumb;
@@ -1403,9 +1801,9 @@
         if (elevFlow.phase === "play" && (!imageCache[path] || !imageCache[path].complete || !imageCache[path].naturalWidth)) {
           path = cam.thumb;
         }
-      } else if (cam.id === STAIR_FLOW_CAM_ID) {
-        path = getStairAwareImagePath(cam);
-        if (stairFlow.phase === "play" && (!imageCache[path] || !imageCache[path].complete || !imageCache[path].naturalWidth)) {
+      } else if (cam.id === BILLBOARD_FLOW_CAM_ID) {
+        path = getBillboardAwareImagePath(cam);
+        if ((billboardFlow.phase === "play" || billboardFlow.locked) && (!imageCache[path] || !imageCache[path].complete || !imageCache[path].naturalWidth)) {
           path = cam.thumb;
         }
       } else {
@@ -1422,12 +1820,14 @@
       } else {
         drawNoiseFrame(ctx, pal, false, w, h, idx);
       }
-      if (cam.id === CULT_FLOW_CAM_ID) {
+      if (isMapTriggeredStairCam(cam) && !stairFlow.noSignal) {
+        drawGlitchPost(ctx, w, h, stairGlitchSeverity());
+      } else if (cam.id === CULT_FLOW_CAM_ID) {
         drawGlitchPost(ctx, w, h, cultGlitchSeverity(cam));
       } else if (cam.id === ELEV_FLOW_CAM_ID) {
         drawGlitchPost(ctx, w, h, elevGlitchSeverity());
-      } else if (cam.id === STAIR_FLOW_CAM_ID) {
-        drawGlitchPost(ctx, w, h, stairGlitchSeverity());
+      } else if (cam.id === BILLBOARD_FLOW_CAM_ID) {
+        drawGlitchPost(ctx, w, h, billboardGlitchSeverity());
       }
     }
 
@@ -1435,11 +1835,16 @@
       var canvas = document.getElementById("viewerCanvas");
       var ctx = canvas.getContext("2d");
       var pal = PALETTES[index % PALETTES.length];
-      var isOff = cam.status === "offline";
+      var isOff = cam.status === "offline" || isStairNoSignal(cam);
       var w = canvas.width;
       var h = canvas.height;
       var imgPath;
-      if (cam.id === CULT_FLOW_CAM_ID) {
+      if (isMapTriggeredStairCam(cam)) {
+        imgPath = getStairAwareImagePath(cam);
+        if (stairFlow.phase === "play" && (!imageCache[imgPath] || !imageCache[imgPath].complete || !imageCache[imgPath].naturalWidth)) {
+          imgPath = cam.thumb;
+        }
+      } else if (cam.id === CULT_FLOW_CAM_ID) {
         imgPath = getCultAwareImagePath(cam);
         if (cultFlow.phase === "play" && (!imageCache[imgPath] || !imageCache[imgPath].complete || !imageCache[imgPath].naturalWidth)) {
           imgPath = cam.thumb;
@@ -1449,9 +1854,9 @@
         if (elevFlow.phase === "play" && (!imageCache[imgPath] || !imageCache[imgPath].complete || !imageCache[imgPath].naturalWidth)) {
           imgPath = cam.thumb;
         }
-      } else if (cam.id === STAIR_FLOW_CAM_ID) {
-        imgPath = getStairAwareImagePath(cam);
-        if (stairFlow.phase === "play" && (!imageCache[imgPath] || !imageCache[imgPath].complete || !imageCache[imgPath].naturalWidth)) {
+      } else if (cam.id === BILLBOARD_FLOW_CAM_ID) {
+        imgPath = getBillboardAwareImagePath(cam);
+        if ((billboardFlow.phase === "play" || billboardFlow.locked) && (!imageCache[imgPath] || !imageCache[imgPath].complete || !imageCache[imgPath].naturalWidth)) {
           imgPath = cam.thumb;
         }
       } else {
@@ -1472,12 +1877,14 @@
         ctx.restore();
       }
 
-      if (cam.id === CULT_FLOW_CAM_ID) {
+      if (isMapTriggeredStairCam(cam) && !stairFlow.noSignal) {
+        drawGlitchPost(ctx, w, h, stairGlitchSeverity());
+      } else if (cam.id === CULT_FLOW_CAM_ID) {
         drawGlitchPost(ctx, w, h, cultGlitchSeverity(cam));
       } else if (cam.id === ELEV_FLOW_CAM_ID) {
         drawGlitchPost(ctx, w, h, elevGlitchSeverity());
-      } else if (cam.id === STAIR_FLOW_CAM_ID) {
-        drawGlitchPost(ctx, w, h, stairGlitchSeverity());
+      } else if (cam.id === BILLBOARD_FLOW_CAM_ID) {
+        drawGlitchPost(ctx, w, h, billboardGlitchSeverity());
       }
 
       ctx.shadowColor = "#000";
@@ -1491,6 +1898,10 @@
       if (cam.status === "live") {
         ctx.fillStyle = "rgba(200,70,70,0.9)";
         ctx.fillText("\u25CF REC", w - 55, 18);
+      }
+      if (isMapTriggeredStairCam(cam)) {
+        ctx.fillStyle = "rgba(210,210,180,0.92)";
+        ctx.fillText("ARCHIVE / PRERECORDED", 10, 36);
       }
       if (isOff) {
         ctx.fillStyle = "rgba(200,200,200,0.4)";
@@ -1516,10 +1927,96 @@
       }
     }
 
+    // Track which cam is currently open in the viewer
+    var _viewerCam = null;
+
+    // Dev override — disable flow lock during testing
+    var _flowLockEnabled = true;
+    function devToggleFlowLock() {
+      _flowLockEnabled = !_flowLockEnabled;
+      var btn = document.getElementById('devFlowLockBtn');
+      if (btn) btn.textContent = 'flow lock: ' + (_flowLockEnabled ? 'ON' : 'OFF (dev)');
+      if (btn) btn.style.background = _flowLockEnabled ? '' : '#884400';
+    }
+
+    // Returns a reason string if the player must stay on the current feed, or null if safe to leave.
+    // Uses persistent GAME flags so revisiting a completed flow camera never re-locks the player.
+    function isFlowCritical() {
+      if (!_flowLockEnabled) return null; // dev bypass
+      if (!_viewerCam) return null;
+      // Cult — lock while actively playing; once the sign frame locks (or seen before), free to leave
+      if (_viewerCam.id === CULT_FLOW_CAM_ID && !GAME.cultFlowSeen && cultFlow.phase === "play" && !cultFlow.locked) {
+        return "transmission in progress";
+      }
+      // Elevator — lock until the 317 clue has been registered (already persisted in GAME.elevatorClue)
+      if (_viewerCam.id === ELEV_FLOW_CAM_ID && !GAME.elevatorClue && elevFlow.phase === "play") {
+        return "transmission in progress";
+      }
+      // Billboard — lock while playing; once the message flag is set (persisted), free to leave
+      if (_viewerCam.id === BILLBOARD_FLOW_CAM_ID && !gameFlag(BILLBOARD_MESSAGE_FLAG) && billboardFlow.phase === "play" && !billboardFlow.locked) {
+        return "transmission in progress";
+      }
+      // Hallway/stairwell — lock during play + frenzy; once NO SIGNAL (or seen before), free to leave
+      if (stairFlow.viewerActive && !GAME.stairFlowSeen && (stairFlow.phase === "play" || (stairFlow.locked && !stairFlow.noSignal))) {
+        return "transmission in progress";
+      }
+      return null;
+    }
+
+    // Show a brief in-band warning in the viewer footer without permanently replacing it
+    var _flowLockFlashTimer = null;
+    function flowLockFlash() {
+      var footer = document.getElementById('viewerFooter');
+      var btn    = document.getElementById('viewerClose');
+      if (!footer) return;
+      if (_flowLockFlashTimer) return; // already flashing
+      var saved = footer.innerHTML;
+      footer.innerHTML = '<span style="color:#b00;font-weight:bold;letter-spacing:1px">&#9888; CANNOT DISCONNECT &mdash; ACTIVE TRANSMISSION</span>';
+      if (btn) { btn.classList.add('viewer-close-locked'); }
+      _flowLockFlashTimer = setTimeout(function() {
+        footer.innerHTML = saved;
+        if (btn) { btn.classList.remove('viewer-close-locked'); }
+        _flowLockFlashTimer = null;
+      }, 2200);
+    }
+
+    // Keep the close button text in sync with the lock state (runs on the main 100ms interval).
+    // Also detects when each flow reaches its final state for the first time and persists that to GAME,
+    // so the lock permanently lifts and never re-engages on subsequent visits.
+    function syncViewerCloseBtn() {
+      if (_viewerCam) {
+        // Cult: final frame locked on screen
+        if (_viewerCam.id === CULT_FLOW_CAM_ID && cultFlow.locked && !GAME.cultFlowSeen) {
+          GAME.cultFlowSeen = true;
+          gameSave();
+        }
+        // Stairwell: NO SIGNAL reached
+        if (stairFlow.viewerActive && stairFlow.noSignal && !GAME.stairFlowSeen) {
+          GAME.stairFlowSeen = true;
+          gameSave();
+        }
+        // Billboard and Elevator already persist themselves via gameSetFlag / gameSave in their flow code
+      }
+
+      var btn = document.getElementById('viewerClose');
+      if (!btn) return;
+      var critical = isFlowCritical();
+      if (critical) {
+        btn.textContent = '[stream locked — stand by]';
+        btn.setAttribute('title', 'Cannot leave during an active transmission');
+      } else {
+        btn.textContent = '[back to feeds]';
+        btn.removeAttribute('title');
+      }
+    }
+
     function openViewer(cam, index) {
+      _viewerCam = cam;
       stopViewerInterval();
 
-      document.getElementById("viewerTitle").textContent = "CAM_" + cam.id + " - [" + cam.country + "] " + cam.label;
+      var mapStair = isMapTriggeredStairCam(cam);
+      var viewerLabel = mapStair ? "Prerecorded Hallway Archive" : cam.label;
+      document.getElementById("viewerTitle").textContent = "CAM_" + cam.id + " - [" + cam.country + "] " + viewerLabel;
       document.getElementById("viewerFooter").innerHTML =
         "Status: <b style='color:" + (cam.status === "live" ? "#060" : "#900") + "'>" +
         cam.status.toUpperCase() + "</b> | Quality: " + cam.quality +
@@ -1530,13 +2027,26 @@
 
       preloadCultFlowFrames();
       preloadElevFlowFrames();
-      var imgPath = getCamImagePath(cam);
+      if (cam.id === BILLBOARD_FLOW_CAM_ID) preloadBillboardFlowFrames();
+      if (mapStair) {
+        stairFlow.viewerActive = true;
+        preloadStairFlowFrames();
+        ensureStairAmbience();
+      } else {
+        stairFlow.viewerActive = false;
+        stopStairAmbience();
+      }
+      var imgPath = mapStair
+        ? getStairAwareImagePath(cam)
+        : cam.id === BILLBOARD_FLOW_CAM_ID
+          ? getBillboardAwareImagePath(cam)
+          : getCamImagePath(cam);
       drawViewer(cam, index);
       ensureImageLoaded(imgPath, function () {
         drawViewer(cam, index);
       });
 
-      var viewerMs = cam.status === "offline" ? 300 : (cam.id === CULT_FLOW_CAM_ID || cam.id === ELEV_FLOW_CAM_ID || cam.id === STAIR_FLOW_CAM_ID ? 200 : 130);
+      var viewerMs = cam.status === "offline" ? 300 : mapStair ? 35 : (cam.id === CULT_FLOW_CAM_ID || cam.id === ELEV_FLOW_CAM_ID || cam.id === BILLBOARD_FLOW_CAM_ID ? 200 : 130);
       viewerInterval = setInterval(function () {
         drawViewer(cam, index);
       }, viewerMs);
@@ -1546,9 +2056,12 @@
     }
 
     function closeViewer() {
+      _viewerCam = null;
       document.getElementById("viewerPanel").classList.remove("open");
       hideFeedList(false);
       stopViewerInterval();
+      stairFlow.viewerActive = false;
+      stopStairAmbience();
     }
 
     function parseQueryParam(name) {
@@ -1571,7 +2084,12 @@
       if (raw === null || raw === undefined) {
         return null;
       }
-      var s = String(raw).replace(/^CAM_/i, "").trim().replace(/\D/g, "");
+      var clean = String(raw).replace(/^CAM_/i, "").trim().toUpperCase();
+      var extraMatch = clean.match(/^E(\d{1,2})$/);
+      if (extraMatch) {
+        return "E" + ("0" + extraMatch[1]).slice(-2);
+      }
+      var s = clean.replace(/\D/g, "");
       if (!s) {
         return null;
       }
@@ -1588,6 +2106,11 @@
       var id = normalizeCamQueryId(parseQueryParam("cam") || parseQueryParam("feed"));
       if (!id) {
         return;
+      }
+      var wantsMapStair = id === STAIR_FLOW_CAM_ID && (parseQueryParam("stair") === "1" || parseQueryParam("fromMap") === "1");
+      if (wantsMapStair && gameFlag(BILLBOARD_MESSAGE_FLAG)) {
+        gameSetFlag(MAP_CAM005_STAIR_FLAG, true);
+        preloadStairFlowFrames();
       }
       var idx = -1;
       for (var i = 0; i < CAMERAS.length; i++) {
@@ -1660,7 +2183,7 @@
               drawLiveThumb(ctx, cam, idx, noiseBuf);
             });
             drawLiveThumb(ctx, cam, idx, noiseBuf);
-            var liveThumbMs = cam.id === CULT_FLOW_CAM_ID ? 220 : 130;
+            var liveThumbMs = isMapTriggeredStairCam(cam) ? 35 : (cam.id === CULT_FLOW_CAM_ID || cam.id === ELEV_FLOW_CAM_ID || cam.id === BILLBOARD_FLOW_CAM_ID ? 220 : 130);
             thumbIntervals.push(setInterval(function () {
               drawLiveThumb(ctx, cam, idx, noiseBuf);
             }, liveThumbMs));
@@ -1693,7 +2216,27 @@
       }
     }
 
-    document.getElementById("viewerClose").onclick = closeViewer;
+    // Use an indirect call so the onclick always resolves to the current (wrapped) closeViewer,
+    // not the original captured at bind time.
+    document.getElementById("viewerClose").onclick = function() { closeViewer(); };
+
+    // Block nav bar navigation while a flow is active — listener on the nav bar element
+    (function() {
+      var navBar = document.querySelector('.nav-bar');
+      if (!navBar) return;
+      navBar.addEventListener('click', function(e) {
+        var a = e.target.closest ? e.target.closest('a') : (e.target.tagName === 'A' ? e.target : null);
+        if (!a) return;
+        var href = a.getAttribute('href');
+        // Only block real outbound links — allow hash anchors and [submit] placeholder
+        if (!href || href === '#' || href.charAt(0) === '#') return;
+        if (isFlowCritical()) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          flowLockFlash();
+        }
+      }, true); // capture phase so it fires before individual onclick handlers
+    })();
 
     var visitors = 847;
     setInterval(function () {
@@ -1746,6 +2289,12 @@
       if (el) el.style.display = '';
     }
 
+    function showNavForumLink() {
+      if (!GAME.forumVisited) return;
+      var el = document.getElementById('navForumLink');
+      if (el) el.style.display = '';
+    }
+
     function gameSolvePuzzle(puzzleId) {
       if (GAME.puzzlesSolved.indexOf(puzzleId) < 0) {
         GAME.puzzlesSolved.push(puzzleId);
@@ -1756,8 +2305,8 @@
     // Extra camera definition bank — images TBD
     var EXTRA_CAMS = {
       '007': { id: '007', label: 'Warehouse Loading Dock', country: 'PL', tz: 'CET', status: 'live', quality: '144p', viewers: 34, isNew: true, thumb: 'bigcams/007.png' },
-      'E02': { id: 'E02', label: 'Stairwell - Floor 3',    country: 'EE', tz: 'EET', status: 'live', quality: '144p', viewers: 2,  isNew: true, thumb: 'flows/stairwell/stairwell01.png' },
-      'E03': { id: 'E03', label: 'Parking Structure - B2', country: '??', tz: '---', status: 'live', quality: '240p', viewers: 1,  isNew: true, thumb: null },
+      'E02': { id: 'E02', label: 'Billboard Relay - Access Road', country: '??', tz: '---', status: 'live', quality: '144p', viewers: 1,  isNew: true, thumb: 'flows/billboard/billboard1.jpg' },
+      'E03': { id: 'E03', label: 'Prerecorded Hallway Archive', country: '??', tz: '---', status: 'live', quality: '144p', viewers: 0,  isNew: true, thumb: 'flows/hallway/hallway1.jpg' },
       'E04': { id: 'E04', label: '[LOCAL] Interior - Cam 1', country: '??', tz: '---', status: 'live', quality: '480p', viewers: 0, isNew: true, thumb: null }
     };
 
@@ -1768,7 +2317,7 @@
       GAME.extraFeeds.push(camId);
       gameSave();
       CAMERAS.push(cam);
-      if (camId === STAIR_FLOW_CAM_ID) preloadStairFlowFrames();
+      if (camId === BILLBOARD_FLOW_CAM_ID) preloadBillboardFlowFrames();
       appendCameraCell(cam, CAMERAS.length - 1);
       setTimeout(function () {
         var cells = document.querySelectorAll('.cam-cell');
@@ -1818,7 +2367,8 @@
         if (c.thumb && c.status === 'live') {
           ensureImageLoaded(c.thumb, function () { drawLiveThumb(ctx, c, i, nb); });
           drawLiveThumb(ctx, c, i, nb);
-          thumbIntervals.push(setInterval(function () { drawLiveThumb(ctx, c, i, nb); }, 130));
+          var appendThumbMs = isMapTriggeredStairCam(c) ? 35 : (c.id === CULT_FLOW_CAM_ID || c.id === ELEV_FLOW_CAM_ID || c.id === BILLBOARD_FLOW_CAM_ID ? 200 : 130);
+          thumbIntervals.push(setInterval(function () { drawLiveThumb(ctx, c, i, nb); }, appendThumbMs));
         } else {
           drawThumb(ctx, c, i);
           thumbIntervals.push(setInterval(function () { drawThumb(ctx, c, i); }, 250));
@@ -1906,58 +2456,56 @@
 
     function sfxRingStop() { _ringActive = false; }
 
-    // Wire sounds into viewer open/close
+    // Wire sounds into viewer open/close — also enforce flow lock
     var _origOpenViewer = openViewer;
-    openViewer = function(cam, index) { sfxClick(); _origOpenViewer(cam, index); };
+    openViewer = function(cam, index) {
+      // Block switching away from an active flow feed
+      if (isFlowCritical()) { flowLockFlash(); return; }
+      sfxClick(); _origOpenViewer(cam, index);
+    };
     var _origCloseViewer = closeViewer;
-    closeViewer = function() { sfxTick(); _origCloseViewer(); };
+    closeViewer = function() {
+      // Block closing the viewer during an active flow sequence
+      if (isFlowCritical()) { flowLockFlash(); return; }
+      sfxTick(); _origCloseViewer();
+    };
 
     // ===== NARRATIVE HOOKS =====
+    // 5550141 = first call (relay service — leads to forum / ECHO-7734)
+    // 5550163 = second call (helpline — leads to news article / creature sighting)
     var NARRATIVE_NUMBERS = {
-      '5550199': 'puzzle_01'
+      '5550141': 'relay',
+      '5550163': 'helpline'
     };
 
     var _narrativeCallActive = false;
     var _narrativeOnComplete = null;
+    var _activeAudioEl = null;
 
-    function playNarrativeCall(onComplete) {
+    function _startCall(audioEl, onFirstLoopEnd, onComplete) {
       _narrativeCallActive = true;
       _narrativeOnComplete = onComplete;
+      _activeAudioEl = audioEl;
 
-      var audio = document.getElementById('callAudio');
-      if (!audio) return;
-
-      audio.currentTime = 0;
-      audio.loop = false;
-
+      audioEl.currentTime = 0;
+      audioEl.loop = false;
       var _firstPlayDone = false;
 
       function onAudioEnded() {
         if (!_narrativeCallActive) return;
-
         if (!_firstPlayDone) {
           _firstPlayDone = true;
-          // Show first address on phone screen + slide down the URL bar
-          phoneSetStatus('signalwatch.net', '/signal_theory');
-          showAddressBar();
-          // After a beat, flip to the second address as a reminder
-          setTimeout(function () {
-            if (_narrativeCallActive) phoneSetStatus('forum.html', 'type in bar above');
-          }, 3500);
+          if (onFirstLoopEnd) onFirstLoopEnd();
         }
-
-        // Loop manually so we can track first-play
-        audio.currentTime = 0;
-        audio.play().catch(function () {});
+        audioEl.currentTime = 0;
+        audioEl.play().catch(function () {});
       }
 
-      audio.removeEventListener('ended', audio._narrativeEndedHandler);
-      audio._narrativeEndedHandler = onAudioEnded;
-      audio.addEventListener('ended', onAudioEnded);
+      audioEl.removeEventListener('ended', audioEl._narrativeEndedHandler);
+      audioEl._narrativeEndedHandler = onAudioEnded;
+      audioEl.addEventListener('ended', onAudioEnded);
+      audioEl.play().catch(function () {});
 
-      audio.play().catch(function () {});
-
-      // Safety fallback — auto-end after 10 minutes if player never hangs up
       window._callFallback = setTimeout(function () {
         if (_narrativeCallActive) endNarrativeCall();
       }, 600000);
@@ -1967,18 +2515,27 @@
       if (!_narrativeCallActive) return;
       _narrativeCallActive = false;
       clearTimeout(window._callFallback);
-      var audio = document.getElementById('callAudio');
-      if (audio) {
-        audio.pause();
-        audio.currentTime = 0;
-        if (audio._narrativeEndedHandler) {
-          audio.removeEventListener('ended', audio._narrativeEndedHandler);
-          audio._narrativeEndedHandler = null;
+      if (_activeAudioEl) {
+        _activeAudioEl.pause();
+        _activeAudioEl.currentTime = 0;
+        if (_activeAudioEl._narrativeEndedHandler) {
+          _activeAudioEl.removeEventListener('ended', _activeAudioEl._narrativeEndedHandler);
+          _activeAudioEl._narrativeEndedHandler = null;
         }
+        _activeAudioEl = null;
       }
       var cb = _narrativeOnComplete;
       _narrativeOnComplete = null;
       if (cb) cb();
+    }
+
+    function _phoneCallEnd() {
+      phone.state = 'idle';
+      phone.number = '';
+      if (window.sfxClick) sfxClick();
+      phoneSetStatus('call ended', '');
+      document.getElementById('phoneSoftL').textContent = 'menu';
+      setTimeout(function () { phoneSetStatus('', 'ready'); }, 1600);
     }
 
     function showAddressBar() {
@@ -2008,31 +2565,389 @@
     }
 
     window.onPhoneDial = function (number) {
-      var event = NARRATIVE_NUMBERS[number.replace(/\D/g, '')];
-      if (!event) return;
+      var clean = number.replace(/\D/g, '');
+      var callType = NARRATIVE_NUMBERS[clean];
+      if (!callType) return;
 
-      phoneSetStatus('CONNECTED', 'relay svc.');
+      if (callType === 'relay') {
+        // ── CALL 1: relay service (message1.mp3) ──────────────────────────────
+        phoneSetStatus('CONNECTED', 'relay svc.');
+        var audio1 = document.getElementById('callAudio');
+        _startCall(audio1,
+          function onFirstEnd() {
+            // After first loop: show address hint on phone + slide in address bar
+            phoneSetStatus('signalwatch.net', '/signal_theory');
+            showAddressBar();
+            setTimeout(function () {
+              if (_narrativeCallActive) phoneSetStatus('forum.html', 'type in bar above');
+            }, 3500);
+          },
+          function onHangUp() {
+            _phoneCallEnd();
+          }
+        );
 
-      playNarrativeCall(function () {
-        // Called if the 2-min fallback fires — normally player hangs up manually
-        phone.state = 'idle';
-        phone.number = '';
-        if (window.sfxClick) sfxClick();
-        phoneSetStatus('call ended', '');
-        document.getElementById('phoneSoftL').textContent = 'menu';
-        setTimeout(function () { phoneSetStatus('', 'ready'); }, 1600);
-        showAddressBar();
-      });
+      } else if (callType === 'helpline') {
+        // ── CALL 2: helpline (message3.mp3) — opens news browser on hang-up ──
+        phoneSetStatus('CONNECTED', 'support line');
+        var audio2 = document.getElementById('callAudioHelp');
+        _startCall(audio2,
+          function onFirstEnd() {
+            // After first loop: hint on phone screen
+            phoneSetStatus('westfieldherald.net', 'opening...');
+          },
+          function onHangUp() {
+            _phoneCallEnd();
+            setTimeout(function () {
+              triggerNewsPopup();
+            }, 700);
+          }
+        );
+      }
     };
 
     window.onPhoneAnswer  = function () {};
     window.onPhoneDecline = function () {};
     window.onPhoneHangUp  = function () {
-      if (_narrativeCallActive) {
-        endNarrativeCall();
-        showAddressBar();
-      }
+      if (_narrativeCallActive) endNarrativeCall();
     };
+
+    // ── SITE GLITCH SYSTEM ────────────────────────────────────────────────────
+    var _glitchActive  = false;
+    var _glitchTimers  = [];
+    var _glitchIvals   = [];
+    var _glitchRAF     = null;
+    var _glitchCanvas  = null;
+    var _glitchCtx     = null;
+    var _glitchPhase   = 0;
+    var _scrambleEls   = [];
+    var _invertedEls   = [];
+    var _savedStyles   = [];
+
+    var GLITCH_CHARS = '!@#$%^&*<>?/\\|{}[]~`░▒▓█▄▀■□▪▫';
+
+    function _rnd(min, max) { return min + Math.random() * (max - min); }
+    function _rndInt(min, max) { return Math.floor(_rnd(min, max)); }
+    function _rndChar() { return GLITCH_CHARS[_rndInt(0, GLITCH_CHARS.length)]; }
+
+    function _scrambleText(el) {
+      if (!el || el._glitchScrambling) return;
+      el._glitchScrambling = true;
+      el._origText = el.textContent;
+      _scrambleEls.push(el);
+      var iter = 0;
+      var id = setInterval(function() {
+        if (!_glitchActive) { clearInterval(id); el.textContent = el._origText; el._glitchScrambling = false; return; }
+        iter++;
+        var t = el._origText;
+        var out = '';
+        for (var i = 0; i < t.length; i++) {
+          out += (Math.random() < 0.35 + iter * 0.05) ? _rndChar() : t[i];
+        }
+        el.textContent = out;
+        if (iter > 14) { clearInterval(id); if (_glitchActive && _glitchPhase >= 3) { el.textContent = out; } else { el.textContent = el._origText; } el._glitchScrambling = false; }
+      }, 60);
+      _glitchIvals.push(id);
+    }
+
+    function _drawTears(ctx, w, h, intensity) {
+      ctx.clearRect(0, 0, w, h);
+      var tears = _rndInt(1, 2 + Math.floor(intensity * 5));
+      for (var i = 0; i < tears; i++) {
+        var y  = _rndInt(0, h);
+        var th = _rndInt(1, 4 + intensity * 8);
+        var dx = _rndInt(-intensity * 40, intensity * 40);
+        // Horizontal displacement strip
+        ctx.save();
+        ctx.fillStyle = 'rgba(' + _rndInt(0,255) + ',' + _rndInt(0,255) + ',' + _rndInt(0,255) + ',' + _rnd(0.05, 0.25) + ')';
+        ctx.fillRect(0, y, w, th);
+        ctx.restore();
+        // RGB ghost strip
+        if (Math.random() < 0.5) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'screen';
+          ctx.fillStyle = 'rgba(255,0,0,0.08)';
+          ctx.fillRect(dx, y, w, th);
+          ctx.fillStyle = 'rgba(0,100,255,0.08)';
+          ctx.fillRect(-dx, y + 2, w, th);
+          ctx.restore();
+        }
+      }
+      // Random static noise
+      if (intensity > 0.4) {
+        var pixels = _rndInt(0, intensity * 600);
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        for (var p = 0; p < pixels; p++) {
+          ctx.fillRect(_rndInt(0, w), _rndInt(0, h), _rndInt(1, 3), 1);
+        }
+      }
+    }
+
+    function _tearLoop() {
+      if (!_glitchActive || !_glitchCtx) return;
+      var intensity = _glitchPhase === 1 ? 0.05 : _glitchPhase === 2 ? 0.25 : 0.7;
+      _drawTears(_glitchCtx, _glitchCanvas.width, _glitchCanvas.height, intensity);
+      _glitchRAF = requestAnimationFrame(function() {
+        setTimeout(_tearLoop, _glitchPhase >= 3 ? 30 : 80);
+      });
+    }
+
+    function _randomInvert() {
+      var candidates = ['.header-bar', '.nav-bar', '.cam-cell', '.viewer-panel', '.notice', '.section-header'];
+      var pick = candidates[_rndInt(0, candidates.length)];
+      var els = document.querySelectorAll(pick);
+      if (!els.length) return;
+      var el = els[_rndInt(0, els.length)];
+      var prev = el.style.filter;
+      el.style.filter = 'invert(1) hue-rotate(' + _rndInt(0, 360) + 'deg)';
+      _invertedEls.push({ el: el, prev: prev });
+      setTimeout(function() {
+        el.style.filter = prev;
+        _invertedEls = _invertedEls.filter(function(x) { return x.el !== el; });
+      }, _rndInt(80, 300));
+    }
+
+    function _applyBodyFilter() {
+      if (!_glitchActive) return;
+      var br  = _rnd(0.7, 1.3);
+      var con = _rnd(0.8, 1.5);
+      var hue = _glitchPhase >= 3 ? _rndInt(-40, 40) : 0;
+      var sat = _glitchPhase >= 3 ? _rnd(0.5, 2.0) : 1;
+      document.body.style.filter = 'brightness(' + br + ') contrast(' + con + ') hue-rotate(' + hue + 'deg) saturate(' + sat + ')';
+    }
+
+    function triggerSiteGlitch() {
+      if (_glitchActive) return;
+      _glitchActive = true;
+      _glitchPhase  = 1;
+
+      // Canvas overlay for tears + noise
+      _glitchCanvas = document.createElement('canvas');
+      _glitchCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:99999;pointer-events:none;';
+      _glitchCanvas.width  = window.innerWidth;
+      _glitchCanvas.height = window.innerHeight;
+      document.body.appendChild(_glitchCanvas);
+      _glitchCtx = _glitchCanvas.getContext('2d');
+      _tearLoop();
+
+      // Phase 1 — subtle flicker + tiny shake (0ms)
+      document.body.classList.add('g-shake-sm');
+      var filterIval = setInterval(_applyBodyFilter, 100);
+      _glitchIvals.push(filterIval);
+
+      // Phase 2 — bigger shake + random inversions (1.4s)
+      _glitchTimers.push(setTimeout(function() {
+        _glitchPhase = 2;
+        document.body.classList.replace('g-shake-sm', 'g-shake-md');
+        var invertIval = setInterval(function() { if (_glitchPhase >= 2) _randomInvert(); }, 180);
+        _glitchIvals.push(invertIval);
+        // Corrupt the address bar hint text
+        var addr = document.getElementById('addressInput');
+        if (addr) { addr._origVal = addr.value; addr.value = '░▒ ERR_STREAM_CORRUPT'; }
+        // Scramble nav links
+        document.querySelectorAll('.nav-bar a').forEach(function(a) { _scrambleText(a); });
+      }, 1400));
+
+      // Phase 3 — full chaos (3.2s)
+      _glitchTimers.push(setTimeout(function() {
+        _glitchPhase = 3;
+        document.body.classList.replace('g-shake-md', 'g-shake-lg');
+        // Scramble headers + section labels
+        ['h1','h2','.section-header','.logo','.viewer-title','#viewerFooter'].forEach(function(sel) {
+          document.querySelectorAll(sel).forEach(function(el) { _scrambleText(el); });
+        });
+        // Scramble camera labels in the grid
+        document.querySelectorAll('.cam-label,.cam-country,.cam-status').forEach(function(el) {
+          if (Math.random() < 0.6) _scrambleText(el);
+        });
+        // Invert the viewer canvas entirely for a moment
+        var vc = document.getElementById('viewerCanvas');
+        if (vc) { vc.style.filter = 'invert(1) contrast(2) hue-rotate(180deg)'; }
+        // Notify shell to glitch the chrome too
+        if (window.parent && window.parent !== window && typeof window.parent.triggerShellGlitch === 'function') {
+          window.parent.triggerShellGlitch();
+        }
+      }, 3200));
+
+      // Phase 4 — peak insanity (5.5s)
+      _glitchTimers.push(setTimeout(function() {
+        _glitchPhase = 4;
+        document.body.classList.add('g-flicker');
+        // Rapid body flash
+        var flashIval = setInterval(function() {
+          document.body.style.filter = Math.random() < 0.5
+            ? 'invert(1) brightness(2) contrast(3)'
+            : 'brightness(' + _rnd(0.3, 1.5) + ') hue-rotate(' + _rndInt(0,360) + 'deg)';
+        }, 50);
+        _glitchIvals.push(flashIval);
+      }, 5500));
+
+      // After 8s — hard cut to offline state
+      _glitchTimers.push(setTimeout(siteGoOffline, 8000));
+    }
+
+    function stopSiteGlitch() {
+      // Dismiss offline overlay if present (dev reset)
+      var oo = document.getElementById('__offlineOverlay');
+      if (oo) { oo.style.opacity = '0'; setTimeout(function(){ if(oo.parentNode) oo.parentNode.removeChild(oo); }, 400); }
+
+      if (!_glitchActive) return;
+      _glitchActive = false;
+      _glitchPhase  = 0;
+
+      _glitchTimers.forEach(clearTimeout);  _glitchTimers = [];
+      _glitchIvals.forEach(clearInterval);  _glitchIvals  = [];
+      if (_glitchRAF) { cancelAnimationFrame(_glitchRAF); _glitchRAF = null; }
+
+      document.body.classList.remove('g-shake-sm','g-shake-md','g-shake-lg','g-flicker');
+      document.body.style.filter    = '';
+      document.body.style.transform = '';
+
+      if (_glitchCanvas) { _glitchCanvas.remove(); _glitchCanvas = null; _glitchCtx = null; }
+
+      // Restore scrambled text
+      _scrambleEls.forEach(function(el) { if (el._origText !== undefined) el.textContent = el._origText; });
+      _scrambleEls = [];
+
+      // Restore inverted elements
+      _invertedEls.forEach(function(o) { o.el.style.filter = o.prev; });
+      _invertedEls = [];
+
+      // Restore address bar
+      var addr = document.getElementById('addressInput');
+      if (addr && addr._origVal !== undefined) { addr.value = addr._origVal; }
+
+      // Restore viewer canvas
+      var vc = document.getElementById('viewerCanvas');
+      if (vc) vc.style.filter = '';
+
+      // Tell shell to stop / reset too
+      if (window.parent && window.parent !== window) {
+        try {
+          if (typeof window.parent.stopShellGlitch === 'function') window.parent.stopShellGlitch();
+          // Also clear the shell offline overlay if present
+          var soo = window.parent.document.getElementById('__shellOfflineOverlay');
+          if (soo && soo.parentNode) soo.parentNode.removeChild(soo);
+          // Reset address bar and title bar color
+          var ma = window.parent.document.getElementById('gbMainAddr');
+          var mb = window.parent.document.getElementById('gbMainTitlebar');
+          var mt = window.parent.document.getElementById('gbMainTitle');
+          var tb = window.parent.document.getElementById('taskbar');
+          var tbm = window.parent.document.getElementById('tbBtnMain');
+          if (ma)  { ma.value = 'http://openfeed.icu'; ma.style.color = ''; }
+          if (mb)  { mb.style.background = ''; mb.style.transition = ''; }
+          if (mt)  { mt.textContent = 'openfeed.icu — iNet Browser 7'; mt.style.color = ''; }
+          if (tb)  { tb.style.background = ''; }
+          if (tbm) { tbm.style.color = ''; }
+        } catch(e) {}
+      }
+    }
+
+    function siteGoOffline() {
+      // ── Hard-stop glitch without restoring ───────────────────────────────────
+      _glitchActive = false;
+      _glitchPhase  = 0;
+      _glitchTimers.forEach(clearTimeout);  _glitchTimers = [];
+      _glitchIvals.forEach(clearInterval);  _glitchIvals  = [];
+      if (_glitchRAF) { cancelAnimationFrame(_glitchRAF); _glitchRAF = null; }
+      if (_glitchCanvas) { _glitchCanvas.remove(); _glitchCanvas = null; _glitchCtx = null; }
+      document.body.classList.remove('g-shake-sm','g-shake-md','g-shake-lg','g-flicker');
+      document.body.style.transform = '';
+
+      // ── Brief hard-cut to black ───────────────────────────────────────────────
+      document.body.style.transition = 'filter 0.08s';
+      document.body.style.filter     = 'brightness(0)';
+
+      setTimeout(function() {
+        document.body.style.filter     = '';
+        document.body.style.transition = '';
+
+        // ── Build offline overlay ────────────────────────────────────────────────
+        var ov = document.createElement('div');
+        ov.id = '__offlineOverlay';
+        ov.style.cssText = [
+          'position:fixed;inset:0;z-index:999999;',
+          'background:#080808;',
+          'display:flex;flex-direction:column;align-items:center;justify-content:center;',
+          'font-family:monospace;color:#ccc;',
+          'opacity:1;'
+        ].join('');
+
+        ov.innerHTML = [
+          '<div style="text-align:center;max-width:520px;padding:40px 24px;user-select:none;">',
+          '  <div style="font-size:10px;letter-spacing:4px;color:#3a3a3a;margin-bottom:30px;text-transform:uppercase">ERR_CONNECTION_REFUSED</div>',
+          '  <div style="font-size:28px;font-weight:bold;color:#c8c8c8;letter-spacing:1px;margin-bottom:8px">openfeed.icu</div>',
+          '  <div style="font-size:12px;color:#555;margin-bottom:36px">This site can\'t be reached.</div>',
+          '  <div style="border-top:1px solid #1c1c1c;border-bottom:1px solid #1c1c1c;',
+          '       padding:20px 0;margin-bottom:32px;text-align:left;font-size:11px;',
+          '       line-height:2.1;color:#333;">',
+          '    <span style="color:#2a2a2a">&gt;</span> STREAM TERMINATED BY HOST<br>',
+          '    <span style="color:#2a2a2a">&gt;</span> SESSION &nbsp;: <span style="color:#252525">[ terminated ]</span><br>',
+          '    <span style="color:#2a2a2a">&gt;</span> FEEDS &nbsp;&nbsp; : <span style="color:#252525">0 / 0 active</span><br>',
+          '    <span style="color:#2a2a2a">&gt;</span> openfeed.icu is unreachable',
+          '  </div>',
+          '  <div id="__offlineTyping" style="font-size:11px;color:#2e2e2e;letter-spacing:1px;min-height:16px;"></div>',
+          '</div>'
+        ].join('');
+
+        document.body.appendChild(ov);
+
+        // Instant appear — no fade
+
+        // Typewriter: "the feed has gone dark."
+        setTimeout(function() {
+          var el = document.getElementById('__offlineTyping');
+          if (!el) return;
+          var msg = 'the feed has gone dark.';
+          var i = 0;
+          var t = setInterval(function() {
+            if (!document.getElementById('__offlineTyping')) { clearInterval(t); return; }
+            el.textContent += msg[i++];
+            if (i >= msg.length) clearInterval(t);
+          }, 75);
+        }, 700);
+
+        // Tell shell chrome to go offline too
+        if (window.parent && window.parent !== window) {
+          try {
+            if (typeof window.parent.shellGoOffline === 'function') window.parent.shellGoOffline();
+            else if (typeof window.parent.stopShellGlitch === 'function') window.parent.stopShellGlitch();
+          } catch(e) {}
+        }
+
+      }, 160);
+    }
+
+    // ── Browser popup ─────────────────────────────────────────────────────────
+    // When running inside shell.html, delegate to the parent shell's popup window.
+    // When opened standalone (direct file / dev testing), open news.html in a plain new window.
+    function triggerNewsPopup() {
+      var url   = 'westfieldherald.net/local/cctv-sighting';
+      var title = 'Creature Sighting Near Parkside Grocery — Westfield Herald';
+      var sentToShell = false;
+      if (window.parent && window.parent !== window) {
+        try {
+          if (typeof window.parent.openPopupBrowser === 'function') {
+            window.parent.openPopupBrowser(url, title);
+            sentToShell = true;
+          }
+        } catch (e) {}
+      }
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({
+            type: 'openfeed:openPopupBrowser',
+            url: url,
+            title: title
+          }, '*');
+          sentToShell = true;
+        } catch (e) {}
+      }
+      if (!sentToShell) {
+        // Standalone fallback — open in a new window sized like the popup
+        window.open('news.html', 'newsPopup', 'width=900,height=680,left=60,top=40,resizable=yes,scrollbars=yes');
+      }
+    }
 
     // ===== SITE INTRO =====
     var introLines = [
@@ -2113,12 +3028,15 @@
 
     gameRestore();
     if (GAME.elevatorClue) showNavRadioLink();
+    showNavForumLink();
     introRun();
 
     preloadCultFlowFrames();
     preloadElevFlowFrames();
-    if (GAME.extraFeeds.indexOf(STAIR_FLOW_CAM_ID) >= 0) preloadStairFlowFrames();
-    setInterval(function () { updateCultFlowState(); updateElevFlowState(); updateStairFlowState(); }, 100);
+    if (GAME.extraFeeds.indexOf(BILLBOARD_FLOW_CAM_ID) >= 0) preloadBillboardFlowFrames();
+    if (gameFlag(MAP_CAM005_STAIR_FLAG)) preloadStairFlowFrames();
+    setInterval(function () { updateCultFlowState(); updateElevFlowState(); updateBillboardFlowState(); syncViewerCloseBtn(); }, 100);
+    setInterval(function () { updateStairFlowState(); }, 30); // stairwell needs fast tick for frenzy
 
     document.getElementById('addressInput').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') tryNavigate();
@@ -2129,6 +3047,9 @@
     buildGrid();
     openViewerFromQuery();
   </script>
+
+  <!-- NARRATIVE AUDIO — second call (helpline / E03 no-signal) -->
+  <audio id="callAudioHelp" src="message3.mp3" preload="auto"></audio>
 
   <!-- DEV CONTROLS — remove before ship -->
   <div id="phoneDevBar">
@@ -2143,6 +3064,14 @@
     <button onclick="unlockExtraFeed('E03')">unlock feed E03</button>
     <button onclick="unlockExtraFeed('E04')">unlock feed E04</button>
     <button onclick="gameReset()">reset &amp; reload</button>
+    <b style="margin-top:3px">// flow lock</b>
+    <button id="devFlowLockBtn" onclick="devToggleFlowLock()" style="font-weight:bold">flow lock: ON</button>
+    <b style="margin-top:3px">// browser (shell)</b>
+    <button onclick="triggerNewsPopup()">open news popup</button>
+    <button onclick="if(window.parent&&window.parent!==window&&window.parent.closePopupBrowser){window.parent.closePopupBrowser();}">close popup</button>
+    <b style="margin-top:3px">// glitch</b>
+    <button onclick="triggerSiteGlitch()" style="color:#0a0;font-weight:bold">trigger site glitch</button>
+    <button onclick="stopSiteGlitch()">stop glitch</button>
   </div>
 
   <!-- NARRATIVE AUDIO -->

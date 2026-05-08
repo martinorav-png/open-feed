@@ -23,5 +23,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Desk.unity
     guid: a6919a80e5918e447b6eee07d3adf942
+  - enabled: 1
+    path: Assets/supermarket2.unity
+    guid: 4934f7412a76db9479d9f8fa9a13c0a6
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -13,6 +13,8 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-150)]
 public class DriveIntroSubtitles : MonoBehaviour
 {
+    const bool SubtitlesEnabled = false;
+
     static readonly string[] Lines =
     {
         "the road back is always faster than the road out",
@@ -49,6 +51,8 @@ public class DriveIntroSubtitles : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void AutoCreateIfDeskScene()
     {
+        if (!SubtitlesEnabled)
+            return;
         if (FindAnyObjectByType<DriveIntroSubtitles>() != null)
             return;
         if (FindAnyObjectByType<MonitorInteraction>() == null)
@@ -83,6 +87,12 @@ public class DriveIntroSubtitles : MonoBehaviour
 
     void Start()
     {
+        if (!SubtitlesEnabled)
+        {
+            gameObject.SetActive(false);
+            return;
+        }
+
         _canvasGroup.alpha = 0f;
         _bodyText.text = string.Empty;
         _sequenceRoutine = StartCoroutine(RunSequenceWrapper());

@@ -196,9 +196,22 @@
       opacity: 0.85;
     }
 
+    /* Special signal-source pin (Lima) */
+    .map-marker.signal-pin {
+      background: #cc8800;
+      border-color: #ffcc44;
+      box-shadow: 0 0 8px rgba(220, 160, 0, 0.9);
+      animation: signal-pulse 0.9s ease-in-out infinite;
+    }
+
     @keyframes marker-pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.55; }
+    }
+
+    @keyframes signal-pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(220, 160, 0, 0.9); }
+      50%       { opacity: 0.6; box-shadow: 0 0 14px rgba(220, 160, 0, 0.4); }
     }
 
     .map-marker .map-tip {
@@ -416,7 +429,7 @@
       { id: "006", label: "Laundromat", country: "US", status: "live", lon: -87.65, lat: 41.88 },
       { id: "007", label: "Warehouse Loading Dock", country: "PL", status: "live", lon: 21.01, lat: 52.23 },
       { id: "008", label: "Hotel Lobby", country: "TH", status: "live", lon: 100.5, lat: 13.76 },
-      { id: "009", label: "Underpass Cam", country: "BR", status: "offline", lon: -46.63, lat: -23.55 },
+      { id: "009", label: "Underpass Cam", country: "BR", status: "offline", lon: -54.0, lat: -23.55 },
       { id: "010", label: "Rooftop - Building 14", country: "JP", status: "live", lon: 139.76, lat: 35.68 },
       { id: "011", label: "Staff Corridor - Rear Wing", country: "UA", status: "live", lon: 30.52, lat: 50.45 },
       { id: "012", label: "Bus Depot - Cam 3", country: "MX", status: "live", lon: -99.13, lat: 19.43 },
@@ -424,6 +437,92 @@
       { id: "014", label: "Convenience Store", country: "KR", status: "live", lon: 126.98, lat: 37.57 },
       { id: "015", label: "Corridor - Floor 7", country: "RU", status: "offline", lon: 37.62, lat: 55.75 }
     ];
+
+    var GAME_KEY = "openfeed_game";
+    var BILLBOARD_MESSAGE_FLAG = "billboardMessageSeen";
+    var MAP_CAM005_STAIR_FLAG = "mapCam005Stair";
+    var GAME = { choices: {} };
+
+    function gameLoad() {
+      try {
+        var raw = localStorage.getItem(GAME_KEY);
+        if (raw) {
+          var saved = JSON.parse(raw);
+          for (var k in saved) {
+            GAME[k] = saved[k];
+          }
+        }
+      } catch (e) {}
+      if (!GAME.choices) {
+        GAME.choices = {};
+      }
+    }
+
+    function gameSave() {
+      try {
+        localStorage.setItem(GAME_KEY, JSON.stringify(GAME));
+      } catch (e) {}
+    }
+
+    function gameFlag(name) {
+      return !!(GAME.choices && GAME.choices[name]);
+    }
+
+    function canTriggerCam005Stair() {
+      return gameFlag(BILLBOARD_MESSAGE_FLAG);
+    }
+
+    function isHallwayArchiveMapCam(cam) {
+      return cam.id === "005" || cam.id === "009";
+    }
+
+    function mapDisplayCamId(cam) {
+      if (cam.id === "009") {
+        return canTriggerCam005Stair() ? "E03" : "???";
+      }
+      return cam.id;
+    }
+
+    function mapDisplayLabel(cam) {
+      if (cam.id === "009") {
+        return canTriggerCam005Stair() ? "Prerecorded Hallway Archive" : "Unindexed Relay";
+      }
+      return cam.label;
+    }
+
+    function mapDisplayStatus(cam) {
+      if (cam.id === "009" && canTriggerCam005Stair()) {
+        return "live";
+      }
+      return cam.status;
+    }
+
+    function mapFeedHref(cam) {
+      if (isHallwayArchiveMapCam(cam) && canTriggerCam005Stair()) {
+        return "index.html?cam=E03&stair=1";
+      }
+      if (cam.id === "009") {
+        return "#";
+      }
+      return "index.html?cam=" + encodeURIComponent(cam.id);
+    }
+
+    function handleMapFeedClick(cam) {
+      if (isHallwayArchiveMapCam(cam) && canTriggerCam005Stair()) {
+        if (!GAME.extraFeeds) {
+          GAME.extraFeeds = [];
+        }
+        if (GAME.extraFeeds.indexOf("E03") < 0) {
+          GAME.extraFeeds.push("E03");
+        }
+        GAME.choices[MAP_CAM005_STAIR_FLAG] = true;
+        gameSave();
+      }
+      if (cam.id === "009" && !canTriggerCam005Stair()) {
+        return false;
+      }
+      return true;
+    }
 
     function lonToPct(lon) {
       return ((lon + 180) / 360) * 100;
@@ -500,31 +599,71 @@
 
       for (var i = 0; i < CAMERAS.length; i++) {
         (function (cam) {
+          var displayStatus = mapDisplayStatus(cam);
+          var displayId = mapDisplayCamId(cam);
+          var displayLabel = mapDisplayLabel(cam);
           var m = document.createElement("a");
-          m.className = "map-marker " + (cam.status === "live" ? "live" : "offline");
-          m.href = "index.html?cam=" + encodeURIComponent(cam.id);
+          m.className = "map-marker " + (displayStatus === "live" ? "live" : "offline");
+          m.href = mapFeedHref(cam);
+          m.onclick = function () { return handleMapFeedClick(cam); };
           m.style.left = lonToPct(cam.lon) + "%";
           m.style.top = latToPct(cam.lat) + "%";
-          m.title = "CAM_" + cam.id + " — " + cam.label;
+          m.title = "CAM_" + displayId + " — " + displayLabel;
 
           var tip = document.createElement("span");
           tip.className = "map-tip";
-          tip.textContent = "CAM_" + cam.id;
+          tip.textContent = "CAM_" + displayId;
           m.appendChild(tip);
 
           surface.appendChild(m);
 
           var tr = document.createElement("tr");
-          var stClass = cam.status === "live" ? "st-live" : "st-off";
-          var stText = cam.status === "live" ? "LIVE" : "OFFLINE";
+          var stClass = displayStatus === "live" ? "st-live" : "st-off";
+          var stText = displayStatus === "live" ? "LIVE" : "OFFLINE";
+          var feedHref = mapFeedHref(cam);
           tr.innerHTML =
-            '<td class="mono"><a href="index.html?cam=' + encodeURIComponent(cam.id) + '">CAM_' + cam.id + "</a></td>" +
+            '<td class="mono"><a href="' + feedHref + '">CAM_' + displayId + "</a></td>" +
             '<td>[' + cam.country + "]</td>" +
-            "<td>" + cam.label + "</td>" +
+            "<td>" + displayLabel + "</td>" +
             '<td class="' + stClass + '">' + stText + "</td>";
+          var rowLink = tr.getElementsByTagName("a")[0];
+          if (rowLink) {
+            rowLink.onclick = function () { return handleMapFeedClick(cam); };
+          }
           tbody.appendChild(tr);
         })(CAMERAS[i]);
       }
+    }
+
+    function buildSpecialPins() {
+      // Lima, Peru signal pin — visible once radio puzzle (puzzle_02) is solved.
+      // Clicking it unlocks feed E02 (billboard) and returns to index.
+      if (!GAME.puzzlesSolved || GAME.puzzlesSolved.indexOf('puzzle_02') < 0) return;
+
+      var surface = document.getElementById('mapSurface');
+
+      var pin = document.createElement('a');
+      pin.className = 'map-marker signal-pin';
+      pin.href = '#';
+      pin.style.left = lonToPct(-77.04) + '%';
+      pin.style.top  = latToPct(-12.05) + '%';
+      pin.title = 'unknown signal relay — Lima, PE';
+
+      pin.onclick = function() {
+        if (!GAME.extraFeeds) GAME.extraFeeds = [];
+        if (GAME.extraFeeds.indexOf('E02') < 0) GAME.extraFeeds.push('E02');
+        gameSave();
+        window.location.href = 'index.html';
+        return false;
+      };
+
+      var tip = document.createElement('span');
+      tip.className = 'map-tip';
+      tip.textContent = '??? relay';
+      tip.style.color = 'rgba(255,200,80,0.95)';
+      pin.appendChild(tip);
+
+      surface.appendChild(pin);
     }
 
     var visitors = 831;
@@ -535,8 +674,10 @@
     }, 7000);
 
     installWheelScrollFallback();
+    gameLoad();
     preventDeadLinks();
     buildMap();
+    buildSpecialPins();
   </script>
 </body>
 

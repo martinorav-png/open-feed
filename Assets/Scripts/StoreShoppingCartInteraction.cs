@@ -37,7 +37,7 @@ public class StoreShoppingCartInteraction : MonoBehaviour
     bool IsStoreShoppingScene()
     {
         string n = gameObject.scene.name;
-        return n == SupermarketScene || n == GroceryScene;
+        return n == SupermarketScene || n == "supermarket2" || n == GroceryScene;
     }
 
     void LateUpdate()

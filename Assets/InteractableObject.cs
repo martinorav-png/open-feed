@@ -10,7 +10,8 @@ public class InteractableObject : MonoBehaviour
         Toggle,     // click pen, lighter
         Crumple,    // paper
         Open,       // drawer, book
-        PlayNudge   // toy / iDog: sound + small motion
+        PlayNudge,  // toy / iDog: sound + small motion
+        Sit         // chair
     }
 
     public InteractionType interactionType;

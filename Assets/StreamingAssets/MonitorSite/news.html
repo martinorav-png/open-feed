@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCTV Footage Captures Unidentified Figure Near Local Grocery Store - Westfield Herald</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #f4f2ee;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      color: #111;
+    }
+
+    a { color: #1a3a7a; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── MASTHEAD ── */
+    .masthead {
+      background: #0d2060;
+      padding: 0;
+      border-bottom: 3px solid #c8a800;
+    }
+    .masthead-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 10px 16px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .masthead-logo {
+      font-family: 'Times New Roman', Georgia, serif;
+      font-size: 32px;
+      font-weight: bold;
+      color: #fff;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+    .masthead-logo span { color: #c8a800; }
+    .masthead-tagline {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 10px;
+      color: #8899bb;
+      font-style: italic;
+      letter-spacing: 1px;
+    }
+    .masthead-meta {
+      text-align: right;
+      font-size: 10px;
+      color: #8899bb;
+      line-height: 1.6;
+    }
+    .masthead-meta .date { color: #aabbcc; }
+
+    /* ── SITE NAV ── */
+    .site-nav {
+      background: #1a3a7a;
+      border-bottom: 1px solid #0d2060;
+    }
+    .site-nav-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
+      gap: 0;
+    }
+    .site-nav a {
+      display: inline-block;
+      padding: 7px 14px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #ccd8ee;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-right: 1px solid #2a4a8a;
+    }
+    .site-nav a:first-child { border-left: 1px solid #2a4a8a; }
+    .site-nav a:hover { background: #0d2060; color: #fff; text-decoration: none; }
+    .site-nav a.active { background: #0d2060; color: #c8a800; }
+
+    /* ── BREAKING TICKER ── */
+    .breaking-bar {
+      background: #cc1111;
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 4px 0;
+      overflow: hidden;
+    }
+    .breaking-bar-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .breaking-tag {
+      background: #fff;
+      color: #cc1111;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 1px 6px;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+    }
+    .breaking-text { font-weight: normal; font-size: 11px; }
+
+    /* ── CONTENT ── */
+    .content-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 18px 16px 32px;
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    /* ── ARTICLE ── */
+    .article-main { flex: 1; min-width: 0; }
+
+    .article-section-label {
+      font-size: 10px;
+      font-weight: bold;
+      color: #1a3a7a;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-bottom: 2px solid #1a3a7a;
+      padding-bottom: 3px;
+      margin-bottom: 10px;
+    }
+
+    .article-headline {
+      font-family: 'Times New Roman', Georgia, serif;
+      font-size: 26px;
+      font-weight: bold;
+      line-height: 1.2;
+      color: #0d1a0d;
+      margin-bottom: 8px;
+    }
+
+    .article-deck {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 14px;
+      color: #444;
+      font-style: italic;
+      line-height: 1.5;
+      border-left: 3px solid #c8a800;
+      padding-left: 10px;
+      margin-bottom: 10px;
+    }
+
+    .article-meta {
+      font-size: 10px;
+      color: #888;
+      border-top: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+      padding: 5px 0;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 16px;
+    }
+    .article-meta .byline { color: #555; font-weight: bold; }
+    .article-meta .timestamp { color: #999; }
+
+    /* ── IMAGE PLACEHOLDER ── */
+    .article-img-wrap {
+      margin-bottom: 14px;
+    }
+    .article-img-placeholder {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #1a1a1a;
+      border: 2px dashed #444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #555;
+      font-family: monospace;
+      font-size: 10px;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+    .article-img-placeholder::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(255,255,255,0.015) 3px,
+        rgba(255,255,255,0.015) 4px
+      );
+      pointer-events: none;
+    }
+    .article-img-placeholder .img-icon {
+      font-size: 28px;
+      opacity: 0.3;
+      filter: grayscale(1);
+    }
+    .article-img-placeholder .img-label { color: #4a4a4a; }
+    .article-img-placeholder .img-sub { color: #333; font-size: 9px; }
+
+    .article-img-caption {
+      font-size: 10px;
+      color: #666;
+      font-style: italic;
+      margin-top: 5px;
+      line-height: 1.5;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 6px;
+    }
+
+    /* ── ARTICLE BODY ── */
+    .article-body {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 14px;
+      line-height: 1.75;
+      color: #222;
+    }
+    .article-body p { margin-bottom: 14px; }
+    .article-body p:first-child::first-letter {
+      font-size: 42px;
+      font-weight: bold;
+      float: left;
+      line-height: 0.8;
+      margin: 5px 6px 0 0;
+      color: #0d2060;
+      font-family: 'Times New Roman', Georgia, serif;
+    }
+
+    .article-update {
+      background: #fffbe6;
+      border-left: 3px solid #c8a800;
+      padding: 8px 10px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+      color: #555;
+      line-height: 1.5;
+    }
+    .article-update strong { color: #333; }
+
+    .article-developing {
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      color: #888;
+      font-style: italic;
+      border-top: 1px solid #e8e8e0;
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+
+    .article-tags {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .article-tag {
+      background: #eef0f8;
+      border: 1px solid #c8d0e0;
+      color: #1a3a7a;
+      font-size: 10px;
+      padding: 2px 7px;
+    }
+
+    /* ── COMMENTS ── */
+    .comments-section {
+      margin-top: 20px;
+      border-top: 2px solid #ddd;
+      padding-top: 14px;
+    }
+    .comments-title {
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    .comment {
+      border-bottom: 1px solid #eee;
+      padding: 8px 0;
+    }
+    .comment-header {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+    .comment-user { font-weight: bold; font-size: 11px; color: #1a3a7a; }
+    .comment-time { font-size: 10px; color: #aaa; }
+    .comment-body { font-size: 12px; color: #333; line-height: 1.5; }
+    .comment-deleted {
+      font-size: 11px;
+      color: #bbb;
+      font-style: italic;
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* ── SIDEBAR ── */
+    .article-sidebar {
+      width: 220px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-block {
+      background: #fff;
+      border: 1px solid #d8d8d0;
+      margin-bottom: 14px;
+    }
+    .sidebar-block-title {
+      background: #1a3a7a;
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 5px 8px;
+    }
+    .sidebar-links { padding: 0; }
+    .sidebar-link {
+      display: block;
+      padding: 7px 8px;
+      border-bottom: 1px solid #eee;
+      font-size: 11px;
+      color: #222;
+      line-height: 1.4;
+    }
+    .sidebar-link:last-child { border-bottom: none; }
+    .sidebar-link:hover { background: #f4f2ee; text-decoration: none; }
+    .sidebar-link .sl-cat {
+      display: block;
+      font-size: 9px;
+      color: #cc1111;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .sidebar-ad {
+      background: #f0ede8;
+      border: 1px solid #d8d8d0;
+      padding: 12px 8px;
+      text-align: center;
+      font-size: 10px;
+      color: #aaa;
+      margin-bottom: 14px;
+    }
+
+    /* ── FOOTER ── */
+    .site-footer {
+      background: #0d2060;
+      color: #8899bb;
+      font-size: 10px;
+      padding: 14px 16px;
+      text-align: center;
+      border-top: 2px solid #c8a800;
+    }
+    .site-footer a { color: #aabbcc; }
+  </style>
+</head>
+<body>
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <div class="masthead-inner">
+      <div>
+        <div class="masthead-logo">WESTFIELD<span>HERALD</span></div>
+        <div class="masthead-tagline">Your Community. Your News. Since 1987.</div>
+      </div>
+      <div class="masthead-meta">
+        <div class="date" id="siteDate"></div>
+        <div>Westfield County Edition</div>
+        <div>weather: overcast, 8°C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="site-nav">
+    <div class="site-nav-inner">
+      <a href="#">Home</a>
+      <a href="#" class="active">Local</a>
+      <a href="#">Crime</a>
+      <a href="#">Weather</a>
+      <a href="#">Obituaries</a>
+      <a href="#">Letters</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+
+  <!-- BREAKING BAR -->
+  <div class="breaking-bar">
+    <div class="breaking-bar-inner">
+      <span class="breaking-tag">BREAKING</span>
+      <span class="breaking-text">Multiple witnesses report unidentified figure crossing Riverside Road on foot and walking through Parkside Grocery car park - photograph submitted to Herald &nbsp;&bull;&nbsp; Police say "no criminal activity suspected"</span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-wrap">
+
+    <!-- ARTICLE -->
+    <div class="article-main">
+
+      <div class="article-section-label">Local &rsaquo; Community Safety</div>
+
+      <h1 class="article-headline">Witnesses Report Unidentified Figure Crossing Highway on Foot and Walking Through Parkside Grocery Car Park - Photo Submitted to Herald</h1>
+
+      <div class="article-deck">
+        Multiple onlookers describe the same figure moving through the car park without stopping. A photograph submitted by a witness has been reviewed by this publication. Police say no criminal activity is suspected.
+      </div>
+
+      <div class="article-meta">
+        <span class="byline">By Staff Reporter</span>
+        <span class="timestamp" id="articleTime"></span>
+        <span>Westfield Herald</span>
+      </div>
+
+      <div class="article-img-wrap">
+        <img src="person/sighting.png" alt="Witness photograph showing unidentified figure in Parkside Grocery car park"
+             style="width:100%;display:block;border:1px solid #222;">
+        <div class="article-img-caption">
+          Photograph submitted to the Westfield Herald by a witness who was driving past on Riverside Road. The image shows an unidentified figure in the Parkside Grocery car park at approximately 02:14 AM. Reproduced with permission. <em>(submitted photograph - Westfield Herald)</em>
+        </div>
+      </div>
+
+      <div class="article-body">
+        <p>Multiple witnesses have come forward to report an unidentified figure crossing the car park of Parkside Grocery on Riverside Road in the early hours of Wednesday morning. One witness, who was driving past on Riverside Road, photographed the figure through their car window and submitted the image to this publication. The photograph shows the figure moving through the lot, walking away, its back to the camera.</p>
+
+        <p>"I was driving home and I saw it cross the road right in front of me," the witness told the Westfield Herald. "I had to slow down. It didn't look at the car, didn't react at all, just walked straight across and into the car park. I pulled over further up the road and took the photo from my window. I couldn't explain the shape of it. I took the picture because I knew nobody would believe me if I didn't."</p>
+
+        <p>A second witness, who had been walking their dog along Riverside Road and asked not to be named, said they saw the same figure from further down the street. "I saw it cross from the other side. The way it was built - the shape of it - I knew straight away it wasn't right. I turned around and went home. I didn't sleep."</p>
+
+        <p>A third account was provided by a driver passing through the area who said they slowed when they saw the figure on the highway. "I thought it was someone in trouble. But the way it was walking - very slow, very straight - I just kept going. I don't know how to explain the shape of it. It was just wrong."</p>
+
+        <p>Westfield Police were contacted for comment Wednesday morning. A spokesperson confirmed the department had received reports from the area but said no active investigation had been opened. "At this time there is nothing to suggest any criminal activity took place at the location," the statement read. Officers have not attended the scene.</p>
+
+        <p>This is at least the third report of an unidentified individual in the Riverside district in the past four weeks. Previous reports, also describing a figure on foot near roads late at night, were similarly closed without investigation. Police have not confirmed whether the incidents are being treated as related.</p>
+      </div>
+
+      <div class="article-update">
+        <strong>UPDATE - 10:42 AM:</strong> Two further witnesses have contacted this publication since the story was published. Both describe observing the same figure, independently, on separate evenings in the past two weeks near the same stretch of Riverside Road. Neither had reported it to police.
+      </div>
+
+      <div class="article-update">
+        <strong>UPDATE - 2:17 PM:</strong> The store manager at Parkside Grocery has declined to comment. Police have reiterated that no investigation is currently open.
+      </div>
+
+      <p class="article-developing"><em>This story is developing. Westfield Herald will update as more information becomes available.</em></p>
+
+      <div class="article-tags">
+        <span class="article-tag">Local</span>
+        <span class="article-tag">Witness Report</span>
+        <span class="article-tag">Community Safety</span>
+        <span class="article-tag">Riverside District</span>
+        <span class="article-tag">Unresolved</span>
+      </div>
+
+      <!-- COMMENTS -->
+      <div class="comments-section">
+        <div class="comments-title">Comments (14) &nbsp;<span style="font-weight:normal;color:#aaa;font-size:11px">- showing most recent</span></div>
+
+        <div class="comment">
+          <div class="comment-header">
+            <span class="comment-user">gretchenmcnair</span>
+            <span class="comment-time">43 minutes ago</span>
+          </div>
+          <div class="comment-body">This is at least the third or fourth time this year. Police do absolutely nothing and then act surprised when it escalates. This area has been raising concerns since January and nobody wants to hear it.</div>
+        </div>
+
+        <div class="comment">
+          <div class="comment-header">
+            <span class="comment-user">local_dave_w</span>
+            <span class="comment-time">1 hour ago</span>
+          </div>
+          <div class="comment-body">Has anyone spoken to the person who took this photo? A single image proves very little. I'm not saying nothing happened but this needs more than anonymous quotes to go anywhere.</div>
+        </div>
+
+        <div class="comment-deleted">[ comment removed by moderator - 1 hour ago ]</div>
+
+        <div class="comment">
+          <div class="comment-header">
+            <span class="comment-user">RiversideRes_anon</span>
+            <span class="comment-time">2 hours ago</span>
+          </div>
+          <div class="comment-body">My neighbour said they saw something similar near the canal last month. Same direction, same time of night. They didn't report it because - and I quote - "what would I even say." That's where we are.</div>
+        </div>
+
+        <div class="comment">
+          <div class="comment-header">
+            <span class="comment-user">T.Hale</span>
+            <span class="comment-time">3 hours ago</span>
+          </div>
+          <div class="comment-body">Share this. People need to know this is happening. The local Facebook groups have had posts about this for weeks and they keep getting deleted or buried. Something is going on in that area.</div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="article-sidebar">
+
+      <div class="sidebar-block">
+        <div class="sidebar-block-title">Related Stories</div>
+        <div class="sidebar-links">
+          <a href="#" class="sidebar-link">
+            <span class="sl-cat">Local</span>
+            Three reports of unusual sightings in Riverside district this month - police monitoring
+          </a>
+          <a href="#" class="sidebar-link">
+            <span class="sl-cat">Crime</span>
+            Missing persons cases up 12% in Westfield County - community meeting scheduled for Thursday
+          </a>
+          <a href="#" class="sidebar-link">
+            <span class="sl-cat">Local</span>
+            Parkside Grocery declines to comment on witness reports - manager unavailable
+          </a>
+          <a href="#" class="sidebar-link">
+            <span class="sl-cat">Local</span>
+            Riverside Road residents call for increased patrols after string of late-night sightings
+          </a>
+        </div>
+      </div>
+
+      <div class="sidebar-block">
+        <div class="sidebar-block-title">Most Read Today</div>
+        <div class="sidebar-links">
+          <a href="#" class="sidebar-link">Westfield Council votes on Riverside development - residents split</a>
+          <a href="#" class="sidebar-link">Local school reaches fundraising target for new equipment</a>
+          <a href="#" class="sidebar-link" style="color:#cc1111;font-weight:bold">Witness photograph: figure in Parkside Grocery car park - full story</a>
+          <a href="#" class="sidebar-link">Weather outlook: frost warning issued for Westfield County this weekend</a>
+        </div>
+      </div>
+
+      <div class="sidebar-ad">
+        <div style="font-size:16px;margin-bottom:4px">📰</div>
+        <div style="font-size:11px;color:#888;margin-bottom:6px">Subscribe to the Westfield Herald</div>
+        <div style="font-size:9px;color:#bbb">Print &amp; Digital from £2.40/week</div>
+      </div>
+
+      <div class="sidebar-block">
+        <div class="sidebar-block-title">Latest Local</div>
+        <div class="sidebar-links">
+          <a href="#" class="sidebar-link">Roadworks on Canal Road extended until further notice</a>
+          <a href="#" class="sidebar-link">New planning application filed for Riverside Road units</a>
+          <a href="#" class="sidebar-link">Community notice board: lost cat, Fernside Close</a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="site-footer">
+    &copy; 2024 Westfield Herald Ltd &nbsp;&bull;&nbsp;
+    <a href="#">Privacy Policy</a> &nbsp;&bull;&nbsp;
+    <a href="#">Terms of Use</a> &nbsp;&bull;&nbsp;
+    <a href="#">Contact Us</a> &nbsp;&bull;&nbsp;
+    <a href="#">Advertise</a>
+  </div>
+
+  <script>
+    // Set the date dynamically so it always looks current
+    var now = new Date();
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('siteDate').textContent =
+      days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+    document.getElementById('articleTime').textContent = 'Published 2:27 AM';
+  </script>
+
+</body>
+</html>
