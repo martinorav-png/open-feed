@@ -556,7 +556,7 @@
 
     // ── DIAL STATE ────────────────────────────────────────────────────────────
     var TARGET_DEG = 317;
-    var LOCK_RANGE = 8;   // degrees — enter this range to instantly lock
+    var LOCK_RANGE = 8;   // degrees — signal strength only; lock requires exact displayed degree
 
     var currentDeg = 0;
     var isLocked   = false;
@@ -669,15 +669,19 @@
       return d > 180 ? d - 360 : d;
     }
 
+    function isExactTargetDeg(deg) {
+      return Math.round(((deg % 360) + 360) % 360) === TARGET_DEG;
+    }
+
     function applyDeg(deg) {
       currentDeg = ((deg % 360) + 360) % 360;
       drawDial(currentDeg);
       document.getElementById('degDisplay').textContent = String(Math.round(currentDeg)).padStart(3, '0');
       var dist = Math.abs(angleDist(currentDeg, TARGET_DEG));
       updateSignalBars(dist);
-      setStaticVolume(dist <= LOCK_RANGE ? 0 : Math.min(0.22, 0.04 + (dist / 60) * 0.18));
+      setStaticVolume(isExactTargetDeg(currentDeg) ? 0 : Math.min(0.22, 0.04 + (dist / 60) * 0.18));
       if (!isLocked) {
-        if (dist <= LOCK_RANGE) { triggerLock(); } else { updateHint(dist); }
+        if (isExactTargetDeg(currentDeg)) { triggerLock(); } else { updateHint(dist); }
       }
     }
 

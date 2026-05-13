@@ -261,6 +261,108 @@
       50%       { opacity: 0.6; }
     }
 
+    .anon-msg-window {
+      position: fixed;
+      right: 18px;
+      bottom: 86px;
+      width: 330px;
+      z-index: 95000;
+      border: 2px solid #111;
+      background: #c0c0c0;
+      box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.45);
+      font-family: Tahoma, Verdana, sans-serif;
+      color: #111;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .anon-msg-window.open {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .anon-msg-titlebar {
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5px 0 8px;
+      background: linear-gradient(90deg, #000080, #1084d0);
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.2px;
+    }
+
+    .anon-msg-close {
+      width: 16px;
+      height: 14px;
+      border: 1px solid #444;
+      background: #c0c0c0;
+      color: #111;
+      font: bold 10px Arial, sans-serif;
+      line-height: 10px;
+      padding: 0;
+    }
+
+    .anon-msg-body {
+      padding: 8px;
+      border-top: 1px solid #fff;
+      font-size: 11px;
+    }
+
+    .anon-msg-status {
+      margin-bottom: 7px;
+      padding: 4px 5px;
+      border: 1px inset #eee;
+      background: #fff;
+      color: #555;
+      font-family: "Courier New", monospace;
+      font-size: 10px;
+    }
+
+    .anon-msg-log {
+      min-height: 150px;
+      max-height: 190px;
+      overflow: hidden;
+      border: 1px inset #eee;
+      background: #fff;
+      padding: 7px;
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .anon-msg-line {
+      margin: 0 0 8px;
+      white-space: pre-wrap;
+    }
+
+    .anon-msg-name {
+      color: #000080;
+      font-weight: bold;
+    }
+
+    .anon-msg-link {
+      display: inline-block;
+      margin-top: 4px;
+      color: #0000cc;
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .anon-msg-cut {
+      color: #9b0000;
+      font-weight: bold;
+      animation: anon-msg-blink 0.28s steps(2, end) infinite;
+    }
+
+    @keyframes anon-msg-blink {
+      50% { opacity: 0.35; }
+    }
+
     .viewer-stage {
       background: #111;
       border: 1px solid #666;
@@ -783,6 +885,10 @@
 
     #phoneDevBar button:active { border-style: inset; }
 
+    #phoneDevBar.dev-hidden {
+      display: none;
+    }
+
     /* browser chrome lives in shell.html */
 
     /* ── SITE GLITCH SYSTEM ───────────────────────────────────────────────── */
@@ -1011,6 +1117,71 @@
     function randomRange(a, b) {
       return a + Math.random() * (b - a);
     }
+
+    var OF_SFX = {
+      click: 'audio/foley/MouseClick_SFXB.4114.wav',
+      key: [
+        'audio/foley/KeyboardTypeKeystroke_BW._1.wav',
+        'audio/foley/ComputerKeyboard_SFXB.4079.wav',
+        'audio/foley/ComputerKeyboard_SFXB.4080.wav',
+        'audio/foley/AppleKeyboard_S08TE.10.wav'
+      ],
+      keyConfirm: 'audio/foley/KeyboardTypeKeystroke_BW.49.wav',
+      beep: 'audio/foley/MO_LW_fx_beeb_beep.wav',
+      message: 'audio/foley/ESM_Recieve_Message_1_Notification_Synth_Electronic_Particle_Cute_Cartoon.wav',
+      call: 'audio/foley/ESM_SG_fx_tech_interface_processing_calling_high_pattern_layered.wav',
+      glitch: 'audio/foley/GLTCH_SFX_Ildcend.wav',
+      emf: 'audio/foley/SUT_EMF_FX_09.wav',
+      boom: 'audio/foley/Kit_6_FB_Sub_Boom.wav'
+    };
+    var _ofSfxPool = {};
+    function ofPlaySfx(name, volume, pitch) {
+      var src = OF_SFX[name];
+      if (Array.isArray(src)) src = src[Math.floor(Math.random() * src.length)];
+      if (!src) return;
+      try {
+        var pool = _ofSfxPool[name] || (_ofSfxPool[name] = []);
+        var a = null;
+        for (var i = 0; i < pool.length; i++) {
+          if (pool[i].paused || pool[i].ended) { a = pool[i]; break; }
+        }
+        if (!a) {
+          a = new Audio(src);
+          a.preload = 'auto';
+          pool.push(a);
+        }
+        a.pause();
+        a.currentTime = 0;
+        a.volume = Math.max(0, Math.min(1, volume == null ? 0.32 : volume));
+        if ('playbackRate' in a) a.playbackRate = pitch || (0.96 + Math.random() * 0.08);
+        var p = a.play();
+        if (p && p.catch) p.catch(function(){});
+      } catch(e) {}
+    }
+
+    function ofIsTypingKey(e) {
+      if (!e || e.ctrlKey || e.metaKey || e.altKey) return false;
+      if (e.repeat) return false;
+      if (!e.key) return false;
+      if (e.key.length === 1) return true;
+      return e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter' || e.key === 'Tab' || e.key === ' ';
+    }
+
+    function ofPlayTypingSfx(e) {
+      if (!ofIsTypingKey(e)) return;
+      var target = e.target;
+      if (!target) return;
+      var tag = (target.tagName || '').toLowerCase();
+      var editable = tag === 'input' || tag === 'textarea' || target.isContentEditable;
+      if (!editable && target.closest) editable = !!target.closest('[contenteditable="true"]');
+      if (!editable) return;
+      var isConfirmKey = e.key === 'Enter' || e.key === ' ';
+      var volume = e.key === 'Backspace' || e.key === 'Delete' ? 0.16 : 0.11 + Math.random() * 0.05;
+      var pitch = e.key === 'Enter' ? 0.82 : 0.9 + Math.random() * 0.28;
+      ofPlaySfx(isConfirmKey ? 'keyConfirm' : 'key', volume, pitch);
+    }
+
+    document.addEventListener('keydown', ofPlayTypingSfx, true);
 
     function getCultFrameDurationMs(frameIndex) {
       if (frameIndex >= CULT_FRAME_DURATIONS_MS.length) {
@@ -1939,6 +2110,33 @@
       if (btn) btn.style.background = _flowLockEnabled ? '' : '#884400';
     }
 
+    var DEV_MENU_HIDDEN_KEY = 'openfeed_dev_menu_hidden';
+
+    function setDevMenuHidden(hidden) {
+      var bar = document.getElementById('phoneDevBar');
+      if (bar) bar.classList.toggle('dev-hidden', !!hidden);
+      try { localStorage.setItem(DEV_MENU_HIDDEN_KEY, hidden ? '1' : '0'); } catch (e) {}
+    }
+
+    function toggleDevMenuHidden() {
+      var bar = document.getElementById('phoneDevBar');
+      var hidden = bar ? !bar.classList.contains('dev-hidden') : true;
+      setDevMenuHidden(hidden);
+    }
+
+    function restoreDevMenuPreference() {
+      var hidden = false;
+      try { hidden = localStorage.getItem(DEV_MENU_HIDDEN_KEY) === '1'; } catch (e) {}
+      setDevMenuHidden(hidden);
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+        e.preventDefault();
+        toggleDevMenuHidden();
+      }
+    });
+
     // Returns a reason string if the player must stay on the current feed, or null if safe to leave.
     // Uses persistent GAME flags so revisiting a completed flow camera never re-locks the player.
     function isFlowCritical() {
@@ -1980,6 +2178,199 @@
       }, 2200);
     }
 
+    var _anonMessengerStarted = false;
+    var _anonMessengerTimers = [];
+    var _anonMessengerAwaitingHeraldClose = false;
+    var _anonMessengerResolvedHerald = false;
+    var _anonMessengerArticlePoll = null;
+    var _anonMessengerGlitchStarted = false;
+
+    function callParentFunction(name, args) {
+      try {
+        if (!window.parent || window.parent === window) return false;
+        var fn = window.parent[name];
+        if (typeof fn !== 'function') return false;
+        fn.apply(window.parent, args || []);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function clearAnonMessengerTimers() {
+      while (_anonMessengerTimers.length) {
+        clearTimeout(_anonMessengerTimers.pop());
+      }
+      if (_anonMessengerArticlePoll) {
+        clearInterval(_anonMessengerArticlePoll);
+        _anonMessengerArticlePoll = null;
+      }
+    }
+
+    function removeAnonMessenger() {
+      clearAnonMessengerTimers();
+      var win = document.getElementById('anonMessenger');
+      if (win && win.parentNode) win.parentNode.removeChild(win);
+    }
+
+    function anonMessengerAddLine(html) {
+      var log = document.getElementById('anonMessengerLog');
+      if (!log) return;
+      ofPlaySfx('message', 0.22, 0.78);
+      var p = document.createElement('p');
+      p.className = 'anon-msg-line';
+      p.innerHTML = '<span class="anon-msg-name">unknown:</span> ' + html;
+      log.appendChild(p);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function triggerAnonMessenger() {
+      if (_anonMessengerStarted || gameFlag('anonMessengerSeen')) return;
+      _anonMessengerStarted = true;
+      _anonMessengerAwaitingHeraldClose = false;
+      _anonMessengerResolvedHerald = false;
+      gameSetFlag('anonMessengerSeen', true);
+
+      removeAnonMessenger();
+
+      var win = document.createElement('div');
+      win.id = 'anonMessenger';
+      win.className = 'anon-msg-window';
+      win.innerHTML = [
+        '<div class="anon-msg-titlebar">',
+        '  <span>Instant Messenger - private relay</span>',
+        '  <button class="anon-msg-close" onclick="removeAnonMessenger()">x</button>',
+        '</div>',
+        '<div class="anon-msg-body">',
+        '  <div class="anon-msg-status">anonymous user connected through openfeed.icu</div>',
+        '  <div class="anon-msg-log" id="anonMessengerLog"></div>',
+        '</div>'
+      ].join('');
+      document.body.appendChild(win);
+      setTimeout(function () { win.classList.add('open'); }, 30);
+
+      var beats = [
+        { t: 600, html: 'do not answer the phone.' },
+        { t: 2200, html: 'i know what camera you opened.' },
+        { t: 3900, html: 'you are not the only one seeing it.' },
+        { t: 5700, html: 'read this. now.<br><span class="anon-msg-link" onclick="anonMessengerOpenHerald()">westfieldherald.net/local/cctv-sighting</span>' }
+      ];
+
+      beats.forEach(function (beat) {
+        _anonMessengerTimers.push(setTimeout(function () {
+          anonMessengerAddLine(beat.html);
+        }, beat.t));
+      });
+
+    }
+
+    function devTriggerAnonMessenger() {
+      _anonMessengerStarted = false;
+      _anonMessengerAwaitingHeraldClose = false;
+      _anonMessengerResolvedHerald = false;
+      _anonMessengerGlitchStarted = false;
+      gameSetFlag('anonMessengerSeen', false);
+      removeAnonMessenger();
+      triggerAnonMessenger();
+    }
+
+    function anonMessengerOpenHerald() {
+      ofPlaySfx('click', 0.18);
+      _anonMessengerAwaitingHeraldClose = true;
+      _anonMessengerResolvedHerald = false;
+      var url = 'westfieldherald.net/local/cctv-sighting';
+      var title = 'Creature Sighting Near Parkside Grocery - Westfield Herald';
+      var sentToShell = false;
+      if (window.parent && window.parent !== window) {
+        sentToShell = callParentFunction('openMainBrowserTab', [url, title, 'openfeed:articleTabClosed']) || sentToShell;
+        try {
+          window.parent.postMessage({
+            type: 'openfeed:openMainBrowserTab',
+            url: url,
+            title: title,
+            closeNotifyType: 'openfeed:articleTabClosed'
+          }, '*');
+          sentToShell = true;
+        } catch (e) {}
+      }
+      if (!sentToShell) {
+        triggerNewsPopup(function () {
+          anonMessengerHeraldClosed();
+        });
+      } else {
+        startAnonMessengerHeraldCloseWatch(url);
+      }
+    }
+
+    function startAnonMessengerHeraldCloseWatch(url) {
+      if (_anonMessengerArticlePoll) clearInterval(_anonMessengerArticlePoll);
+      _anonMessengerArticlePoll = setInterval(function () {
+        if (!_anonMessengerAwaitingHeraldClose || _anonMessengerResolvedHerald) {
+          clearInterval(_anonMessengerArticlePoll);
+          _anonMessengerArticlePoll = null;
+          return;
+        }
+        try {
+          if (window.parent && window.parent !== window) {
+            var isOpen = window.parent.isMainBrowserTabOpen;
+            if (typeof isOpen === 'function' && !isOpen.call(window.parent, 'openfeed:articleTabClosed', url)) {
+              clearInterval(_anonMessengerArticlePoll);
+              _anonMessengerArticlePoll = null;
+              anonMessengerHeraldClosed();
+            }
+          }
+        } catch (e) {}
+      }, 300);
+    }
+
+    function anonMessengerHeraldClosed() {
+      if (_anonMessengerResolvedHerald) return;
+      _anonMessengerResolvedHerald = true;
+      _anonMessengerAwaitingHeraldClose = false;
+      if (_anonMessengerArticlePoll) {
+        clearInterval(_anonMessengerArticlePoll);
+        _anonMessengerArticlePoll = null;
+      }
+
+      _anonMessengerTimers.push(setTimeout(function () {
+        anonMessengerAddLine('they found out.');
+      }, 700));
+
+      _anonMessengerTimers.push(setTimeout(function () {
+        anonMessengerAddLine('you nead to lea<span class="anon-msg-cut">-</span><br><span class="anon-msg-cut">* user disconnected *</span>');
+      }, 2500));
+
+      _anonMessengerTimers.push(setTimeout(anonMessengerStartBreakdown, 12500));
+      callParentFunction('scheduleOpenfeedSiteGlitch', [12500]);
+    }
+
+    function anonMessengerStartBreakdown() {
+      if (_anonMessengerGlitchStarted) return;
+      _anonMessengerGlitchStarted = true;
+      ofPlaySfx('emf', 0.34, 0.82);
+      triggerSiteGlitch();
+      callParentFunction('triggerShellGlitch');
+    }
+
+    window.anonMessengerHeraldClosed = anonMessengerHeraldClosed;
+    window.devContinueAnonMessenger = anonMessengerHeraldClosed;
+    window.anonMessengerStartBreakdown = anonMessengerStartBreakdown;
+
+    window.addEventListener('message', function (e) {
+      var data = e && e.data;
+      if (!data || (data.type !== 'openfeed:popupClosed' && data.type !== 'openfeed:articleTabClosed')) return;
+      anonMessengerHeraldClosed();
+    });
+
+    document.addEventListener('click', function(e) {
+      var target = e.target;
+      if (!target || !target.closest) return;
+      if (target.closest('#phoneWidget')) return;
+      var el = target.closest('button,a,input[type="button"],input[type="submit"]');
+      if (!el) return;
+      ofPlaySfx('click', 0.08);
+    }, true);
+
     // Keep the close button text in sync with the lock state (runs on the main 100ms interval).
     // Also detects when each flow reaches its final state for the first time and persists that to GAME,
     // so the lock permanently lifts and never re-engages on subsequent visits.
@@ -1992,6 +2383,7 @@
         }
         // Stairwell: NO SIGNAL reached
         if (stairFlow.viewerActive && stairFlow.noSignal && !GAME.stairFlowSeen) {
+          triggerAnonMessenger();
           GAME.stairFlowSeen = true;
           gameSave();
         }
@@ -2011,6 +2403,7 @@
     }
 
     function openViewer(cam, index) {
+      ofPlaySfx('click', 0.24);
       _viewerCam = cam;
       stopViewerInterval();
 
@@ -2056,6 +2449,7 @@
     }
 
     function closeViewer() {
+      ofPlaySfx('click', 0.1, 0.9);
       _viewerCam = null;
       document.getElementById("viewerPanel").classList.remove("open");
       hideFeedList(false);
@@ -2461,13 +2855,13 @@
     openViewer = function(cam, index) {
       // Block switching away from an active flow feed
       if (isFlowCritical()) { flowLockFlash(); return; }
-      sfxClick(); _origOpenViewer(cam, index);
+      _origOpenViewer(cam, index);
     };
     var _origCloseViewer = closeViewer;
     closeViewer = function() {
       // Block closing the viewer during an active flow sequence
       if (isFlowCritical()) { flowLockFlash(); return; }
-      sfxTick(); _origCloseViewer();
+      _origCloseViewer();
     };
 
     // ===== NARRATIVE HOOKS =====
@@ -2720,6 +3114,7 @@
       if (_glitchActive) return;
       _glitchActive = true;
       _glitchPhase  = 1;
+      ofPlaySfx('glitch', 0.36, 0.86);
 
       // Canvas overlay for tears + noise
       _glitchCanvas = document.createElement('canvas');
@@ -2751,6 +3146,7 @@
       // Phase 3 — full chaos (3.2s)
       _glitchTimers.push(setTimeout(function() {
         _glitchPhase = 3;
+        ofPlaySfx('emf', 0.38, 0.75);
         document.body.classList.replace('g-shake-md', 'g-shake-lg');
         // Scramble headers + section labels
         ['h1','h2','.section-header','.logo','.viewer-title','#viewerFooter'].forEach(function(sel) {
@@ -2763,15 +3159,14 @@
         // Invert the viewer canvas entirely for a moment
         var vc = document.getElementById('viewerCanvas');
         if (vc) { vc.style.filter = 'invert(1) contrast(2) hue-rotate(180deg)'; }
-        // Notify shell to glitch the chrome too
-        if (window.parent && window.parent !== window && typeof window.parent.triggerShellGlitch === 'function') {
-          window.parent.triggerShellGlitch();
-        }
+        // Notify shell to glitch the chrome too when same-origin access is available.
+        callParentFunction('triggerShellGlitch');
       }, 3200));
 
       // Phase 4 — peak insanity (5.5s)
       _glitchTimers.push(setTimeout(function() {
         _glitchPhase = 4;
+        ofPlaySfx('boom', 0.34, 0.9);
         document.body.classList.add('g-flicker');
         // Rapid body flash
         var flashIval = setInterval(function() {
@@ -2836,7 +3231,7 @@
           var tbm = window.parent.document.getElementById('tbBtnMain');
           if (ma)  { ma.value = 'http://openfeed.icu'; ma.style.color = ''; }
           if (mb)  { mb.style.background = ''; mb.style.transition = ''; }
-          if (mt)  { mt.textContent = 'openfeed.icu — iNet Browser 7'; mt.style.color = ''; }
+          if (mt)  { mt.textContent = 'openfeed.icu - iNet Browser 7'; mt.style.color = ''; }
           if (tb)  { tb.style.background = ''; }
           if (tbm) { tbm.style.color = ''; }
         } catch(e) {}
@@ -2844,6 +3239,8 @@
     }
 
     function siteGoOffline() {
+      ofPlaySfx('boom', 0.42, 0.72);
+      ofPlaySfx('beep', 0.25, 0.75);
       // ── Hard-stop glitch without restoring ───────────────────────────────────
       _glitchActive = false;
       _glitchPhase  = 0;
@@ -2908,30 +3305,38 @@
         }, 700);
 
         // Tell shell chrome to go offline too
-        if (window.parent && window.parent !== window) {
-          try {
-            if (typeof window.parent.shellGoOffline === 'function') window.parent.shellGoOffline();
-            else if (typeof window.parent.stopShellGlitch === 'function') window.parent.stopShellGlitch();
-          } catch(e) {}
-        }
+        if (!callParentFunction('shellGoOffline')) callParentFunction('stopShellGlitch');
+        notifyUnitySiteOffline();
 
       }, 160);
+    }
+
+    function notifyUnitySiteOffline() {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'openfeed:siteOffline' }, '*');
+        }
+      } catch(e) {}
+      try {
+        if (window.Unity && typeof window.Unity.call === 'function') {
+          window.Unity.call('openfeed:siteOffline');
+          return;
+        }
+      } catch(e) {}
+      try {
+        window.location.href = 'unity:openfeed:siteOffline';
+      } catch(e) {}
     }
 
     // ── Browser popup ─────────────────────────────────────────────────────────
     // When running inside shell.html, delegate to the parent shell's popup window.
     // When opened standalone (direct file / dev testing), open news.html in a plain new window.
-    function triggerNewsPopup() {
+    function triggerNewsPopup(onClosed) {
       var url   = 'westfieldherald.net/local/cctv-sighting';
       var title = 'Creature Sighting Near Parkside Grocery — Westfield Herald';
       var sentToShell = false;
       if (window.parent && window.parent !== window) {
-        try {
-          if (typeof window.parent.openPopupBrowser === 'function') {
-            window.parent.openPopupBrowser(url, title);
-            sentToShell = true;
-          }
-        } catch (e) {}
+        sentToShell = callParentFunction('openPopupBrowser', [url, title]) || sentToShell;
       }
       if (window.parent && window.parent !== window) {
         try {
@@ -2945,7 +3350,15 @@
       }
       if (!sentToShell) {
         // Standalone fallback — open in a new window sized like the popup
-        window.open('news.html', 'newsPopup', 'width=900,height=680,left=60,top=40,resizable=yes,scrollbars=yes');
+        var popup = window.open('news.html', 'newsPopup', 'width=900,height=680,left=60,top=40,resizable=yes,scrollbars=yes');
+        if (popup && typeof onClosed === 'function') {
+          var poll = setInterval(function () {
+            if (popup.closed) {
+              clearInterval(poll);
+              onClosed();
+            }
+          }, 300);
+        }
       }
     }
 
@@ -3046,6 +3459,7 @@
     preventDeadLinks();
     buildGrid();
     openViewerFromQuery();
+    restoreDevMenuPreference();
   </script>
 
   <!-- NARRATIVE AUDIO — second call (helpline / E03 no-signal) -->
@@ -3054,6 +3468,7 @@
   <!-- DEV CONTROLS — remove before ship -->
   <div id="phoneDevBar">
     <b>// dev</b>
+    <button onclick="setDevMenuHidden(true)">hide dev menu</button>
     <button onclick="phonePowerOn()">phone on</button>
     <button onclick="phonePowerOff()">phone off</button>
     <button onclick="phoneIncomingCall('??????????', 'unknown caller')">simulate ring</button>
@@ -3068,7 +3483,10 @@
     <button id="devFlowLockBtn" onclick="devToggleFlowLock()" style="font-weight:bold">flow lock: ON</button>
     <b style="margin-top:3px">// browser (shell)</b>
     <button onclick="triggerNewsPopup()">open news popup</button>
-    <button onclick="if(window.parent&&window.parent!==window&&window.parent.closePopupBrowser){window.parent.closePopupBrowser();}">close popup</button>
+    <button onclick="callParentFunction('closePopupBrowser')">close popup</button>
+    <button onclick="devTriggerAnonMessenger()">anon msg</button>
+    <button onclick="devContinueAnonMessenger()">anon continue</button>
+    <button onclick="anonMessengerStartBreakdown()">anon glitch</button>
     <b style="margin-top:3px">// glitch</b>
     <button onclick="triggerSiteGlitch()" style="color:#0a0;font-weight:bold">trigger site glitch</button>
     <button onclick="stopSiteGlitch()">stop glitch</button>
@@ -3145,6 +3563,7 @@
 
     function phonePowerOn() {
       if (phone.power) return;
+      ofPlaySfx('beep', 0.18, 1.15);
       phone.power = true;
       var body = document.getElementById('phoneBodyEl');
       var screen = document.getElementById('phoneScreen');
@@ -3162,6 +3581,7 @@
 
     function phonePowerOff() {
       if (!phone.power) return;
+      ofPlaySfx('beep', 0.12, 0.75);
       phone.power = false;
       phone.state = 'idle';
       phone.number = '';
@@ -3181,6 +3601,7 @@
     function phonePressKey(k) {
       if (!phone.power || phone.state === 'ringing' || phone.state === 'call-active') return;
       if (phone.number.length >= 14) return;
+      ofPlaySfx('key', 0.12, 1.4);
       if (window.sfxDTMF) sfxDTMF(k);
       phone.number += k;
       phone.state = 'dialing';
@@ -3210,6 +3631,7 @@
       if (!phone.power) return;
       if (phone.state === 'ringing') { phoneAnswerCall(); return; }
       if (!phone.number || phone.state === 'call-active') return;
+      ofPlaySfx('call', 0.22, 1);
       if (window.sfxClick) sfxClick();
       phone.state = 'call-active';
       document.getElementById('phoneLabel').textContent = 'calling\u2026';
@@ -3219,6 +3641,7 @@
     function phoneEndCall() {
       if (!phone.power) return;
       if (phone.state === 'ringing') { phoneDeclineCall(); return; }
+      ofPlaySfx('beep', 0.16, 0.85);
       if (window.sfxClick) sfxClick();
       phone.state = 'idle';
       phone.number = '';
@@ -3242,6 +3665,7 @@
 
     function phoneAnswerCall() {
       if (window.sfxRingStop) sfxRingStop();
+      ofPlaySfx('beep', 0.16, 1.05);
       if (window.sfxClick) sfxClick();
       phone.state = 'call-active';
       document.getElementById('phoneBodyEl').classList.remove('phone-ringing');
@@ -3252,6 +3676,7 @@
 
     function phoneDeclineCall() {
       if (window.sfxRingStop) sfxRingStop();
+      ofPlaySfx('beep', 0.14, 0.75);
       if (window.sfxClick) sfxClick();
       phone.state = 'idle';
       phone.incomingFrom = null;

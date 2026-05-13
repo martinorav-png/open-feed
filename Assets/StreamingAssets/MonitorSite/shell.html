@@ -239,7 +239,7 @@
 
       <div class="gb-titlebar" id="gbMainTitlebar">
         <span class="gb-titlebar-icon">🌐</span>
-        <span class="gb-title" id="gbMainTitle">openfeed.icu — iNet Browser 7</span>
+        <span class="gb-title" id="gbMainTitle">openfeed.icu - iNet Browser 7</span>
         <div class="gb-winctrls">
           <button class="gb-wctrl" title="Minimize" onclick="tbMinimizeMain()">&#8722;</button>
           <button class="gb-wctrl" title="Maximize">&#9633;</button>
@@ -267,6 +267,7 @@
 
       <div class="gb-content">
         <iframe id="gbMainFrame"
+                data-main-tab="0"
                 src="index.html"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"
                 allowfullscreen></iframe>
@@ -286,7 +287,7 @@
       <div class="gb-titlebar" id="gbPopupTitlebar"
            onmousedown="gbPopupDragStart(event)">
         <span class="gb-titlebar-icon">🌐</span>
-        <span class="gb-title" id="gbPopupTitle">New Tab — iNet Browser 7</span>
+        <span class="gb-title" id="gbPopupTitle">New Tab - iNet Browser 7</span>
         <div class="gb-winctrls">
           <button class="gb-wctrl" title="Minimize" onclick="tbMinimizePopup()">&#8722;</button>
           <button class="gb-wctrl" title="Maximize">&#9633;</button>
@@ -332,7 +333,7 @@
     <button id="tbStart">&#127758; Start</button>
     <div class="tb-sep"></div>
     <button class="tb-win-btn active" id="tbBtnMain"
-            onclick="tbFocusMain()">🌐 openfeed.icu — iNet Browser 7</button>
+            onclick="tbFocusMain()">🌐 openfeed.icu - iNet Browser 7</button>
     <button class="tb-win-btn" id="tbBtnPopup" style="display:none"
             onclick="tbFocusPopup()">🌐 <span id="tbBtnPopupLabel">New Tab</span></button>
     <div id="tbClock">00:00</div>
@@ -356,6 +357,81 @@
 
     var MAIN_HOME_URL   = 'http://openfeed.icu';
     var MAIN_HOME_FILE  = 'index.html';
+    var GB_SFX = {
+      click: 'audio/foley/MouseClick_SFXB.4114.wav',
+      key: [
+        'audio/foley/KeyboardTypeKeystroke_BW._1.wav',
+        'audio/foley/ComputerKeyboard_SFXB.4079.wav',
+        'audio/foley/ComputerKeyboard_SFXB.4080.wav',
+        'audio/foley/AppleKeyboard_S08TE.10.wav'
+      ],
+      keyConfirm: 'audio/foley/KeyboardTypeKeystroke_BW.49.wav',
+      message: 'audio/foley/ESM_Recieve_Message_1_Notification_Synth_Electronic_Particle_Cute_Cartoon.wav',
+      glitch: 'audio/foley/GLTCH_SFX_Ildcend.wav',
+      emf: 'audio/foley/SUT_EMF_FX_09.wav',
+      boom: 'audio/foley/Kit_6_FB_Sub_Boom.wav',
+      beep: 'audio/foley/MO_LW_fx_beeb_beep.wav'
+    };
+    var _gbSfxPool = {};
+
+    function gbPlaySfx(name, volume, pitch) {
+      var src = GB_SFX[name];
+      if (Array.isArray(src)) src = src[Math.floor(Math.random() * src.length)];
+      if (!src) return;
+      try {
+        var pool = _gbSfxPool[name] || (_gbSfxPool[name] = []);
+        var a = null;
+        for (var i = 0; i < pool.length; i++) {
+          if (pool[i].paused || pool[i].ended) { a = pool[i]; break; }
+        }
+        if (!a) {
+          a = new Audio(src);
+          a.preload = 'auto';
+          pool.push(a);
+        }
+        a.pause();
+        a.currentTime = 0;
+        a.volume = Math.max(0, Math.min(1, volume == null ? 0.18 : volume));
+        if ('playbackRate' in a) a.playbackRate = pitch || (0.96 + Math.random() * 0.08);
+        var p = a.play();
+        if (p && p.catch) p.catch(function(){});
+      } catch (e) {}
+    }
+
+    function gbIsTypingKey(e) {
+      if (!e || e.ctrlKey || e.metaKey || e.altKey) return false;
+      if (e.repeat) return false;
+      if (!e.key) return false;
+      if (e.key.length === 1) return true;
+      return e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter' || e.key === 'Tab' || e.key === ' ';
+    }
+
+    function gbPlayTypingSfx(e) {
+      if (!gbIsTypingKey(e)) return;
+      var target = e.target;
+      if (!target) return;
+      var tag = (target.tagName || '').toLowerCase();
+      var editable = tag === 'input' || tag === 'textarea' || target.isContentEditable;
+      if (!editable && target.closest) editable = !!target.closest('[contenteditable="true"]');
+      if (!editable) return;
+      var isConfirmKey = e.key === 'Enter' || e.key === ' ';
+      var volume = e.key === 'Backspace' || e.key === 'Delete' ? 0.16 : 0.1 + Math.random() * 0.05;
+      var pitch = e.key === 'Enter' ? 0.82 : 0.88 + Math.random() * 0.3;
+      gbPlaySfx(isConfirmKey ? 'keyConfirm' : 'key', volume, pitch);
+    }
+
+    document.addEventListener('keydown', gbPlayTypingSfx, true);
+
+    function gbInstallFrameTypingSfx(frame) {
+      try {
+        if (!frame || !frame.contentWindow || frame.contentWindow.__gbTypingSfxInstalled) return;
+        if (typeof frame.contentWindow.ofPlayTypingSfx === 'function') return;
+        frame.contentWindow.__gbTypingSfxInstalled = true;
+        frame.contentDocument.addEventListener('keydown', function(e) {
+          gbPlayTypingSfx(e);
+        }, true);
+      } catch (e) {}
+    }
 
     function resolveUrl(url) {
       if (!url || url === 'about:blank') return null;
@@ -393,9 +469,39 @@
     setInterval(updateClock, 10000);
 
     // ── MAIN WINDOW ───────────────────────────────────────────────────────────
-    var gbMainTabs    = [{ url: MAIN_HOME_FILE, title: 'openfeed.icu' }];
+    var gbMainTabs    = [{ url: MAIN_HOME_FILE, title: 'openfeed.icu', frameId: 'gbMainFrame', closeNotifyType: null }];
     var gbMainActive  = 0;
     var gbMainMinimized = false;
+    var gbMainOfflineLocked = false;
+
+    function gbMainFrameForTab(i) {
+      var tab = gbMainTabs[i];
+      if (!tab) return null;
+      return document.getElementById(tab.frameId || 'gbMainFrame');
+    }
+
+    function gbMainEnsureFrame(i) {
+      var tab = gbMainTabs[i];
+      if (!tab) return null;
+      var frame = gbMainFrameForTab(i);
+      if (frame) return frame;
+      var content = document.querySelector('#gbMainWin .gb-content');
+      if (!content) return null;
+      frame = document.createElement('iframe');
+      frame.id = tab.frameId;
+      frame.setAttribute('data-main-tab', String(i));
+      frame.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-modals allow-popups');
+      frame.setAttribute('allowfullscreen', '');
+      frame.style.display = 'none';
+      content.appendChild(frame);
+      return frame;
+    }
+
+    function gbMainShowActiveFrame() {
+      document.querySelectorAll('#gbMainWin .gb-content iframe').forEach(function(frame) {
+        frame.style.display = frame.id === gbMainTabs[gbMainActive].frameId ? '' : 'none';
+      });
+    }
 
     function gbMainRenderTabs() {
       var strip = document.getElementById('gbMainTabstrip');
@@ -408,6 +514,14 @@
         lbl.className = 'gb-tab-title';
         lbl.textContent = tab.title || 'New Tab';
         t.appendChild(lbl);
+        if (i > 0) {
+          var x = document.createElement('button');
+          x.className = 'gb-tab-x';
+          x.textContent = 'x';
+          x.title = 'Close tab';
+          x.onclick = function(e) { e.stopPropagation(); gbMainCloseTab(i); };
+          t.appendChild(x);
+        }
         t.onclick = function() { gbMainSwitchTab(i); };
         strip.appendChild(t);
       });
@@ -415,27 +529,124 @@
     }
 
     function gbMainSwitchTab(i) {
+      if (!gbMainTabs[i]) return;
+      gbPlaySfx('click', 0.08);
       gbMainActive = i;
       gbMainRenderTabs();
-      gbMainLoadFile(gbMainTabs[i].url);
+      var frame = gbMainEnsureFrame(i);
+      if (frame && !frame.getAttribute('src') && gbMainTabs[i].url) {
+        gbMainLoadFile(gbMainTabs[i].url);
+      }
+      gbMainShowActiveFrame();
+      var addr = document.getElementById('gbMainAddr');
+      if (addr) addr.value = displayUrl(gbMainTabs[i].url);
+      var title = gbMainTabs[i].title || 'New Tab';
+      document.getElementById('gbMainTitle').textContent = title + ' - iNet Browser 7';
+    }
+
+    function gbMainCloseTab(i) {
+      var tab = gbMainTabs[i];
+      if (!tab || i === 0) return;
+      gbPlaySfx('click', 0.1, 0.82);
+      gbMainNotifyPrimaryTab(tab.closeNotifyType, tab.url, 'before-close');
+      var frame = gbMainFrameForTab(i);
+      if (frame && frame.parentNode) frame.parentNode.removeChild(frame);
+      gbMainTabs.splice(i, 1);
+      gbMainActive = Math.max(0, Math.min(gbMainActive, gbMainTabs.length - 1));
+      gbMainRenderTabs();
+      gbMainSwitchTab(gbMainActive);
+      gbMainNotifyPrimaryTab(tab.closeNotifyType, tab.url, 'after-close');
+      setTimeout(function () { gbMainNotifyPrimaryTab(tab.closeNotifyType, tab.url, 'after-close-retry'); }, 150);
+      setTimeout(function () { gbMainNotifyPrimaryTab(tab.closeNotifyType, tab.url, 'after-close-retry-2'); }, 600);
+    }
+
+    function gbMainNotifyPrimaryTab(type, url, reason) {
+      if (!type) return;
+      document.querySelectorAll('#gbMainWin .gb-content iframe').forEach(function (mainFrame) {
+        try {
+          if (mainFrame && mainFrame.contentWindow) {
+            mainFrame.contentWindow.postMessage({ type: type, url: url, reason: reason || '' }, '*');
+            if (type === 'openfeed:articleTabClosed' && typeof mainFrame.contentWindow.anonMessengerHeraldClosed === 'function') {
+              mainFrame.contentWindow.anonMessengerHeraldClosed();
+            }
+          }
+        } catch (e) {}
+      });
+    }
+
+    function openMainBrowserTab(url, title, closeNotifyType) {
+      var file = resolveUrl(url) || url || 'about:blank';
+      for (var i = 0; i < gbMainTabs.length; i++) {
+        if (gbMainTabs[i].url === file && gbMainTabs[i].closeNotifyType === closeNotifyType) {
+          gbMainSwitchTab(i);
+          return;
+        }
+      }
+      gbPlaySfx('message', 0.12, 0.85);
+      var id = 'gbMainFrame_' + Date.now() + '_' + gbMainTabs.length;
+      gbMainTabs.push({ url: file, title: title || 'New Tab', frameId: id, closeNotifyType: closeNotifyType || null });
+      gbMainActive = gbMainTabs.length - 1;
+      gbMainRenderTabs();
+      gbMainLoadFile(file);
+    }
+
+    function isMainBrowserTabOpen(closeNotifyType, url) {
+      var file = resolveUrl(url) || url || null;
+      for (var i = 0; i < gbMainTabs.length; i++) {
+        if (closeNotifyType && gbMainTabs[i].closeNotifyType !== closeNotifyType) continue;
+        if (file && gbMainTabs[i].url !== file) continue;
+        return true;
+      }
+      return false;
+    }
+
+    var _openfeedSiteGlitchTimer = null;
+
+    function triggerOpenfeedSiteGlitch() {
+      triggerShellGlitch();
+      document.querySelectorAll('#gbMainWin .gb-content iframe').forEach(function (frame) {
+        try {
+          if (frame && frame.contentWindow) {
+            if (typeof frame.contentWindow.anonMessengerStartBreakdown === 'function') {
+              frame.contentWindow.anonMessengerStartBreakdown();
+            } else if (typeof frame.contentWindow.triggerSiteGlitch === 'function') {
+              frame.contentWindow.triggerSiteGlitch();
+            }
+          }
+        } catch (e) {}
+      });
+    }
+
+    function scheduleOpenfeedSiteGlitch(delayMs) {
+      if (_openfeedSiteGlitchTimer) clearTimeout(_openfeedSiteGlitchTimer);
+      _openfeedSiteGlitchTimer = setTimeout(function () {
+        _openfeedSiteGlitchTimer = null;
+        triggerOpenfeedSiteGlitch();
+      }, Math.max(0, delayMs || 0));
     }
 
     function gbMainLoadFile(file) {
-      var frame = document.getElementById('gbMainFrame');
+      if (gbMainOfflineLocked) return;
+      gbPlaySfx('click', 0.07);
+      var frame = gbMainEnsureFrame(gbMainActive);
+      var loadIndex = gbMainActive;
       var addr  = document.getElementById('gbMainAddr');
       var status = document.getElementById('gbMainStatus');
       if (!frame) return;
+      if (gbMainTabs[gbMainActive]) gbMainTabs[gbMainActive].url = file;
+      gbMainShowActiveFrame();
       if (status) status.textContent = 'Loading...';
       frame.src = file;
       frame.onload = function() {
+        gbInstallFrameTypingSfx(frame);
         if (status) status.textContent = 'Done';
         if (addr) addr.value = displayUrl(file);
         try {
           var t = frame.contentDocument && frame.contentDocument.title;
           if (t) {
-            if (gbMainTabs[gbMainActive]) gbMainTabs[gbMainActive].title = t;
+            if (gbMainTabs[loadIndex]) gbMainTabs[loadIndex].title = t;
             gbMainRenderTabs();
-            document.getElementById('gbMainTitle').textContent = t + ' — iNet Browser 7';
+            document.getElementById('gbMainTitle').textContent = t + ' - iNet Browser 7';
             var btnLabel = document.getElementById('tbBtnMain');
             if (btnLabel) btnLabel.textContent = '🌐 ' + t;
           }
@@ -463,6 +674,8 @@
     }
 
     function gbMainGo() {
+      if (gbMainOfflineLocked) return;
+      gbPlaySfx('click', 0.08);
       var val = (document.getElementById('gbMainAddr') || {}).value;
       if (!val || !val.trim()) return;
       val = val.trim();
@@ -471,7 +684,7 @@
         gbMainLoadFile(file);
       } else {
         // Not a known page — show error in frame
-        var frame = document.getElementById('gbMainFrame');
+      var frame = gbMainFrameForTab(gbMainActive);
         if (frame) {
           frame.srcdoc = gbErrorPage(val);
           document.getElementById('gbMainStatus').textContent = 'Cannot display page';
@@ -479,10 +692,10 @@
       }
     }
 
-    function gbMainGoHome()    { gbMainLoadFile(MAIN_HOME_FILE); }
-    function gbMainRefresh()   { var f = document.getElementById('gbMainFrame'); if(f) f.src = f.src; }
-    function gbMainGoBack()    { try { document.getElementById('gbMainFrame').contentWindow.history.back(); } catch(e){} }
-    function gbMainGoFwd()     { try { document.getElementById('gbMainFrame').contentWindow.history.forward(); } catch(e){} }
+    function gbMainGoHome()    { if (!gbMainOfflineLocked) { gbPlaySfx('click', 0.08); gbMainLoadFile(MAIN_HOME_FILE); } }
+    function gbMainRefresh()   { if (gbMainOfflineLocked) return; gbPlaySfx('click', 0.08); var f = gbMainFrameForTab(gbMainActive); if(f) f.src = f.src; }
+    function gbMainGoBack()    { if (gbMainOfflineLocked) return; gbPlaySfx('click', 0.08); try { gbMainFrameForTab(gbMainActive).contentWindow.history.back(); } catch(e){} }
+    function gbMainGoFwd()     { if (gbMainOfflineLocked) return; gbPlaySfx('click', 0.08); try { gbMainFrameForTab(gbMainActive).contentWindow.history.forward(); } catch(e){} }
 
     function tbMinimizeMain() {
       var win = document.getElementById('gbMainWin');
@@ -518,6 +731,7 @@
     function openPopupBrowser(url, title) {
       var win = document.getElementById('gbPopupWin');
       if (!win) return;
+      gbPlaySfx('message', 0.13, 0.82);
       win.style.display  = 'flex';
       win.style.zIndex   = '200';
       gbPopupMinimized   = false;
@@ -534,12 +748,19 @@
     }
 
     function closePopupBrowser() {
+      gbPlaySfx('click', 0.1, 0.82);
       var win = document.getElementById('gbPopupWin');
       if (win) win.style.display = 'none';
       document.getElementById('tbBtnPopup').style.display = 'none';
       document.getElementById('tbBtnMain').classList.add('active');
       document.getElementById('gbMainTitlebar').classList.remove('inactive');
       document.getElementById('gbPopupTitlebar').classList.add('inactive');
+      try {
+        var mainFrame = document.getElementById('gbMainFrame');
+        if (mainFrame && mainFrame.contentWindow) {
+          mainFrame.contentWindow.postMessage({ type: 'openfeed:popupClosed', url: gbPopupTabs[gbPopupActive] && gbPopupTabs[gbPopupActive].url }, '*');
+        }
+      } catch (e) {}
     }
 
     function gbPopupAddTab(url, title) {
@@ -614,6 +835,7 @@
         if (status) status.textContent = 'Loading...';
         frame.src = localFile;
         frame.onload = function() {
+          gbInstallFrameTypingSfx(frame);
           if (status) status.textContent = 'Done';
           try {
             var t = frame.contentDocument && frame.contentDocument.title;
@@ -621,7 +843,7 @@
               var short = t.length > 40 ? t.substring(0, 38) + '…' : t;
               if (gbPopupTabs[gbPopupActive]) gbPopupTabs[gbPopupActive].title = short;
               gbPopupRenderTabs();
-              if (title) title.textContent = t + ' — iNet Browser 7';
+              if (title) title.textContent = t + ' - iNet Browser 7';
               var btn = document.getElementById('tbBtnPopupLabel');
               if (btn) btn.textContent = short;
             }
@@ -654,7 +876,7 @@
         if (status) status.textContent = 'Cannot display page';
         if (gbPopupTabs[gbPopupActive]) gbPopupTabs[gbPopupActive].title = 'Cannot display page';
         gbPopupRenderTabs();
-        if (title) title.textContent = 'Cannot display page — iNet Browser 7';
+        if (title) title.textContent = 'Cannot display page - iNet Browser 7';
       }
     }
 
@@ -777,6 +999,7 @@
     function triggerShellGlitch() {
       if (_shellGlitchActive) return;
       _shellGlitchActive = true;
+      gbPlaySfx('glitch', 0.28, 0.8);
 
       var mainWin   = document.getElementById('gbMainWin');
       var popupWin  = document.getElementById('gbPopupWin');
@@ -797,7 +1020,7 @@
       var titleIval = setInterval(function() {
         if (!_shellGlitchActive) { clearInterval(titleIval); return; }
         if (mainTitle) {
-          var glitchTitles = ['iNet Browser 7', 'ERR — iNet Browser 7', '░░░░░░ — iNet', 'SIGNAL LOST'];
+          var glitchTitles = ['iNet Browser 7', 'ERR - iNet Browser 7', '░░░░░░ - iNet', 'SIGNAL LOST'];
           mainTitle.textContent = glitchTitles[Math.floor(Math.random() * glitchTitles.length)];
         }
       }, 200);
@@ -826,6 +1049,7 @@
 
       // Phase 3 — shake entire desktop + glitch popup window (2.5s)
       _shellGlitchTimers.push(setTimeout(function() {
+        gbPlaySfx('emf', 0.25, 0.75);
         if (desktop) desktop.classList.add('g-shake-md');
 
         // Try to inject glitch class into popup iframe content
@@ -882,6 +1106,7 @@
 
       // Phase 4 — full popup inversion flash (4.5s)
       _shellGlitchTimers.push(setTimeout(function() {
+        gbPlaySfx('boom', 0.25, 0.9);
         if (popupWin && popupWin.style.display !== 'none') {
           var popIval = setInterval(function() {
             if (!_shellGlitchActive) { clearInterval(popIval); popupWin.style.filter=''; return; }
@@ -911,7 +1136,7 @@
       if (mainBar)   mainBar.style.background = '';
       if (mainTitle) mainTitle.textContent = (document.getElementById('gbMainFrame') &&
         document.getElementById('gbMainFrame').contentDocument &&
-        document.getElementById('gbMainFrame').contentDocument.title || 'openfeed.icu') + ' — iNet Browser 7';
+        document.getElementById('gbMainFrame').contentDocument.title || 'openfeed.icu') + ' - iNet Browser 7';
       if (mainAddr)  { try { mainAddr.value = 'http://openfeed.icu'; } catch(e){} }
       if (taskbar)   taskbar.style.background = '';
       if (desktop)   { desktop.classList.remove('g-shake-md','g-shake-lg'); }
@@ -949,8 +1174,11 @@
     })();
 
     function shellGoOffline() {
+      gbPlaySfx('boom', 0.3, 0.7);
+      gbPlaySfx('beep', 0.18, 0.7);
       // Stop any active glitch first
       stopShellGlitch();
+      gbMainOfflineLocked = true;
 
       var mainBar   = document.getElementById('gbMainTitlebar');
       var mainTitle = document.getElementById('gbMainTitle');
@@ -962,10 +1190,17 @@
 
       // Gray out title bar
       if (mainBar)   { mainBar.style.background  = '#2a2a2a'; mainBar.style.transition = 'background 0.4s'; }
-      if (mainTitle) { mainTitle.textContent = 'openfeed.icu — connection lost'; mainTitle.style.color = '#555'; }
+      if (mainTitle) { mainTitle.textContent = 'openfeed.icu - connection lost'; mainTitle.style.color = '#555'; }
       if (mainAddr)  { try { mainAddr.value = 'ERR_CONNECTION_REFUSED'; mainAddr.style.color = '#666'; } catch(e){} }
       if (taskbar)   { taskbar.style.background = '#111'; taskbar.style.transition = 'background 0.4s'; }
       if (tbMain)    { tbMain.style.color = '#444'; }
+      document.querySelectorAll('#gbMainWin .gb-navbtn, #gbMainWin .gb-go-btn').forEach(function (btn) {
+        btn.disabled = true;
+      });
+      if (mainAddr) {
+        mainAddr.disabled = true;
+        mainAddr.style.pointerEvents = 'none';
+      }
 
       // Dim the main browser frame with a dark overlay inside the desktop
       var offDiv = document.createElement('div');
@@ -992,12 +1227,29 @@
       if (popupWin && popupWin.style.display !== 'none') {
         setTimeout(function() { closePopupBrowser(); }, 300);
       }
+      notifyUnitySiteOffline();
+    }
+
+    function notifyUnitySiteOffline() {
+      try {
+        if (window.Unity && typeof window.Unity.call === 'function') {
+          window.Unity.call('openfeed:siteOffline');
+          return;
+        }
+      } catch(e) {}
+      try {
+        window.location.href = 'unity:openfeed:siteOffline';
+      } catch(e) {}
     }
 
     // ── INIT ──────────────────────────────────────────────────────────────────
     gbMainRenderTabs();
     // Expose openPopupBrowser globally so index.html can call window.parent.openPopupBrowser(...)
     window.openPopupBrowser  = openPopupBrowser;
+    window.openMainBrowserTab = openMainBrowserTab;
+    window.isMainBrowserTabOpen = isMainBrowserTabOpen;
+    window.triggerOpenfeedSiteGlitch = triggerOpenfeedSiteGlitch;
+    window.scheduleOpenfeedSiteGlitch = scheduleOpenfeedSiteGlitch;
     window.closePopupBrowser = closePopupBrowser;
     window.triggerShellGlitch = triggerShellGlitch;
     window.stopShellGlitch    = stopShellGlitch;
@@ -1005,8 +1257,16 @@
 
     window.addEventListener('message', function(e) {
       var data = e && e.data;
-      if (!data || data.type !== 'openfeed:openPopupBrowser') return;
-      openPopupBrowser(data.url, data.title);
+      if (!data) return;
+      if (data.type === 'openfeed:openPopupBrowser') {
+        openPopupBrowser(data.url, data.title);
+      }
+      if (data.type === 'openfeed:openMainBrowserTab') {
+        openMainBrowserTab(data.url, data.title, data.closeNotifyType);
+      }
+      if (data.type === 'openfeed:siteOffline') {
+        notifyUnitySiteOffline();
+      }
     });
 
   </script>
