@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OPEN FEED: game design documentation</title>
+  <style>
+    /* Westfield Herald article structure (MonitorSite/news.html), dark page theme, single-column GDD layout */
+    :root {
+      --wh-navy: #0d2060;
+      --wh-nav: #1a3a7a;
+      --wh-gold: #c8a800;
+      --wh-meta: #8899bb;
+      --wh-meta-lite: #aabbcc;
+      --wh-red: #cc1111;
+      --bg-page: #12151c;
+      --bg-elev: #1a1f28;
+      --bg-muted: #252b38;
+      --border: #3a4556;
+      --text: #e4e2de;
+      --text-soft: #b8c0cc;
+      --text-muted: #8899aa;
+      --link: #9eb8e8;
+      --link-hover: #c8d8ff;
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg-page);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.55;
+    }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { color: var(--link-hover); text-decoration: underline; }
+
+    .masthead {
+      background: var(--wh-navy);
+      padding: 0;
+      border-bottom: 3px solid var(--wh-gold);
+    }
+    .masthead-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 10px 16px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .masthead-logo {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 30px;
+      font-weight: bold;
+      color: #fff;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+    .masthead-logo span { color: var(--wh-gold); }
+    .masthead-tagline {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 10px;
+      color: var(--wh-meta);
+      font-style: italic;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+    .masthead-meta {
+      text-align: right;
+      font-size: 10px;
+      color: var(--wh-meta);
+      line-height: 1.6;
+    }
+    .masthead-meta .date { color: var(--wh-meta-lite); }
+    .masthead-meta a { color: #ccd8ee; }
+    .masthead-meta a:hover { color: #fff; text-decoration: underline; }
+
+    .site-nav {
+      background: var(--wh-nav);
+      border-bottom: 1px solid #0a1838;
+    }
+    .site-nav-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+    }
+    .site-nav a {
+      display: inline-block;
+      padding: 7px 14px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #ccd8ee;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-right: 1px solid #2a4a8a;
+    }
+    .site-nav a:first-child { border-left: 1px solid #2a4a8a; }
+    .site-nav a:hover { background: #0d2060; color: #fff; text-decoration: none; }
+    .site-nav a.active { background: #0d2060; color: var(--wh-gold); }
+
+    .breaking-bar {
+      background: var(--wh-red);
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 4px 0;
+    }
+    .breaking-bar-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .breaking-tag {
+      background: #fff;
+      color: var(--wh-red);
+      font-size: 10px;
+      font-weight: bold;
+      padding: 1px 6px;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+    }
+    .breaking-text { font-weight: normal; font-size: 11px; }
+
+    .content-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+
+    .article-main { flex: 1; min-width: 0; }
+
+    .article-section-label {
+      font-size: 10px;
+      font-weight: bold;
+      color: var(--link);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-bottom: 2px solid var(--wh-nav);
+      padding-bottom: 3px;
+      margin-bottom: 10px;
+    }
+
+    .article-headline {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 28px;
+      font-weight: bold;
+      line-height: 1.2;
+      color: #f4f2ee;
+      margin: 0 0 8px;
+    }
+
+    .article-deck {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 14px;
+      color: var(--text-soft);
+      font-style: italic;
+      line-height: 1.5;
+      border-left: 3px solid var(--wh-gold);
+      padding-left: 10px;
+      margin-bottom: 10px;
+    }
+
+    .article-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 5px 0;
+      margin-bottom: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+    }
+    .article-meta .byline { color: var(--text-soft); font-weight: bold; }
+
+    .article-update {
+      background: rgba(200, 168, 0, 0.12);
+      border-left: 3px solid var(--wh-gold);
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text-soft);
+      line-height: 1.5;
+    }
+    .article-update strong { color: var(--text); }
+    .article-update > .meta-grid { margin-top: 0; }
+
+    .sidebar-block {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      margin-bottom: 18px;
+    }
+    .sidebar-block-title {
+      background: var(--wh-nav);
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 5px 8px;
+    }
+    .doc-toc-inner {
+      padding: 10px 12px 12px;
+      font-size: 12px;
+    }
+    .doc-toc ol { margin: 0; padding-left: 1.2rem; }
+    .doc-toc li { margin: 5px 0; }
+    .doc-toc a { color: var(--link); }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 5.2rem 1fr;
+      gap: 4px 10px;
+      margin: 10px 0 0;
+      font-size: 11px;
+    }
+    .meta-grid dt {
+      font-weight: bold;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .meta-grid dd { margin: 0; color: var(--text-soft); }
+
+    .article-body {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text);
+    }
+    .article-body > p:first-of-type:first-letter {
+      font-size: 42px;
+      font-weight: bold;
+      float: left;
+      line-height: 0.8;
+      margin: 5px 6px 0 0;
+      color: var(--wh-gold);
+      font-family: "Times New Roman", Georgia, serif;
+    }
+
+    h1.article-headline { font-family: "Times New Roman", Georgia, serif; }
+
+    h2.gdd-h2 {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      font-weight: bold;
+      color: var(--link);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-bottom: 2px solid var(--wh-nav);
+      padding-bottom: 4px;
+      margin: 2rem 0 10px;
+    }
+    h2.gdd-h2:first-of-type { margin-top: 0; }
+
+    h3 {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 17px;
+      font-weight: bold;
+      color: #f0ebe3;
+      margin: 1.35rem 0 0.5rem;
+    }
+
+    .article-body p { margin: 0 0 14px; }
+    .article-body li { font-size: 14px; }
+    ul, ol { margin: 0.5rem 0 0.75rem; padding-left: 1.25rem; }
+    li { margin: 0.3rem 0; }
+    .article-body strong { font-weight: 700; color: #fff; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 12px 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--bg-muted);
+      color: var(--link);
+      font-weight: bold;
+      width: 22%;
+    }
+    td { background: rgba(0, 0, 0, 0.15); color: var(--text-soft); }
+
+    pre, code {
+      font-family: "Courier New", Consolas, monospace;
+      font-size: 11px;
+    }
+    pre {
+      background: #0d1016;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      overflow-x: auto;
+      margin: 12px 0;
+      line-height: 1.45;
+      color: var(--text-soft);
+    }
+    code {
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      color: var(--link);
+      padding: 1px 5px;
+    }
+    pre code { background: none; border: none; padding: 0; color: var(--text-soft); }
+
+    figure { margin: 14px 0; text-align: center; }
+    figure img {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      background: var(--bg-muted);
+    }
+    figure object,
+    figure embed,
+    figure iframe {
+      display: block;
+      width: 100%;
+      min-height: 520px;
+      border: 1px solid var(--border);
+      background: var(--bg-muted);
+    }
+    .figure-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .figure-row figure { margin: 0; text-align: left; }
+    figcaption {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 6px;
+      font-family: Arial, Helvetica, sans-serif;
+      text-align: left;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5rem 0;
+    }
+    .flow-callout {
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      margin: 10px 0;
+      color: var(--text);
+    }
+
+    .magazine-profile {
+      margin: 22px 0;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--wh-navy);
+      overflow: hidden;
+    }
+    .magazine-profile-inner { padding: 14px 16px 16px; }
+    .mag-kicker {
+      font-family: "Courier New", monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--link);
+      margin: 0 0 6px;
+    }
+    h3.mag-headline {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 22px;
+      font-weight: bold;
+      font-style: italic;
+      line-height: 1.2;
+      margin: 0 0 8px;
+      color: #f4f2ee;
+    }
+    .mag-deck {
+      font-family: Georgia, serif;
+      font-size: 13px;
+      color: var(--text-soft);
+      font-style: italic;
+      line-height: 1.5;
+      border-left: 3px solid var(--wh-gold);
+      padding-left: 10px;
+      margin: 0 0 14px;
+    }
+    .mag-layout {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.1fr);
+      gap: 14px 18px;
+      align-items: start;
+    }
+    @media (max-width: 720px) {
+      .mag-layout { grid-template-columns: 1fr; }
+    }
+    .mag-photo-frame { margin: 0; }
+    .mag-photo-inner {
+      background: var(--bg-muted);
+      padding: 6px;
+      border: 1px solid var(--border);
+    }
+    .mag-photo-inner img {
+      display: block;
+      width: 100%;
+      height: auto;
+      filter: contrast(1.08) saturate(0.9);
+    }
+    .mag-caption {
+      font-family: "Courier New", monospace;
+      font-size: 9px;
+      color: var(--text-muted);
+      padding-top: 6px;
+      line-height: 1.35;
+    }
+    .mag-body { font-size: 13px; color: var(--text-soft); font-family: Georgia, serif; }
+    .mag-pullquote {
+      font-family: Georgia, serif;
+      font-size: 13px;
+      font-style: italic;
+      color: var(--link);
+      border-left: 3px solid var(--wh-red);
+      margin: 8px 0 12px;
+      padding: 4px 0 4px 10px;
+      line-height: 1.45;
+    }
+    .mag-specs {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 12px;
+      font-size: 11px;
+      margin: 12px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .mag-specs dt {
+      color: var(--link);
+      font-weight: bold;
+      margin: 0;
+    }
+    .mag-specs dd { margin: 0; color: var(--text-muted); }
+    .dossier-meta-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      font-family: "Courier New", monospace;
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: var(--bg-muted);
+      padding: 6px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dossier-flag { color: #ff6b6b; font-weight: bold; }
+
+    .masthead-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-present {
+      appearance: none;
+      border: 1px solid var(--wh-gold);
+      background: rgba(200, 168, 0, 0.15);
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 6px 12px;
+      cursor: pointer;
+      line-height: 1.2;
+    }
+    .btn-present:hover {
+      background: var(--wh-gold);
+      color: var(--wh-navy);
+      text-decoration: none;
+    }
+    .btn-present:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+
+    body.presentation-active {
+      overflow: hidden;
+    }
+    body.presentation-active .masthead,
+    body.presentation-active .site-nav,
+    body.presentation-active .breaking-bar,
+    body.presentation-active .content-wrap {
+      visibility: hidden;
+    }
+
+    .presentation-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: var(--bg-page);
+      flex-direction: column;
+    }
+    body.presentation-active .presentation-overlay {
+      display: flex;
+    }
+
+    .presentation-header {
+      background: var(--wh-navy);
+      border-bottom: 3px solid var(--wh-gold);
+      flex-shrink: 0;
+    }
+    .presentation-header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .presentation-brand {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .presentation-brand span { color: var(--wh-gold); }
+    .presentation-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .presentation-counter {
+      font-size: 10px;
+      color: var(--wh-meta-lite);
+      font-family: "Courier New", monospace;
+      min-width: 5rem;
+      text-align: center;
+    }
+    .presentation-controls button {
+      appearance: none;
+      border: 1px solid #2a4a8a;
+      background: var(--wh-nav);
+      color: #ccd8ee;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .presentation-controls button:hover {
+      background: #0d2060;
+      color: #fff;
+    }
+    .presentation-controls button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .btn-exit-present {
+      border-color: var(--wh-gold) !important;
+      color: var(--wh-gold) !important;
+    }
+    .btn-exit-present:hover {
+      background: var(--wh-gold) !important;
+      color: var(--wh-navy) !important;
+    }
+
+    .presentation-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px 28px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .presentation-slide {
+      display: none;
+      width: 100%;
+      max-width: 820px;
+      max-height: 100%;
+      overflow: hidden;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--wh-navy);
+      padding: 18px 22px 20px;
+      animation: slide-in 0.2s ease-out;
+      flex-direction: column;
+    }
+    .presentation-slide.is-active {
+      display: flex;
+    }
+    .presentation-slide .slide-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .presentation-slide .slide-content ul {
+      margin-bottom: 0;
+    }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .presentation-slide .slide-kicker {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      font-weight: bold;
+      color: var(--link);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-bottom: 2px solid var(--wh-nav);
+      padding-bottom: 4px;
+      margin: 0 0 10px;
+    }
+    .presentation-slide .slide-title {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 24px;
+      font-weight: bold;
+      color: #f4f2ee;
+      line-height: 1.15;
+      margin: 0 0 10px;
+      flex-shrink: 0;
+    }
+    .presentation-slide .slide-deck {
+      font-family: Georgia, serif;
+      font-size: 14px;
+      font-style: italic;
+      color: var(--text-soft);
+      border-left: 3px solid var(--wh-gold);
+      padding-left: 10px;
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+    .presentation-slide ul,
+    .presentation-slide ol {
+      margin: 0;
+      padding-left: 1.2rem;
+      font-family: Georgia, serif;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text-soft);
+    }
+    .presentation-slide li {
+      margin: 0 0 0.45rem;
+    }
+    .presentation-slide li strong { color: #fff; }
+    .presentation-slide .slide-callout {
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      margin: 0 0 12px;
+      color: var(--text);
+    }
+    .presentation-slide .slide-media {
+      flex: 0 0 auto;
+      margin-top: 14px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-height: min(42vh, 360px);
+      overflow: visible;
+    }
+    .presentation-slide .slide-media img {
+      display: block;
+      width: auto;
+      max-width: 100%;
+      height: auto;
+      max-height: min(40vh, 340px);
+      object-fit: contain;
+      object-position: center;
+    }
+    .presentation-footer {
+      background: var(--wh-nav);
+      border-top: 1px solid #0a1838;
+      flex-shrink: 0;
+    }
+    .presentation-footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 6px 16px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      font-size: 10px;
+      color: var(--wh-meta-lite);
+    }
+    .presentation-slide--thanks {
+      justify-content: center;
+      text-align: center;
+    }
+    .presentation-slide--thanks .slide-title {
+      font-size: 36px;
+      margin-bottom: 18px;
+    }
+    .presentation-slide--thanks .slide-content--thanks {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 auto;
+    }
+    .presentation-slide--thanks .slide-thanks-body {
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: var(--text-soft);
+      margin: 0 0 16px;
+    }
+    .presentation-slide--thanks .slide-thanks-meta {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin: 0;
+    }
+
+    @media print {
+      body { background: #fff; color: #111; font-size: 11pt; }
+      .masthead, .site-nav, .breaking-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      a { color: #000; text-decoration: none; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table, figure, pre { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <div class="masthead-logo">OPEN<span>FEED</span></div>
+      <div class="masthead-tagline">Design notes alongside the development diary</div>
+    </div>
+    <div class="masthead-meta masthead-actions">
+      <div class="date">Unity 6000.4 + URP</div>
+      <div>Game design record</div>
+      <div><a href="https://github.com/martinorav-png/open-feed">github.com/martinorav-png/open-feed</a></div>
+      <button type="button" class="btn-present" id="btn-enter-presentation" aria-label="Ava esitlusrežiim">Esitlus</button>
+
+    </div>
+  </div>
+</div>
+
+<nav class="site-nav" aria-label="Section shortcuts">
+  <div class="site-nav-inner">
+    <a href="#high-concept" class="active">Overview</a>
+    <a href="#pillars">Principles</a>
+    <a href="#macro-flow">Flow</a>
+    <a href="#chapters">Scenes</a>
+    <a href="#mechanics">Systems</a>
+    <a href="#fiction">OpenFeed</a>
+    <a href="#scope">Shipped</a>
+    <a href="#appendix">Appendix</a>
+    <a href="OPEN_FEED_Devlog_browse.html">Dev diary</a>
+  </div>
+</nav>
+
+<div class="breaking-bar">
+  <div class="breaking-bar-inner">
+    <span class="breaking-tag">FINAL BUILD</span>
+    <span class="breaking-text">May 19, 2026: menu → <code>supermarket2</code> → <code>ForestDrive</code> → <code>house</code>, with MonitorSite on the desk monitor and the TV / hide sequence as the peak. <code>GameFlowManager</code> still blocks legacy scenes (<code>supermarket</code>, <code>MainArea</code>, <code>Desk</code>) from loading on the shipped path.</span>
+  </div>
+</div>
+
+<div class="content-wrap">
+  <main class="article-main">
+
+    <div class="article-section-label">Production &rsaquo; Game design record</div>
+    <h1 class="article-headline">OPEN FEED</h1>
+    <div class="article-deck">
+      Design companion to my <a href="OPEN_FEED_Devlog_browse.html">development diary</a>. The diary is chronological; this is the map of what <strong>OPEN FEED</strong> is, how the May build plays, and which systems I actually used.
+    </div>
+    <div class="article-meta">
+      <span class="byline">Martin Orav</span>
+      <span class="timestamp">Final build: 19 May 2026</span>
+      <span><a href="OPEN_FEED_Devlog_browse.html">Development diary</a></span>
+      <span><a href="https://github.com/martinorav-png/open-feed">Source repository</a></span>
+    </div>
+
+    <div class="article-update">
+      <dl class="meta-grid">
+        <dt>Name</dt>
+        <dd>Martin Orav</dd>
+        <dt>Course</dt>
+        <dd>Digitooteprojekt 1</dd>
+        <dt>Updated</dt>
+        <dd>19.05.2026</dd>
+      </dl>
+    </div>
+
+    <nav id="toc" class="doc-toc sidebar-block" aria-label="Table of contents">
+      <div class="sidebar-block-title">Contents</div>
+      <div class="doc-toc-inner">
+        <ol>
+          <li><a href="#origins">Origins and moodboard</a></li>
+          <li><a href="#high-concept">High concept</a></li>
+          <li><a href="#pillars">Design principles</a></li>
+          <li><a href="#genre">Genre and atmosphere</a></li>
+          <li><a href="#fantasy">Player experience</a></li>
+          <li><a href="#macro-flow">Scene flow and build path</a></li>
+          <li><a href="#chapters">Scene-by-scene breakdown</a></li>
+          <li><a href="#subject-dossier">Antagonist field note</a></li>
+          <li><a href="#mechanics">Mechanics and rules</a></li>
+          <li><a href="#fiction">Diegetic web: OpenFeed</a></li>
+          <li><a href="#art">Visual direction</a></li>
+          <li><a href="#audio">Audio</a></li>
+          <li><a href="#technical">Technology</a></li>
+          <li><a href="#scope">What shipped</a></li>
+          <li><a href="#risks">Lessons and loose ends</a></li>
+          <li><a href="#appendix">Appendix</a></li>
+        </ol>
+        <p style="margin:10px 0 0;font-size:11px;font-family:Arial,sans-serif;color:var(--text-muted);">Keep this HTML in <code>web_docs/</code> so images in <code>progress screens/</code> and <code>assets/</code> resolve. See also the <a href="OPEN_FEED_Devlog_browse.html">development diary</a>.</p>
+      </div>
+    </nav>
+
+    <div class="article-body">
+
+<h2 class="gdd-h2" id="origins">1. Origins and moodboard</h2>
+
+<p>OPEN FEED started from a feeling I could not name at first: late-night browsing, an old website, a public camera feed, a parking lot that is too empty. Nothing jumps out at you. Something is still wrong.</p>
+
+<p>Before I had a real scene list I used a moodboard and a flowchart. The board pinned down PS1 low-poly, CRT and VHS noise, 90s web design, and that watched-from-afar feeling. The chart was me checking whether menu, store, drive, house, and desk could be one night instead of five separate tests.</p>
+
+<figure>
+  <img src="progress%20screens/open%20feed%20moodboard_page-0001.jpg" alt="Open Feed pre-production moodboard" />
+  <figcaption>Pre-production moodboard (same board as in the development diary).</figcaption>
+</figure>
+
+<div class="figure-row">
+  <figure>
+    <img src="progress%20screens/Screenshot%202026-02-07%20184612.png" alt="Very early Unity prototype" />
+    <figcaption>First graybox: does this space hold at all?</figcaption>
+  </figure>
+  <figure>
+    <img src="progress%20screens/Screenshot%202026-02-09%20025143.png" alt="Night driving prototype" />
+    <figcaption>Early ForestDrive layout and camera test.</figcaption>
+  </figure>
+</div>
+
+<h2 class="gdd-h2" id="high-concept">2. High concept</h2>
+
+<p><strong>OPEN FEED</strong> is first-person horror built on public camera feeds, ordinary late-night places, and the sense that watching is not passive anymore. You go from a supermarket to a night drive, into a house, then to a monitor where the in-game OpenFeed site is part of the plot.</p>
+
+<p>I did not want a game that proves every thirty seconds that it is horror. I wanted something that sits with you: empty frames, broken signals, silence in a lot. Fear is partly that you cannot step into the feed and fix what you see.</p>
+
+<h2 class="gdd-h2" id="pillars">3. Design principles</h2>
+
+<p>Whenever a scene started to feel like a generic horror set, I came back to these:</p>
+<ul>
+  <li><strong>Ordinary places first.</strong> Aisles and camera thumbnails should feel off before anything announces itself. That took a lot of store and website iteration.</li>
+  <li><strong>Systems that feel neglected, not gamey.</strong> Feeds and UI are hand-built, but they should read like something someone shipped years ago and forgot to take offline.</li>
+  <li><strong>Low fidelity on purpose.</strong> PSX-ish geometry, noisy video, hard cuts to black, ugly tables. Not placeholders. I never planned a polish pass for this course build.</li>
+  <li><strong>Silence counts.</strong> Some moments I like best almost refuse to escalate. Standing still in the car or at the monitor is allowed to be uncomfortable.</li>
+  <li><strong>One continuous night.</strong> Fades, subtitles, and the menu typewriter stitch Unity scenes into one flow, not a folder of demos.</li>
+</ul>
+
+<h2 class="gdd-h2" id="genre">4. Genre and atmosphere</h2>
+
+<p>First-person horror, mostly linear: walk, read, click, listen. The monitor runs a real site in-engine (Unity WebView). I kept the scope narrow so I could spend time on rhythm and sound instead of a sandbox.</p>
+
+<p>The mood stayed surveillance, paranoia, loneliness, and guilt about watching something that is technically public but still feels wrong. You are not supposed to be on that page this long. The game keeps saying that without spelling it out.</p>
+
+<p>Visually: PS1-adjacent silhouettes, CRT and VHS junk, 90s web, broken UI. You observe, connect what you can, listen to radio and warnings, and decide whether to keep watching.</p>
+
+<h2 class="gdd-h2" id="fantasy">5. Player experience</h2>
+
+<p>Half the time you are a distant observer on feeds. Then the story puts you in rooms where that distance is gone.</p>
+
+<table>
+  <thead>
+    <tr><th>Action</th><th>Where</th><th>Role</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>First-person exploration</td><td>Store, drive, house</td><td>Scene controllers; same player fantasy throughout.</td></tr>
+    <tr><td>Read prompts and subtitles</td><td>Menu to store, radio, global fades</td><td><code>GameFlowManager</code> owns timing and copy.</td></tr>
+    <tr><td>Interact (raycast / click)</td><td>Shelves, cart, cashier, house props</td><td>e.g. <code>ShelfPickupClicker</code>, <code>HouseInteractionClicker</code>.</td></tr>
+    <tr><td>Shopping sequence</td><td><code>supermarket2</code></td><td><code>SupermarketTaskController</code>: items, checkout, exit.</td></tr>
+    <tr><td>Radio / listening</td><td><code>ForestDrive</code></td><td>Spatial audio; subtitles on the cutscene.</td></tr>
+    <tr><td>Type <strong>home</strong></td><td><code>ForestDrive</code></td><td><code>DrivingCarInteriorInteraction</code> → <code>GameFlowManager</code> loads house.</td></tr>
+    <tr><td>Hide, fail, retry</td><td><code>house</code></td><td>Bed hide (shipping spot); <strong>YOU WERE SEEN</strong>; TV checkpoint.</td></tr>
+    <tr><td>Browse diegetic site</td><td>Desk / monitor</td><td>React build in <code>StreamingAssets</code>; <code>WebViewController</code>.</td></tr>
+  </tbody>
+</table>
+
+<h2 class="gdd-h2" id="macro-flow">6. Scene flow and build path</h2>
+
+<p>Early on I drew a full flowchart so I could see which scenes were real and how the player would move. It still includes the desk layer even though the May build takes a shorter path through the house first.</p>
+
+<figure>
+  <img src="assets/flowchart_image.jpg" alt="OPEN FEED story flowchart" />
+  <figcaption>Pre-production flowchart (<code>assets/flowchart_image.jpg</code>). Full intended route vs. shipped chain below.</figcaption>
+</figure>
+
+<p><strong>Shipped May 19 build</strong> via <code>GameFlowManager</code>:</p>
+<p class="flow-callout"><code>MainMenu</code> → <code>supermarket2</code> → <code>ForestDrive</code> → <code>house</code></p>
+
+<p>Menu and typewriter intro, late-night store and checkout, forest drive with radio, then type <code>home</code> for the house. MonitorSite and the desk monitor live inside the house beat. The separate <code>Desk</code> scene stays in the repo but is excluded from auto flow so old maps do not load by accident.</p>
+
+<p>I reworked transitions many times because pacing is where the game lives. Store to drive now fades to black, shows inner-monologue text on black, then eases into the car. One night continuing, not a level swap. <code>GameFlowManager</code> persists (<code>DontDestroyOnLoad</code>) so typing <code>home</code> survives scene unloads.</p>
+
+<p><code>supermarket</code> (legacy), <code>MainArea</code>, and standalone <code>Desk</code> sit in <code>FlowExcludedScenes</code>. That let me keep experimenting without breaking the path I was grading against.</p>
+
+<h2 class="gdd-h2" id="chapters">7. Scene-by-scene breakdown</h2>
+<p>What each scene is for, what you do there, the scripts I leaned on, how you leave, and where it landed on ship day.</p>
+
+<h3 id="ch-menu">7.1 Main menu</h3>
+<table>
+  <tbody>
+    <tr><th>Purpose</th><td>Set tone. Starting should feel like opening a story, not a test map.</td></tr>
+    <tr><th>Player goals</th><td>Start the game. Skip paths exist for iteration when the intro drags.</td></tr>
+    <tr><th>Systems</th><td><code>MainMenuUI</code> when present; else <code>GameFlowManager</code> overlay text.</td></tr>
+    <tr><th>Transition</th><td>Loads <code>supermarket2</code> with black hold and typewriter timings in <code>GameFlowManager</code>.</td></tr>
+    <tr><th>Status</th><td>Shipped. Final-day pass on black-screen intro pacing (no skip in release flow).</td></tr>
+  </tbody>
+</table>
+
+<h3 id="ch-store">7.2 Store and parking (<code>supermarket2</code>)</h3>
+<table>
+  <tbody>
+    <tr><th>Purpose</th><td>Late-hour retail before the drive. A lot of first impression lives here.</td></tr>
+    <tr><th>Player goals</th><td>Shopping beat, checkout, head toward <code>ForestDrive</code>.</td></tr>
+    <tr><th>Systems</th><td><code>SupermarketTaskController</code>, cart, cashier, shelf pickup, ambience, snowfall; <code>SupermarketDriveInIntro</code> or runtime spawn.</td></tr>
+    <tr><th>Transition</th><td><code>GameFlowManager</code> fade and <code>supermarketToForestDriveDelay</code>.</td></tr>
+    <tr><th>Status</th><td>Shipped: three-item cap, checkout, smoother fade into ForestDrive.</td></tr>
+  </tbody>
+</table>
+<figure>
+  <img src="progress%20screens/mainscreen1.png" alt="Open Feed site on monitor, related store-to-web fiction" />
+  <figcaption>Store fiction points at the OpenFeed index you meet again at the monitor.</figcaption>
+</figure>
+
+<h3 id="ch-drive">7.3 Forest drive (<code>ForestDrive</code>)</h3>
+<table>
+  <tbody>
+    <tr><th>Purpose</th><td>Isolation in the car. Radio is the voice. Bridge from public space to the house. Teacher feedback kept pushing me to protect this section; it is not just travel time.</td></tr>
+    <tr><th>Player goals</th><td>Listen to radio; when ready, type <code>home</code> → <code>GameFlowManager.BeginDriveHomeToHouse()</code>.</td></tr>
+    <tr><th>Systems</th><td><code>DrivingCarInteriorInteraction</code> (crosshair, radio raycast); <code>CutscenePlayer</code> subtitles.</td></tr>
+    <tr><th>Transition</th><td>Driving cutscene; async <code>house</code> load; fade cleanup on entry if needed.</td></tr>
+    <tr><th>Status</th><td>Shipped. Type <code>home</code> for house; radio and subtitles on the cutscene.</td></tr>
+  </tbody>
+</table>
+<div class="figure-row">
+  <figure>
+    <img src="progress%20screens/Screenshot%202026-02-09%20025143.png" alt="Forest drive prototype" />
+    <figcaption>Night road and cabin from the driving prototype.</figcaption>
+  </figure>
+  <figure>
+    <img src="progress%20screens/Screenshot%202026-04-01%20012225.png" alt="Monitor beside old desktop shell" />
+    <figcaption>Desktop shell look that fed the drive-to-house tone.</figcaption>
+  </figure>
+</div>
+
+<h3 id="ch-house">7.4 House (<code>house</code>)</h3>
+<table>
+  <tbody>
+    <tr><th>Purpose</th><td>Domestic pressure: MonitorSite on the desk, TV / EAS, hide beat, escape. Most late devlog entries are this room.</td></tr>
+    <tr><th>Player goals</th><td>When the sequence starts: move, hide under the bed (first shipping volume), survive, or fail into <strong>YOU WERE SEEN</strong> and retry at the TV.</td></tr>
+    <tr><th>Systems</th><td><code>HouseInteractionClicker</code>, doors, <code>HouseCreaturePathRecorder</code> routes (<code>window1</code>, <code>housepath</code>, <code>window2</code>), VHS failure.</td></tr>
+    <tr><th>Transition</th><td>From drive via <code>GameFlowManager</code>; after survive or fail, escape to car and ending video, then main menu.</td></tr>
+    <tr><th>Status</th><td>Shipped: MonitorSite collapse, EAS, hide / YOU WERE SEEN / retry, menu after ending video.</td></tr>
+  </tbody>
+</table>
+<div class="figure-row">
+  <figure>
+    <img src="progress%20screens/Screenshot%202026-03-18%20232807.png" alt="Dark surveillance-style house test" />
+    <figcaption>Early surveillance-style house lighting.</figcaption>
+  </figure>
+  <figure>
+    <img src="progress%20screens/Screenshot%202026-03-18%20234208.png" alt="Figure visible in house surveillance feed" />
+    <figcaption>How the creature reads on a feed before the in-room chase.</figcaption>
+  </figure>
+</div>
+
+<article id="subject-dossier" class="magazine-profile" aria-label="Creature field note">
+  <div class="dossier-meta-strip">
+    <span class="dossier-flag">Final build</span>
+    <span>OPEN FEED / PRODUCTION NOTE</span>
+    <span>REF: MH-FB1</span>
+    <span>REFERENCE STILL</span>
+  </div>
+  <div class="magazine-profile-inner">
+    <p class="mag-kicker">Subject profile (house antagonist)</p>
+    <h3 class="mag-headline">The figure at the window</h3>
+    <p class="mag-deck">Tall, fragmented, limping walk. The still is reference art; in-engine work was footsteps, the door threshold, and whispers placed in world space so he feels in the room with you, not on a texture.</p>
+    <div class="mag-layout">
+      <figure class="mag-photo-frame">
+        <div class="mag-photo-inner">
+          <img src="assets/creature.png" alt="Reference still of the tall fragmented humanoid antagonist" width="512" height="512" />
+        </div>
+        <figcaption class="mag-caption">Reference: <code>Assets/Textures/posters/person/creature.png</code> (rough on purpose; matches the half-real look).</figcaption>
+      </figure>
+      <div class="mag-body">
+        <p>I walk the route in Play Mode, record it, he replays the same beats. Staged theatre, not emergent AI hunting.</p>
+        <p>Recorded paths through the house (<code>window1</code>, <code>housepath</code>, <code>window2</code>) with footsteps, a threshold creak, and positional whispers. After TV tells you to leave, seeing him at the driveway window starts the countdown; prompt is <strong>FIND A PLACE TO HIDE. NOW.</strong> Opening the front door during that beat is an authored mistake and uses the same fail pipeline.</p>
+        <p>Fail: held frame, VHS, <strong>YOU WERE SEEN</strong>, back to TV checkpoint. Survive hide and you can continue toward the car.</p>
+        <dl class="mag-specs">
+          <dt>Source asset</dt>
+          <dd><code>Fragmented_Form_biped</code>; runtime cleanup for scale and materials.</dd>
+          <dt>Direction</dt>
+          <dd><code>HouseCreaturePathRecorder</code>: walk it in-editor; creature repeats so movement matches the layout.</dd>
+          <dt>Why bother</dt>
+          <dd>Turns feed dread into someone in the same room as the player.</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</article>
+
+<h3 id="ch-desk">7.5 Desk and monitor layer</h3>
+<table>
+  <tbody>
+    <tr><th>Purpose</th><td>OpenFeed camera index in a real browser. Ugly and believable, like a forgotten public tool.</td></tr>
+    <tr><th>Player goals</th><td>Browse feeds, forum and messenger beats, survive the site dying after the glitch.</td></tr>
+    <tr><th>Systems</th><td>React / Vite in <code>StreamingAssets</code>; <code>WebViewController</code>; tabs including Westfield Herald.</td></tr>
+    <tr><th>Transition</th><td>Inside <code>house</code> in ship build; standalone <code>Desk</code> for tooling, excluded from auto flow.</td></tr>
+    <tr><th>Status</th><td>Shipped: offline lock, EAS on TV, final-day white-page fixes.</td></tr>
+  </tbody>
+</table>
+<figure>
+  <img src="progress%20screens/image%20(1).png" alt="Open Feed page on the in-game monitor" />
+  <figcaption>Monitor webview. The site is a story system, not set dressing.</figcaption>
+</figure>
+
+<h2 class="gdd-h2" id="mechanics">8. Mechanics and rules</h2>
+
+<h3>8.1 Global flow (<code>GameFlowManager</code>)</h3>
+<ul>
+  <li><code>FlowExcludedScenes</code> stops legacy or experimental maps from hijacking the shipped path.</li>
+  <li>Fades and subtitles are glue. They sell continuity between beats.</li>
+  <li>Ctrl+Shift+F9/F10 warps are for me only; turn off in builds you hand to someone else.</li>
+</ul>
+
+<h3>8.2 Store (<code>SupermarketTaskController</code>)</h3>
+<ul>
+  <li>Intro → collect three items → cart in range → checkout → bag → fade. Store music fades when you leave for the forest.</li>
+</ul>
+
+<h3>8.3 Driving (<code>DrivingCarInteriorInteraction</code>)</h3>
+<ul>
+  <li>Type <strong>home</strong> (per script casing) to end the drive; <code>GameFlowManager</code> loads the house.</li>
+</ul>
+
+<h3>8.4 House: playtest ruleset</h3>
+<ol>
+  <li>TV warning: <strong>move</strong>.</li>
+  <li>Creature visible: <strong>hide</strong> (bed in current build).</li>
+  <li>Hide active + open <strong>front door</strong> = authored fail (same jumpscare pipeline).</li>
+  <li>Timeout outside: chase, scream, VHS, <strong>YOU WERE SEEN</strong>, retry at TV.</li>
+  <li>Timeout inside: creature uses recorded interior route (no clipping through walls).</li>
+  <li>Survive hide: continue toward car / escape layer.</li>
+</ol>
+<p>Not a stealth sandbox. One short crisis where the whole house is a single bad choice. That is what I built for the May playthrough.</p>
+
+<h2 class="gdd-h2" id="fiction">9. Diegetic web: OpenFeed</h2>
+<p>I did not want a beautiful or modern interface. I wanted old, ugly, believable: tables, low-res camera cards, live/offline labels, fake viewer counts, FAQ that sounds legally careful instead of honest. Thumbnails jitter so feeds feel like bad video, not marketing stills.</p>
+<p>First I built UI in Unity canvases. HTML webview was the breakthrough: the site could grow as a real project (<code>tools/monitor-site</code>) and bake into <code>StreamingAssets</code>. May ending adds messenger, Westfield Herald tab, shell lockout after offline, and glitching inside the page so sandbox errors do not break the collapse.</p>
+
+<h2 class="gdd-h2" id="art">10. Visual direction</h2>
+<p>URP with a PSX-adjacent read: bold silhouettes, hard edges, <code>Metallic 0</code>, <code>Smoothness 0</code>, point-filtered textures, no bloom. Mostly primitives; materials prefixed (<code>StoreFlow_</code>, <code>MainMenu_</code>, etc.) so the repo stayed searchable as it grew.</p>
+<p>That matches the moodboard: late-90s unease and tired digital surfaces, not a PBR showcase.</p>
+
+<h2 class="gdd-h2" id="audio">11. Audio</h2>
+<p>Sound did a lot of the work, especially the drive. Radio, room tone, and silence often beat the geometry. In the house, <code>boneaudio.mp3</code> peaks on the TV LEAVE NOW beat; after MonitorSite shuts down, site audio cuts completely so the collapse feels finished.</p>
+<p>Store ambience, car cabin, creature steps and whispers, door creaks. Menu typewriter, EAS, VHS failure stings. I mixed quiet so the loud moments actually land.</p>
+
+<h2 class="gdd-h2" id="technical">12. Technology</h2>
+<table>
+  <thead><tr><th>Area</th><th>Implementation</th></tr></thead>
+  <tbody>
+    <tr><td>Engine</td><td>Unity 6000.4.0f1</td></tr>
+    <tr><td>Rendering</td><td>Universal Render Pipeline (URP)</td></tr>
+    <tr><td>Input</td><td>Unity Input System</td></tr>
+    <tr><td>In-engine browser</td><td>WebView package; static build in <code>StreamingAssets</code></td></tr>
+    <tr><td>Web authoring</td><td>React / Vite (<code>tools/monitor-site</code>)</td></tr>
+    <tr><td>Cinematics</td><td>Timeline; <code>CutscenePlayer</code> on the drive sequence</td></tr>
+    <tr><td>Editor tooling</td><td>Custom <code>Assets/Editor/OpenFeed</code> menus (store, driving, paths, textures, exports)</td></tr>
+  </tbody>
+</table>
+<p>Gameplay code under <code>Assets/Scripts/</code>.</p>
+
+<h2 class="gdd-h2" id="scope">13. What shipped (May 19)</h2>
+<p>One sitting: <strong>menu → store → night drive → house</strong>, MonitorSite, TV / EAS, hide or fail, escape, ending video, back to menu. That matches the last devlog entry more than any roadmap slide.</p>
+<p>If I come back, honest next steps are repeat-play polish: more hide spots, less samey creature paths, optional shorter intro. Not five new cities for the sake of scope.</p>
+
+<h2 class="gdd-h2" id="risks">14. Lessons and loose ends</h2>
+<ol>
+  <li>Scope grows fast. One good idea drags five systems with it.</li>
+  <li>WebView plus PSX shaders need a pass on a weaker PC before I promise performance.</li>
+  <li>Recorded creature paths may feel samey on replay; any variation has to respect staging.</li>
+  <li>Typewriter intro sets mood but will annoy some players. Shorter default later maybe.</li>
+  <li><code>home</code> still needs a clearer affordance for first-timers.</li>
+  <li>Keep the <a href="OPEN_FEED_Devlog_browse.html">development diary</a> and this page in sync when flow changes.</li>
+</ol>
+
+<h2 class="gdd-h2" id="appendix">15. Appendix</h2>
+
+<h3>15.1 Recommended capture set</h3>
+<ol>
+  <li>Main menu or black typewriter beat.</li>
+  <li>Store interior or exterior at night.</li>
+  <li>Car cabin and radio moment.</li>
+  <li>TV / emergency broadcast beat.</li>
+  <li>Monitor with OpenFeed in WebView.</li>
+  <li><strong>YOU WERE SEEN</strong> frame (if the audience should see it).</li>
+  <li>Unity editor with OPEN FEED custom tools visible (production context).</li>
+</ol>
+
+<h3>15.2 <code>GameFlowManager</code> excerpt</h3>
+<p>Scene string defaults (must match Build Settings):</p>
+<pre><code>public string mainMenuScene = "MainMenu";
+public string storeScene = "supermarket2";
+public string drivingScene = "ForestDrive";
+public string houseScene = "house";</code></pre>
+<p>Scenes excluded from the shipped transition path:</p>
+<pre><code>static readonly string[] FlowExcludedScenes = { "supermarket", "MainArea", "Desk" };</code></pre>
+
+    </div><!-- article-body -->
+  </main>
+</div><!-- content-wrap -->
+
+<div class="presentation-overlay" id="presentation-overlay" role="dialog" aria-modal="true" aria-label="OPEN FEED esitlus" hidden>
+  <header class="presentation-header">
+    <div class="presentation-header-inner">
+      <div class="presentation-brand">OPEN<span>FEED</span> - Esitlus</div>
+      <div class="presentation-controls">
+        <button type="button" id="pres-prev" aria-label="Eelmine slaid">Eelmine</button>
+        <span class="presentation-counter" id="pres-counter" aria-live="polite">1 / 15</span>
+        <button type="button" id="pres-next" aria-label="Järgmine slaid">Järgmine</button>
+        <button type="button" class="btn-exit-present" id="pres-exit" aria-label="Välju esitlusest">Välju</button>
+      </div>
+    </div>
+  </header>
+  <div class="presentation-stage" id="presentation-stage"></div>
+  <footer class="presentation-footer">
+    <div class="presentation-footer-inner">
+      <span id="pres-footer-meta">M&auml;ngudisaini dokumentatsioon, mai 2026</span>
+    </div>
+  </footer>
+</div>
+<script src="gdd-presentation.js"></script>
+
+</body>
+</html>

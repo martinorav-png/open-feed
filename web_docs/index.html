@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OPEN FEED</title>
+  <style>
+    :root {
+      --desktop: #0f1724;
+      --desktop-2: #1f2b3f;
+      --window: #c0c0c0;
+      --window-light: #ffffff;
+      --window-shadow: #404040;
+      --window-mid: #808080;
+      --title-a: #000080;
+      --title-b: #1084d0;
+      --paper: #ece7d1;
+      --ink: #151515;
+      --link: #0000aa;
+      --accent: #c8a800;
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 16px; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 40%),
+        linear-gradient(180deg, var(--desktop-2), var(--desktop));
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    a { color: var(--link); }
+
+    .window {
+      width: min(820px, 100%);
+      background: var(--window);
+      border: 2px solid;
+      border-color: var(--window-light) var(--window-shadow) var(--window-shadow) var(--window-light);
+      box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.55);
+    }
+
+    .titlebar {
+      min-height: 24px;
+      padding: 3px 5px;
+      background: linear-gradient(90deg, var(--title-a), var(--title-b));
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: bold;
+    }
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .program-icon {
+      width: 16px;
+      height: 16px;
+      background:
+        linear-gradient(#ffffff 0 0) 3px 3px / 10px 2px no-repeat,
+        linear-gradient(#ffffff 0 0) 3px 7px / 10px 2px no-repeat,
+        linear-gradient(#ffffff 0 0) 3px 11px / 7px 2px no-repeat,
+        #000000;
+      border: 1px solid #ffffff;
+      flex: 0 0 auto;
+    }
+
+    .window-buttons {
+      display: flex;
+      gap: 3px;
+    }
+
+    .win-btn {
+      width: 18px;
+      height: 16px;
+      border: 2px solid;
+      border-color: #ffffff #404040 #404040 #ffffff;
+      background: var(--window);
+      color: #000000;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .body {
+      padding: 26px 22px 24px;
+      background: var(--paper);
+      border-top: 1px solid #ffffff;
+    }
+
+    .kicker {
+      color: #8a0000;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 2px 0 8px;
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 42px;
+      line-height: 1;
+      letter-spacing: 0.5px;
+    }
+
+    .deck {
+      max-width: 640px;
+      margin: 0 0 18px;
+      color: #333333;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 15px;
+      font-style: italic;
+    }
+
+    .panel {
+      border: 1px solid #111111;
+      background: rgba(255,255,255,0.6);
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .panel p {
+      margin: 0;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .doc-button {
+      display: block;
+      padding: 14px;
+      text-decoration: none;
+      color: #000000;
+      background: #d4d0c8;
+      border: 2px solid;
+      border-color: #ffffff #404040 #404040 #ffffff;
+      box-shadow: inset 0 0 0 1px #b0b0b0;
+    }
+
+    .doc-button:hover {
+      text-decoration: none;
+      background: #e1ddd6;
+    }
+
+    .doc-button:active {
+      border-color: #404040 #ffffff #ffffff #404040;
+      background: #c9c4bc;
+    }
+
+    .doc-label {
+      display: inline-block;
+      margin-bottom: 7px;
+      padding: 2px 6px;
+      background: #000080;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .doc-title {
+      margin: 0 0 6px;
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 28px;
+      line-height: 1.05;
+      color: #111111;
+    }
+
+    .doc-copy {
+      margin: 0;
+      color: #2f2f2f;
+      font-size: 13px;
+    }
+
+    .statusbar {
+      border-top: 1px solid var(--window-mid);
+      padding: 4px 7px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      color: #111111;
+      font-size: 11px;
+      background: var(--window);
+    }
+
+    .status-cell {
+      border: 1px solid;
+      border-color: var(--window-mid) #ffffff #ffffff var(--window-mid);
+      padding: 2px 5px;
+      min-height: 18px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 560px) {
+      .body { padding: 18px 14px 18px; }
+      h1 { font-size: 34px; }
+      .doc-title { font-size: 24px; }
+      .statusbar { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <section class="window" aria-label="OPEN FEED home">
+    <header class="titlebar">
+      <div class="title-left">
+        <span class="program-icon" aria-hidden="true"></span>
+        <span>OPEN FEED Navigator</span>
+      </div>
+      <div class="window-buttons" aria-hidden="true">
+        <span class="win-btn">_</span>
+        <span class="win-btn">&#9633;</span>
+        <span class="win-btn">&times;</span>
+      </div>
+    </header>
+
+    <div class="body">
+      <div class="kicker">Project Documents</div>
+      <h1>OPEN FEED</h1>
+      <p class="deck">A small launch page for the main project documentation.</p>
+
+      <div class="panel">
+        <p>Select one of the documents below to open either the full game design document or the browse-only development diary.</p>
+      </div>
+
+      <div class="button-grid">
+        <a class="doc-button" href="GDD_ACADEMIC.html">
+          <span class="doc-label">Document 01</span>
+          <h2 class="doc-title">Game Design Document</h2>
+          <p class="doc-copy">Open the academic GDD version with project structure, systems, flow, and design planning.</p>
+        </a>
+
+        <a class="doc-button" href="OPEN_FEED_Devlog_browse.html">
+          <span class="doc-label">Document 02</span>
+          <h2 class="doc-title">Development Diary</h2>
+          <p class="doc-copy">Open the browse-only dev diary with timeline entries, reflections, process notes, and media.</p>
+        </a>
+      </div>
+    </div>
+
+    <footer class="statusbar">
+      <div class="status-cell">Home page for OPEN FEED project files</div>
+      <div class="status-cell">2 documents available</div>
+    </footer>
+  </section>
+</body>
+</html>
