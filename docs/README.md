@@ -6,7 +6,7 @@ Static site for the game design document, dev diary, and presentation mode.
 
 1. Repo **Settings → Pages**
 2. **Build and deployment → Branch:** `Presentation`
-3. **Folder:** `/web_docs`
+3. **Folder:** `/docs`
 4. Save
 
 Site URL (project pages): `https://martinorav-png.github.io/open-feed/`
