@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OPEN FEED: development diary</title>
+  <style>
+    :root {
+      --desktop: #008080;
+      --window: #c0c0c0;
+      --window-light: #ffffff;
+      --window-shadow: #404040;
+      --window-mid: #808080;
+      --title-a: #000080;
+      --title-b: #1084d0;
+      --paper: #f4f0df;
+      --ink: #141414;
+      --ink-soft: #333333;
+      --link: #0000aa;
+      --danger: #b00000;
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%) 0 0 / 8px 8px,
+        var(--desktop);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    a { color: var(--link); }
+    a:hover { color: #ffffff; background: var(--title-a); text-decoration: none; }
+
+    .desktop {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 18px 14px 46px;
+    }
+
+    .window {
+      background: var(--window);
+      border: 2px solid;
+      border-color: var(--window-light) var(--window-shadow) var(--window-shadow) var(--window-light);
+      box-shadow: 2px 2px 0 #000000;
+    }
+
+    .titlebar {
+      min-height: 24px;
+      padding: 3px 5px;
+      background: linear-gradient(90deg, var(--title-a), var(--title-b));
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: bold;
+      letter-spacing: 0.2px;
+    }
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .program-icon {
+      width: 16px;
+      height: 16px;
+      background:
+        linear-gradient(#ffffff 0 0) 3px 3px / 10px 2px no-repeat,
+        linear-gradient(#ffffff 0 0) 3px 7px / 10px 2px no-repeat,
+        linear-gradient(#ffffff 0 0) 3px 11px / 7px 2px no-repeat,
+        #000000;
+      border: 1px solid #ffffff;
+      flex: 0 0 auto;
+    }
+
+    .window-buttons {
+      display: flex;
+      gap: 3px;
+      flex: 0 0 auto;
+    }
+
+    .win-btn {
+      width: 18px;
+      height: 16px;
+      border: 2px solid;
+      border-color: #ffffff #404040 #404040 #ffffff;
+      background: var(--window);
+      color: #000000;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      line-height: 1;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .toolbar {
+      border-top: 1px solid #ffffff;
+      border-bottom: 1px solid var(--window-mid);
+      padding: 5px 7px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toolbar a,
+    .toolbar button {
+      appearance: none;
+      border: 2px solid;
+      border-color: #ffffff #404040 #404040 #ffffff;
+      background: var(--window);
+      color: #000000;
+      padding: 3px 9px;
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .toolbar a:active,
+    .toolbar button:active {
+      border-color: #404040 #ffffff #ffffff #404040;
+      padding: 4px 8px 2px 10px;
+    }
+
+    .statusbar {
+      border-top: 1px solid var(--window-mid);
+      padding: 4px 7px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      color: #111111;
+      font-size: 11px;
+    }
+
+    .status-cell {
+      border: 1px solid;
+      border-color: var(--window-mid) #ffffff #ffffff var(--window-mid);
+      padding: 2px 5px;
+      min-height: 18px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .sidebar {
+      align-self: start;
+      position: sticky;
+      top: 10px;
+      background: #efefef;
+      border: 2px solid;
+      border-color: var(--window-shadow) #ffffff #ffffff var(--window-shadow);
+      padding: 8px;
+    }
+
+    .sidebar h2,
+    .sidebar h3 {
+      margin: 0 0 6px;
+      font-size: 12px;
+    }
+
+    .sidebar ol {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .sidebar li { margin: 0 0 5px; }
+
+    .main {
+      min-width: 0;
+      background: var(--paper);
+      border: 2px solid;
+      border-color: var(--window-shadow) #ffffff #ffffff var(--window-shadow);
+      padding: 18px 18px 24px;
+    }
+
+    .masthead {
+      border-bottom: 3px double #000000;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .kicker {
+      color: var(--danger);
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 3px 0 4px;
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 34px;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .deck {
+      max-width: 720px;
+      margin: 0;
+      color: var(--ink-soft);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 15px;
+      font-style: italic;
+    }
+
+    .entry {
+      margin: 0 0 18px;
+      border: 1px solid #111111;
+      background: rgba(255,255,255,0.55);
+    }
+
+    .entry-titlebar {
+      padding: 5px 8px;
+      background: #000080;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+      flex-wrap: wrap;
+      font-weight: bold;
+    }
+
+    .entry-titlebar time {
+      font-weight: normal;
+      font-size: 11px;
+      color: #d8e6ff;
+    }
+
+    .entry-body {
+      padding: 11px 12px 13px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 14px;
+      line-height: 1.7;
+      outline: none;
+    }
+
+    .entry-body:focus {
+      background:
+        linear-gradient(rgba(255,255,180,0.28), rgba(255,255,180,0.28)),
+        #ffffff;
+      box-shadow: inset 0 0 0 2px #000080;
+    }
+
+    .entry-body p { margin: 0 0 0.85rem; }
+    .entry-body p:last-child { margin-bottom: 0; }
+    .entry-body h3 {
+      margin: 0 0 0.65rem;
+      font-size: 15px;
+      line-height: 1.3;
+      color: #000080;
+    }
+    .entry-body h3:not(:first-child) {
+      margin-top: 1.15rem;
+    }
+    .entry-body code {
+      background: #e6e1ca;
+      border: 1px solid #b8ae88;
+      padding: 0 3px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.92em;
+    }
+
+    .media-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      padding: 0 12px 12px;
+    }
+
+    .media-card {
+      margin: 0;
+      padding: 6px;
+      background: #efefef;
+      border: 2px solid;
+      border-color: var(--window-light) var(--window-shadow) var(--window-shadow) var(--window-light);
+    }
+
+    .media-card img,
+    .media-card video,
+    .media-card object,
+    .media-card embed {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid #111111;
+      background: #000000;
+    }
+
+    .media-card object,
+    .media-card embed {
+      min-height: 360px;
+    }
+
+    .media-card figcaption {
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1.35;
+      color: #222222;
+    }
+
+    .mini-table {
+      width: calc(100% - 24px);
+      margin: 8px 12px 12px;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: #f7f3e3;
+    }
+
+    .mini-table th,
+    .mini-table td {
+      border: 1px solid #111111;
+      padding: 4px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .mini-table th {
+      background: #d9d4bf;
+    }
+
+    .note {
+      border: 1px dashed #333333;
+      background: #fffbd1;
+      padding: 9px 10px;
+      margin: 12px 0 18px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .desktop { padding: 8px; }
+      .content { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .main { padding: 12px; }
+      h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop">
+    <section class="window" aria-label="OPEN FEED development diary window">
+      <header class="titlebar">
+        <div class="title-left">
+          <span class="program-icon" aria-hidden="true"></span>
+          <span>OPEN FEED_DEVLOG.TXT</span>
+        </div>
+        <div class="window-buttons" aria-hidden="true">
+          <span class="win-btn">_</span>
+          <span class="win-btn">□</span>
+          <span class="win-btn">×</span>
+        </div>
+      </header>
+
+      <nav class="toolbar" aria-label="Document toolbar">
+        <a href="GDD_ACADEMIC.html">GDD</a>
+        <a href="#latest">Latest Entry</a>
+      </nav>
+
+      <div class="content">
+        <aside class="sidebar">
+          <h2>Contents</h2>
+          <ol>
+            <li><a href="#project">Project Brief</a></li>
+            <li><a href="#concept">Concept</a></li>
+            <li><a href="#entries">Process Entries</a></li>
+            <li><a href="#teacher">Teacher Feedback</a></li>
+            <li><a href="#reflection">Reflection</a></li>
+          </ol>
+        </aside>
+
+        <main class="main">
+          <div class="masthead">
+            <div class="kicker">Development Diary</div>
+            <h1>OPEN FEED</h1>
+          </div>
+
+          <article class="entry" id="project">
+            <header class="entry-titlebar">
+              <span>Project Brief</span>
+              <time>Undated overview</time>
+            </header>
+            <div class="entry-body">
+              <p><strong>OPEN FEED</strong> is a first-person horror game built around public camera feeds, ordinary late-night locations, and the feeling that watching is no longer a passive act. The player moves from a supermarket to a night drive, then into a domestic space and finally to a monitor, where the in-game openfeed website becomes part of the story.</p>
+              <p>This document is a process diary. The entries describe what I made during development, what problems came up, how I solved them, and what still needed to be done in the next stage.</p>
+            </div>
+          </article>
+
+          <article class="entry" id="concept">
+            <header class="entry-titlebar">
+              <span>Concept and Atmosphere</span>
+              <time>Early project notes</time>
+            </header>
+            <div class="entry-body">
+              <p>OPEN FEED started from a fairly simple feeling that is difficult to describe precisely. It is the feeling you can get when browsing the internet late at night and finding an old website, a public camera feed, or a strangely empty place. Those places are not directly frightening, but they feel too real and somehow unsafe at the same time.</p>
+              <p>I have always been interested in the quieter side of the internet. Not so much social media, but forgotten pages, public systems, and anonymous places where people probably no longer think about the fact that someone might be watching. That is where the first idea for OPEN FEED came from: what if the player finds something they were never supposed to see?</p>
+              <p>The game began more from atmosphere than from mechanics. I wanted to make an experience where fear does not immediately come from a monster or a jumpscare, but from uncertainty. For example, the moment when you are alone at night looking at an old camera image and nothing is really happening, but you still feel like you should close the monitor. OPEN FEED is not meant to scare the player constantly. I want to make a game that lingers a little after it is over, where the player still thinks back to an empty camera frame or a broken signal.</p>
+              <p>In the earlier pre-production notes, the core themes were already clear: surveillance, paranoia, loneliness, and the strange moral discomfort of seeing something that is technically public but still feels private. One idea that stayed with me from the beginning was that if something is visible online, that does not automatically mean it should be watched. That tension between curiosity and guilt became one of the most important parts of the concept.</p>
+              <p>Visually, I am inspired by PS1-era low-poly games, old CRT monitors, analog noise, VHS artifacts, 1990s internet design, amateur television signals, broken UI elements, and surveillance aesthetics. I like the idea that the whole game feels like a found system that should not have been opened.</p>
+              <p>In the core concept, the player sits at a computer and browses public or poorly protected camera feeds. At first everything is fairly ordinary: stores, parking lots, warehouses, apartment buildings, and empty streets at night. The more the player watches, the more the feeds begin to connect. The same people, symbols, numbers, places, signal errors, and strange interruptions can start repeating across the cameras.</p>
+              <p>The intended player experience is not fast action but a shorter atmospheric horror experience built around observation, interpretation, and escalating unease. The player mostly acts as a distant observer, noticing small changes, connecting clues, listening to radio frequencies and warnings, and deciding whether what they are seeing should be ignored, investigated, or reported. That distance is important, because the fear comes partly from not being able to step directly into the scene and fix what is happening.</p>
+              <p>Even at the concept stage, the structure already leaned toward two repeating moods: investigation through feeds and quieter reflection through movement and sound. The player watches camera feeds, notices anomalies, and follows strange details, then moves through more personal spaces where radio, ambient sound, and silence reshape the same tension in a different form. That rhythm helps keep the game from becoming one-note and makes the later, more personal scenes feel stronger.</p>
+            </div>
+            <div class="media-strip">
+              <figure class="media-card">
+                <img src="progress%20screens/open%20feed%20moodboard_page-0001.jpg" alt="Open Feed pre-production moodboard" />
+                <figcaption>Pre-production moodboard used to lock in the early visual tone and reference pool.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <section id="entries" aria-label="Process entries">
+            <article class="entry">
+              <header class="entry-titlebar">
+                <span>Entry 1: Finding the Core Idea</span>
+                <time>Process note</time>
+              </header>
+              <div class="entry-body">
+                <p>At the beginning of the process, I needed to define what kind of horror game OPEN FEED actually is. I did not want to make a game based only on jumpscares. I wanted a slower and more uncomfortable experience. The core idea formed around public camera feeds: the player watches something that seems normal at first, but the longer they watch, the more it starts to feel like the system is watching back.</p>
+                <p>In this stage I thought through the main locations and mood: a late-night store, an empty road, a quiet house, a desk, and a monitor. These places are ordinary, which makes them interesting for horror. The goal was to create the feeling that something is wrong before the game says it directly.</p>
+                <p>The main decision was to keep the tone restrained. OPEN FEED does not need to prove constantly that it is a horror game. Rhythm, silence, and the feeling that the player is using systems they do not fully understand are more important.</p>
+              </div>
+            </article>
+
+            <article class="entry">
+              <header class="entry-titlebar">
+                <span>Entry 2: Building the Unity Project Structure</span>
+                <time>Process note</time>
+              </header>
+              <div class="entry-body">
+                <p>The next step was to establish the technical base. The project is built in Unity 6000.4. It uses URP, Unity Input System, Timeline, Unity WebView, and various editor tools. Because the project consists of several different scenes, it was important that they did not remain separate experiments, but started forming one coherent game flow.</p>
+                <h3>First Unity Prototype</h3>
+                <p>As the first major progress update, I started in Unity with one of the more technically complicated parts: a rough version of the 3D driving scene. I first wanted to understand whether this kind of scene would work at all and what the layout could feel like. It was not a final scene yet, more of a graybox for testing space, camera movement, and the general mood.</p>
+                <p>At the same time, I also grayboxed the desk scene. This was important because the computer and monitor are one of the central locations of the game. I also began looking into how to texture the scene later so it would not remain only a gray prototype. I made a simple main menu where the Play button would later lead into the desk scene. Later, the desk scene was pushed to a later point in the game instead. At this stage, the goal was to get the first working framework in place: menu, desk, and driving scene.</p>
+                <h3>Story Flowchart, UI, and the Computer Scene</h3>
+                <p>In the next stage, I worked more on the story and user interface. I put together a story flowchart to see how the game events could move into one another. This helped me understand which scenes were actually needed and how the player would get from one section to the next.</p>
+                <p>I also worked on the computer scene and UI. Because OPEN FEED tells so much of its story through a screen and a website, it was important that the interface did not feel like decoration. It needed to feel like a natural part of the game world. I also tested a bit of animation so the scene would not feel too static. By this point the project was starting to become a coherent game instead of a group of separate ideas. At first the openfeed.icu interface was made purely inside Unity using canvases, but later I found a much better solution: an HTML webview.</p>
+                <p>The scenes became the main menu, supermarket, drive, home area, desk, and house. At first the biggest problem was how to connect these scenes so the player would not feel harsh breaks between them.</p>
+                <p>To solve this, I started using a central <code>GameFlowManager</code>, which handles scene changes, fades to black, subtitles, and larger transitions. This helped make the project less fragmented and gave the game a clearer beginning, middle, and progression logic.</p>
+              </div>
+              <div class="media-strip">
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-02-07%20184612.png" alt="Early prototype screenshot" />
+                  <figcaption>Very early prototype capture from the first Unity phase.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-02-09%20025143.png" alt="Driving prototype screenshot" />
+                  <figcaption>Low-poly night driving test used to explore mood, camera framing, and road layout.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <video controls preload="metadata" src="progress%20screens/driving.mp4"></video>
+                  <figcaption>Driving prototype footage showing the scene in motion.</figcaption>
+                </figure>
+              </div>
+            </article>
+
+            <article class="entry">
+              <header class="entry-titlebar">
+                <span>Entry 3: Moving from the Menu to the Store</span>
+                <time>Process note</time>
+              </header>
+              <div class="entry-body">
+                <p>One important part of the process was creating the transition from the main menu to the supermarket scene. At first this was mostly a technical scene change, but later it became an atmosphere-building moment of its own.</p>
+                <p>I added a black screen with typewriter-style text. The goal was to give the player a small inner monologue or atmospheric introduction before entering the store. The text talks about an empty parking lot, a late-night grocery run, and the feeling that the player is not there for anything important, but because the silence at home is worse.</p>
+                <p>The problem in this stage was pacing. If the text is too long, it becomes annoying. If it is too short, the mood does not have time to form. As a solution, I added the ability to skip exposition during development so testing could happen quickly. In the normal game flow, the slower introduction remains and supports the atmosphere.</p>
+              </div>
+              <div class="media-strip">
+                <figure class="media-card">
+                  <video controls preload="metadata" src="progress%20screens/mainmenu.mp4"></video>
+                  <figcaption>early iteration of the main menu</figcaption>
+                </figure>
+              </div>
+            </article>
+
+            <article class="entry">
+              <header class="entry-titlebar">
+                <span>Entry 4: Developing the In-Game OpenFeed Website</span>
+                <time>Process note</time>
+              </header>
+              <div class="entry-body">
+                <p>An important part of the project is the in-game website, which looks like an index of public surveillance cameras. For this I used React and Vite tools and created a separate monitor-site project. Later, the content can be built into Unity's <code>StreamingAssets</code> folder so it can be shown through the in-game monitor.</p>
+                <h3>Desk Scene Expansion and Working Browser UI</h3>
+                <p>After receiving teacher feedback, I added more objects to the desk scene. The idea was to make the environment feel more alive and believable, instead of leaving it built only around the computer and monitor. Small objects help define the room and give the player the feeling that it is a real place.</p>
+                <p>I also got the browser UI working so it could scroll and register clicks. At first the interaction was still very simple: clicking showed in the debug window that the system registered the press. It was still an important step because it proved that the in-game website could be interactive. At this stage I decided to take a break from the 3D side and focus more on the website itself, its content, lore, audio, and dialogue. At the same time I learned a bit of Blender so I could create or adjust 3D models myself if needed.</p>
+                <h3>Voiceover, Radio, and Website Focus</h3>
+                <p>At one point I spent a lot of time on the driving scene. Based on teacher feedback, the radio, music, and general atmosphere were the strongest parts. That was important to me because the drive is not meant to be only movement from point A to point B. It should be a tension-building section where the player is alone on a dark road and the soundscape slowly becomes uncomfortable.</p>
+                <p>I had also tested voiceover. It was still basic, but it helped me understand how audio could support the atmosphere. One idea was to use the format of a radio show, giving background to the world without the game explaining everything directly. In this scene I realized that sound is just as important as visuals. Radio, background noise, and silence help create the feeling that something is wrong even when nothing obvious is happening on screen.</p>
+                <p>At that moment, the main plan was to focus heavily on the website, because the progression of the story depends on it so much. Since I could make it in HTML as a separate web project, it felt like a good way to make fast progress.</p>
+                <p>When designing the website, I did not want to make a beautiful or modern interface. The opposite was the goal: it should feel a little old, ugly, and believable. The page has tables, low-resolution camera cards, live/offline labels, viewer counts, FAQ text, and fake camera noise. The camera images are created with canvases so they move and feel like poor-quality video feeds.</p>
+                <p>The biggest question in this stage was believability. If the site looks too much like a horror game prop, it loses its effect. I tried to make it feel more like a forgotten tool from the public internet, something someone actually made years ago and then left online.</p>
+              </div>
+              <div class="media-strip">
+                <figure class="media-card">
+                  <img src="progress%20screens/image%20(1).png" alt="Open Feed page inside the Unity desk scene" />
+                  <figcaption>Early desk-scene webview test with the Open Feed page rendered onto the monitor.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/image%20(2).png" alt="Desk phone interaction in Unity" />
+                  <figcaption>Desk interaction work-in-progress with the phone prop placed on the table.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <video controls preload="metadata" src="progress%20screens/Screen_Recording_2026-03-04_001052.mp4"></video>
+                  <figcaption>March browser and desk interaction recording from the early webview stage.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/mainscreen1.png" alt="Open Feed public surveillance camera index page" />
+                  <figcaption>Open Feed site layout with feeds, FAQ, and visitor counters in place.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-03-31%20233316.png" alt="Open Feed site scroll test" />
+                  <figcaption>Browser UI test showing the site in a narrower in-game window.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-04-01%20012225.png" alt="Windows 98 screen beside Open Feed browser" />
+                  <figcaption>Monitor presentation pass leaning further into the old desktop aesthetic.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-04-01%20013106.png" alt="Open Feed feed page screenshot" />
+                  <figcaption>Another website capture showing the feed index in a more complete state.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-03-31%20231012.png" alt="Figma prototype for the Open Feed site header" />
+                  <figcaption>figma prototyping the header of the open feed site</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-04-01%20004518.png" alt="Phone animation work-in-progress" />
+                  <figcaption>the phone flipping the wrong way again while I was trying to animate it</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <video controls preload="metadata" src="progress%20screens/Screen%20Recording%202026-04-08%20023008.mp4"></video>
+                  <figcaption>Open Feed site recording from an April work-in-progress pass.</figcaption>
+                </figure>
+              </div>
+            </article>
+
+            <article class="entry">
+              <header class="entry-titlebar">
+                <span>Entry 5: Connecting the Store and Driving Flow</span>
+                <time>Process note</time>
+              </header>
+              <div class="entry-body">
+                <p>After the store section, I needed to find a way for the game to move into the driving scene. It was important that the supermarket did not feel like a separate level. The flow moves from the store back into the car and then onward to the forest road.</p>
+                <h3>Website Worldbuilding and Reworking the Store</h3>
+                <p>Next, I worked more on the openfeed website and worldbuilding. I added forum ideas to show that the player is not the only person who has found these camera feeds. This makes the world feel larger and more believable, because it suggests that something has already been happening around this system.</p>
+                <p>At the same time, the store scene changed a lot. I replaced it with a newer and larger store model where I could place my own objects more effectively. I continued developing the scene and started thinking about the cashier dialogue and the idea that the player could put specific items into the cart. Since I had the shopping cart physics mostly working, it felt possible to keep developing the item collection system.</p>
+                <p>I also used Photoshop and Adobe Firefly to create camera images and visual material that could carry the narrative forward. These images needed to feel slightly uncomfortable and low-quality so they would fit the surveillance aesthetic.</p>
+                <p><code>GameFlowManager</code> helps control when the store intro ends and when the transition to the driving scene begins. The transition uses a fade to black and short subtitles. This gives the player the feeling that the action is moving forward while skipping technically unnecessary moments.</p>
+                <p>In this stage I learned that in a horror project, technically connecting scenes is just as important as building individual rooms. When the rhythm of the game works, even simpler scenes feel stronger.</p>
+              </div>
+              <div class="media-strip">
+                <figure class="media-card">
+                  <video controls preload="metadata" src="progress%20screens/Screen%20Recording%202026-04-26%20144116.mp4"></video>
+                  <figcaption>testing the cart flow of the supermarket</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <video controls preload="metadata" src="progress%20screens/Screen%20Recording%202026-04-09%20215032.mp4"></video>
+                  <figcaption>April follow-up recording from the same branch of development.</figcaption>
+                </figure>
+              </div>
+            </article>
+
+            <article class="entry">
+              <header class="entry-titlebar">
+                <span>Entry 6: The House and the EAS Moment</span>
+                <time>Process note</time>
+              </header>
+              <div class="entry-body">
+                <p>The goal of the house section is to make the game more personal. If the store and camera feeds are public spaces, the house is a private place. That creates a useful contrast: the game begins with public watching, but moves closer and closer to the player's own space.</p>
+                <h3>Adding the House Scene</h3>
+                <p>Although I had been advised not to make the house scene too large, I still decided to try that direction because I already had the idea quite clearly in my head. The house itself stayed small, but it gave the final part of the game a much more personal feeling.</p>
+                <p>I put together the flow for the house scene and began furnishing it. The idea was to connect it with the computer desk interactions and also use the 3D creature model, which gets closer to the player in a lore sense as the game goes on. For example, it can be shown barely moving between the trees or peeking from behind a window.</p>
+                <p>At this stage I felt that the process was moving well. Adding the house increased the scope of the project, but it also gave the game a stronger ending and a better way to connect public watching with private space.</p>
+                <p>The television and EAS message play an important role in the house. This moment should act as a sign that the situation has become more dangerous. After it, the player needs to understand that they have to leave the house.</p>
+                <p>For the EAS message, I first made a simple flow in After Effects. It was not the final video right away, but more of a visual plan for understanding the order of the warning, interruptions, and images on the screen. I used very simple stick-figure-style drawings and placeholder visuals at first, because rhythm and idea were more important than final appearance at that stage.</p>
+                <p>Later, I used Claude to help post-process the material and make it stronger. With that help, I added more interference, distortion, and effects so the EAS message would not look like a normal video, but more like a corrupted signal or something coming from the wrong source. This made the scene much more unsettling and helped turn a rough draft into something that better fits OPEN FEED's overall aesthetic.</p>
+                <p>The problem in this section was how to connect the EAS moment to player action. As a solution, I started making a system where after the EAS cutoff state, the player can interact with the parked car. That makes the escape a decision the player actually has to perform.</p>
+              </div>
+              <div class="media-strip">
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-03-18%20232807.png" alt="Dark surveillance-style house screenshot" />
+                  <figcaption>First dark surveillance-style experiment for the house section.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-03-18%20234208.png" alt="Figure in house surveillance screenshot" />
+                  <figcaption>testing the atmosphere with different camera feeds, one example</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img src="progress%20screens/Screenshot%202026-03-18%20234316.png" alt="Close surveillance shot of the figure in the house" />
+                  <figcaption>Closer variation from the same surveillance pass.</figcaption>
+                </figure>
+              </div>
+            </article>
+
+            <article class="entry">
+              <header class="entry-titlebar">
+                <span>Entry 7: Escape Flow and Using the Car</span>
+                <time>Process note</time>
+              </header>
+              <div class="entry-body">
+                <p>For the house ending, I added the <code>HouseEndingCarExit</code> system. Its job is to let the player interact with the parked car after the correct moment and start the escape sequence. When the player looks at the car and clicks, the script takes control of the camera, locks movement, fades, and begins the escape.</p>
+                <p>The escape flow contains several elements: car movement, camera placement, radio glow, the look-back effect, FOV change, and activating the pursuing creature.</p>
+                <p>The hardest part was polishing the sequence. If the camera, car, and creature do not move at the right time, the scene can feel funny or confusing. Because of that, the script has many parameters for tuning distance, duration, camera position, creature position, and fade timing. This makes the sequence easier to test.</p>
+              </div>
+            </article>
+
+            <article class="entry">
+              <header class="entry-titlebar">
+                <span>Entry 8: Custom Unity Editor Tools</span>
+                <time>Process note</time>
+              </header>
+              <div class="entry-body">
+                <p>As the project grew, I needed tools that would speed up repeated tasks. In the Unity editor there is now a custom <code>OPEN FEED</code> menu with tools for Store Flow, Grocery Store, Parking Lot, Driving, Desk, SixTwelve, UI, Main Area, project setup, texture importing, camera path recording, and scene export.</p>
+                <p>These tools are not directly visible to the player, but they affect the development process a lot. For example, they make it faster to generate or repair scenes, process PSX-style textures more consistently, and record camera movement paths.</p>
+                <p>The main lesson from this stage was that in a larger game project, you are not only developing the game itself, but also the workflow around it. If the tools help you test faster, you can spend more time on atmosphere and playability.</p>
+                <p>One thing that sped up development significantly was using Unity MCP, which stands for Model Context Protocol. In simple terms, it is a way for an AI tool to interact more usefully with a Unity project: reading the project structure, helping write scripts, looking through existing files, and supporting the workflow without every small task needing to be done manually from zero.</p>
+                <p>For me this was especially useful because OPEN FEED quickly grew into quite a large project. In the active project folders, excluding Unity-generated folders and bundled engine/package content, it currently includes 107 C# scripts, 1,340 image files, 394 model files, 191 audio files, and 14 distinct UI systems. Those UI systems include the main menu, pause menu, settings menu, photosensitivity warning, menu widgets, monitor feed buttons, monitor interaction layer, monitor webview, external shell browser, phone interface, world-space EAS TV webview, supermarket subtitle overlay, floating task and crosshair prompts, and the Open Feed website itself with index, map, radio, tools, forum, news, about, decrypt, transmission, final transmission, shell, and post-escape message pages. If I had to keep track of all of that only by hand, it would be very easy to lose the thread.</p>
+                <table class="mini-table" aria-label="Project asset counts">
+                  <tr>
+                    <th>Type</th>
+                    <th>Count</th>
+                  </tr>
+                  <tr>
+                    <td>C# scripts</td>
+                    <td>107</td>
+                  </tr>
+                  <tr>
+                    <td>Image files</td>
+                    <td>1,340</td>
+                  </tr>
+                  <tr>
+                    <td>Model files</td>
+                    <td>394</td>
+                  </tr>
+                  <tr>
+                    <td>Audio files</td>
+                    <td>191</td>
+                  </tr>
+                  <tr>
+                    <td>UI systems</td>
+                    <td>14</td>
+                  </tr>
+                </table>
+                <p>Unity MCP did not make the game for me, but it helped speed up the process. For example, I could create or adjust C# scripts faster, search the project for needed files, fix scene-flow logic, and think through how different systems connect. This was especially useful in places where I had the idea in my head, but the technical implementation needed many small steps.</p>
+                <p>A good example is connecting the game flow and scenes. When a project has a main menu, store, driving scene, house, and desk scene, I constantly have to think about when to move from one place to another, when to fade, when to start audio, and when to give control back to the player. MCP helped me prototype and repair those systems faster.</p>
+                <p>It also helped with editor tools and repeated technical tasks. For example, when I needed tools for scene setup, texture importing, or recording camera paths, I could move more quickly from the idea to a working tool. That saved a lot of time and let me focus more on atmosphere, level design, and the feeling of the story.</p>
+                <p>A lot of that problem-solving also led to custom tools inside the project itself. I ended up making or extending tools such as Scene View Camera Readout for checking exact camera position and framing, Scene Camera Path Recorder for saving movement routes, Scene Exporter and Scene Hierarchy Snapshot Exporter for documenting or rebuilding scene state, PSX Texture Import Tools for keeping materials consistent, WebView Windows ASCII Key Code Patch for browser input issues, and setup generators for scenes like the supermarket, driving section, desk, parking lot, and main menu. Tools like these were necessary because the project kept running into small technical bottlenecks, and solving those bottlenecks once in a reusable way was usually better than fixing the same issue by hand over and over again.</p>
+                <p>The most important thing for me was that Unity MCP made development feel less stuck. When a technical problem came up, I did not always have to stop for a long time. I could try different solutions more quickly. That fit my working style well because the project developed a lot through experimentation.</p>
+              </div>
+            </article>
+          </section>
+
+          <article class="entry">
+            <header class="entry-titlebar">
+              <span>MonitorSite Ending Flow and Browser Polish</span>
+              <time>May 11</time>
+            </header>
+            <div class="entry-body">
+              <p>I continued working on the later story moment of the openfeed website. After the NO SIGNAL part of the hallway archive feed, I added an anonymous messenger window that replaces the earlier phone call idea. From there, the player receives a link to a Westfield Herald article, which now opens in the shell browser as a separate tab next to openfeed.icu. After the article is closed, the conversation continues with an interruption: the user warns the player, the connection cuts off, and after a while the openfeed page starts glitching.</p>
+              <p>This required solving several technical problems, because Unity WebView and the <code>file://</code> environment behaved more strictly than a normal browser because of sandboxing. Reading parent-frame functions directly could cause a SecurityError, so I made the calls safer and made the glitch start inside the page itself first. I also locked the shell browser after the offline state: refresh, back, forward, home, and the address bar can no longer bring the page back. This helps the ending feel like the system has really collapsed, not just temporarily frozen.</p>
+            </div>
+          </article>
+
+          <article class="entry">
+            <header class="entry-titlebar">
+              <span>House Ending, Phone, and Small Interactions</span>
+              <time>May 12</time>
+            </header>
+            <div class="entry-body">
+              <p>By the end of the evening, I focused on connecting the final part of the house scene more clearly. The TV's EAS message is no longer accessible from the beginning. It only unlocks after MonitorSite has fully fallen offline after the glitch sequence. After that, the television gives the player a new signal: a blinking red light and a beeping sound that draw attention to the next step.</p>
+              <p>I also improved smaller interactions around the desk. When holding the Nokia phone, the screen is now easier to read and the phone sits better in the camera. If the player cuts off the relay call too early, the phone still shows the <code>forum.html</code> hint so the game flow does not accidentally get stuck. I also configured the Still.mp3 audio so it starts at the beginning of the house, but fades and stops when the monitor is being used, so the website moments do not compete with the background music.</p>
+              <p>Finally, I fixed the energy drink bug where after several sips the can model could visually become flat. The problem came from the empty-can state changing the scale too aggressively. Now only the material and color change, while the model keeps its shape. It is a small fix, but details like that help keep the world believable and prevent funny technical bugs from breaking the atmosphere.</p>
+            </div>
+          </article>
+
+          <article class="entry">
+            <header class="entry-titlebar">
+              <span>Hiding Flow and a More Tense Ending</span>
+              <time>May 14</time>
+            </header>
+            <div class="entry-body">
+              <p>The final part of the house became much more playable in this stage. The original idea was that after the TV's EAS message, the player would simply go to the car and start the escape. Instead, I added a new moment between those beats: the TV tells the player to leave, but before reaching the car, the player sees the creature moving past the driveway-side window. From that moment a countdown starts and the player has to quickly find a place to hide.</p>
+              <p>At first the text was very direct and told the player to go under the bed. Later I made it more general: <code>FIND A PLACE TO HIDE. NOW.</code> This fits better because the bed is currently the first working hiding place, but other options could be added later, such as the shower or under the desk. Going under the bed currently happens through a short fade-to-black cut. I did not make a separate crawling animation because the goal of the moment is a fast panic reaction rather than a long staged animation.</p>
+              <p>When the player is under the bed, the camera is low and shakes slightly to create the feeling that the character is trying to stay still. The creature enters the house through the door, follows the recorded <code>housepath</code> route, checks the rooms, and finally reaches the area near the bedroom. I used paths recorded in play mode so I could walk the route myself and then have the creature follow it later.</p>
+              <p>The technical side of the creature needed many fixes. It now uses a textured biped model and a limping walk animation, but getting that to work required solving scaling, materials, animation looping, and movement speed problems. I also added spatial footsteps, a door creak, and whispers that come from the creature's position.</p>
+              <p>If the player does not hide in time, a separate failure path triggers. The player sees the warning, sees the creature, has to hide quickly, and only after that can run to the car again. This gives the ending a stronger rhythm and connects the EAS message, the creature, and the house space into one clearer sequence.</p>
+            </div>
+          </article>
+
+          <article class="entry">
+            <header class="entry-titlebar">
+              <span>Supermarket Polish and Black-Screen Menu Behavior</span>
+              <time>May 18</time>
+            </header>
+            <div class="entry-body">
+              <p>I worked on supermarket polish and the main menu's black-screen behavior. I cleaned up the shelf interactions: after three products have been placed in the cart, the system no longer allows the player to add more items. I removed Space to Skip, so the black screen now has to wait until the time limit or flow itself ends. This creates a more logical flow for the player and avoids the chance of accidentally skipping important text.</p>
+            </div>
+          </article>
+
+          <article class="entry" id="latest">
+            <header class="entry-titlebar">
+              <span>MonitorSite Stability and Final Web Flow</span>
+              <time>May 19</time>
+            </header>
+            <div class="entry-body">
+              <p>May 19 was the final day of development, so I spent it tightening OPEN FEED's ending flow and fixing the last issues that could break the experience. In the supermarket, I slowed down the intro text so it is easier to read, restored the missing "walk in when you're ready" prompt, made the cart objective clearer, and expanded the checkout interactions so milk cartons, hockey puck variants, and the dollar bill payment all behave as part of the same cashier sequence. I changed the cashier line from "five twenty" to "five dollars please," and added the dollar bill as a world-space 2D object on the counter, scaled and trimmed so it no longer has the huge white border. I also adjusted counter placement so items face the player more naturally while keeping the previous hot dog orientation.</p>
+              <p>I also polished the transition from the supermarket into ForestDrive. Instead of showing the last supermarket frame and then jump-cutting, I changed the flow so it fades to black first, shows the "you don't have anywhere to be" style text over black, and then slowly fades into the driving scene. This made the handoff feel much smoother and more intentional. In the house, I made the monitor prompt easier to read despite the PSX shader, and I changed the Unity monitor launch so the Open Feed site always starts in the reset/reloaded state with nothing unlocked. That keeps the web sequence reliable for a fresh playthrough every time.</p>
+              <p>A lot of the final day went into MonitorSite stability. I fixed several white-page dead ends in the shell browser, including returning to the feed index after the echo cipher tools popup, closing the tools popup, selecting the Lima, Peru node on the map, and opening the Westfield Herald news article. The site now keeps its shell and content flow intact instead of dropping into a blank browser view. I also made sure all MonitorSite audio cuts out when the final shutdown state is reached, so the collapse feels clean and final instead of leaving stray sounds behind.</p>
+              <p>The last major part of the day was the house and EAS audio flow. I removed the old <code>intensemoment.mp3</code> and replaced it with <code>boneaudio.mp3</code>. I made it start early enough that its 34-second mark lines up with the TV's "LEAVE NOW" message, added a fade-in so it does not pop in, lowered the volume so it does not overpower the other sounds, and made it fade out when the post-escape message begins. I also added a test hotkey so I can trigger the EAS message directly during development. When the "you were seen" failure path plays and I click try again, the player is restored back to the TV checkpoint, the cutoff warning is reset, and <code>boneaudio.mp3</code> is reset to the same 34-second alignment. Finally, when <code>endingmessage.mp4</code> finishes playing, the game returns to the main menu, which gives the ending a cleaner full-circle close.</p>
+              <p>By the time I zipped the final build, the project had been in development for about 8 months, including the pre-production phase starting around October last year, and then from the first rough Unity prototypes in February to the finished version on May 19, 2026. I cannot know the exact hour count anymore, but considering the amount of scene work, scripting, testing, website development, audio editing, bug fixing, and late polish, it is easily one of the most time-intensive projects I have worked on, likely well over a hundred hours, probably even closer to the ballpark of 150-200 hours. Finishing it feels strange: partly relief, partly exhaustion, and partly disbelief that all of these separate systems finally became one playable thing. After so many small fixes and moments where one solved problem created another, zipping the build felt like closing a very heavy tab in my brain.</p>
+            </div>
+          </article>
+
+          <article class="entry" id="teacher">
+            <header class="entry-titlebar">
+              <span>Impact of Teacher Feedback</span>
+              <time>Process reflection</time>
+            </header>
+            <div class="entry-body">
+              <p>Teacher feedback helped me understand which parts were already working. For example, the main menu background, the driving scene atmosphere, the store visuals, and the house idea received positive feedback. That was useful because in an atmosphere-based project it can sometimes be hard to judge whether the feeling is reaching other people.</p>
+              <p>I also received the suggestion to add more small interactive objects to the desk scene. That idea influenced how I began to see rooms: not only as places where the story happens, but as environments where small details help make the world believable.</p>
+              <p>I am grateful for the guidance I received throughout the process. It helped me stay motivated and gave me a clearer sense of direction at moments when the project felt overwhelming or too broad. Because OPEN FEED depends so much on atmosphere and subtle tension, outside feedback was especially valuable. It helped me notice which ideas were already working, which parts needed more development, and where I should focus my time more carefully.</p>
+              <p>The feedback also encouraged me to look at the project not only as a collection of scenes, but as a complete experience with a consistent tone and flow. That was important for me, because it pushed me to think more critically about pacing, detail, and how each part supports the overall feeling of the game. I appreciate that support a lot, because it helped the project become more coherent and stronger than it would have been if I had worked entirely on my own.</p>
+            </div>
+          </article>
+
+          <article class="entry" id="reflection">
+            <header class="entry-titlebar">
+              <span>Personal Reflection</span>
+              <time>Final note</time>
+            </header>
+            <div class="entry-body">
+              <p>From my experience, I can say that game development is tough work. There is always some anxiety around the possibility that the game will disappoint people, break at the wrong moment, or fail to communicate the feeling I had in my head. That anxiety can be crippling at times. Maybe my anxiety disorder makes it heavier, but after working on OPEN FEED I can much more clearly imagine how stressful professional game development can be, especially in a bigger studio with a release date getting closer, bugs still appearing, and one fix sometimes creating a completely new problem.</p>
+              <p>One of the biggest things I learned is how easily scope can grow. A small idea turns into a scene, a scene needs a transition, a transition needs audio, the audio needs timing, and suddenly one "simple" feature has five other systems attached to it. OPEN FEED started as a concept about cameras and atmosphere, but over time it became a supermarket, a driving sequence, a house, a web browser, a fictional website, a phone, a TV broadcast, a hiding sequence, and an ending. I am proud of that, but I also understand much better now why scope control matters so much. Every new idea costs time, energy, testing, and emotional patience.</p>
+              <p>This project also gave me much more respect for game developers. Before this, I understood in theory that games are complicated, but now I have felt it directly. A game is not just art, code, sound, writing, or level design. It is all of those things happening at the same time, and they all have to work together. Even a short game can contain an overwhelming amount of invisible work. The player might only see a small interaction, but behind it there can be hours of debugging, adjusting, rebuilding, testing, and trying to make the moment feel natural.</p>
+              <p>Another difficult part was juggling this project between my other school assignments and responsibilities. OPEN FEED needed a lot of focus, but I could not give it unlimited time. There were moments where I wanted to keep polishing, but I also had other deadlines and tasks waiting. That made the project feel even heavier sometimes, because I had to switch between creative work, technical problem-solving, school pressure, and personal stress. Still, returning to the project again and again also showed me that I genuinely care about this kind of work.</p>
+              <p>After finishing OPEN FEED, my feelings about pursuing game design are more complicated, but also more serious. This project did not make game development seem easier. If anything, it showed me how demanding it really is. But it also showed me how meaningful it can feel when separate pieces finally come together into an experience that someone else can play. I still feel drawn to game design, especially atmosphere, interaction, horror, and the way games can create feelings that other media cannot. OPEN FEED has made me more aware of the stress and responsibility that come with this path, but it has also made the desire feel more real. It feels less like a distant dream now and more like something I have actually started doing.</p>
+              <p>As a closing note, I want to thank anyone who takes the time to read through this diary or play the final build of OPEN FEED. This project was made through a lot of uncertainty, trial and error, late fixes, and moments where I was not sure if everything would come together. If the game manages to leave even a small feeling behind, whether it is unease, curiosity, or just the memory of staring at a strange screen too late at night, then I feel like the journey was worth it.</p>
+              <p>Martin</p>
+            </div>
+          </article>
+        </main>
+      </div>
+
+      <footer class="statusbar">
+        <div class="status-cell">Browse-only HTML generated from OPEN FEED Devlog.txt</div>
+        <div class="status-cell">OPEN FEED / DEVLOG</div>
+      </footer>
+    </section>
+  </div>
+</body>
+</html>
